@@ -1,0 +1,18 @@
+# local dev
+jupyterlab==1.1.4
+
+# testing
+pytest==4.5.0
+pytest-cov==2.7.1
+pytest-xdist==1.28.0
+pytest-benchmark==3.2.2
+pytest-profiling==1.7.0
+tox==3.23.0
+snapshottest==0.6.0
+
+# docs
+sphinx==3.5.2
+sphinx-autobuild==2020.9.1
+nbsphinx==0.8.2
+autoapi==2.0.1
+m2r==0.2.1

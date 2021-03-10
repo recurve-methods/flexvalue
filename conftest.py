@@ -1,0 +1,99 @@
+import pandas as pd
+import pytest
+import random
+
+
+@pytest.fixture
+def test_ids():
+    return [f"{i}" for i in range(5)]
+
+
+@pytest.fixture
+def metered_load_shape(test_ids):
+    random.seed(0)
+    output = []
+    for _id in test_ids:
+        for hour in range(8760):
+            savings = random.random() * 0.1
+            output.append(
+                {"identifier": _id, "hour_of_year": hour, "hourly_mwh_savings": savings}
+            )
+    df = (
+        pd.DataFrame(output)
+        .pivot(index="hour_of_year", columns="identifier", values="hourly_mwh_savings")
+    )
+    df.columns.name = None
+    return df
+
+
+@pytest.fixture
+def deer_ls_options():
+    return [
+        "Res_Indoor_CFL_Ltg",
+        "Res_RefgFrzr_HighEff",
+        "Res_RefgFrzr_Recyc_Conditioned",
+        "Res_RefgFrzr_Recyc_UnConditioned",
+        "Res_HVAC_Eff_AC",
+        "Res_HVAC_Eff_HP",
+        "Res_HVAC_Duct_Sealing",
+        "Res_HVAC_Refrig_Charge",
+        "Res_Refg_Chrg_Duct_Seal",
+        "Res_RefgFrzr_Recycling",
+        "NonRes_Indoor_CFL_Ltg",
+        "NonRes_Indoor_Non_CFL_Ltg",
+        "NonRes_HVAC_Chillers",
+        "Non_Res_HVAC_Refrig_Charge",
+        "NonRes_HVAC_Split_Package_AC",
+        "NonRes_HVAC_Duct_Sealing",
+        "NonRes_HVAC_Split_Package_HP",
+        "Res_ClothesDishWasher",
+        "Res_BldgShell_Ins",
+    ]
+
+
+@pytest.fixture
+def user_inputs(metered_load_shape, deer_ls_options):
+    user_inputs = metered_load_shape.sum()
+    user_inputs.name = "mwh_savings"
+    user_inputs.index.name = "ID"
+    user_inputs = user_inputs.to_frame().reset_index()
+    user_inputs["load_shape"] = user_inputs["ID"]  # so it points to metered_ls
+    user_inputs["start_year"] = 2021
+    user_inputs["start_quarter"] = [1, 2, 3, 4, 2]
+    user_inputs["utility"] = "PGE"
+    user_inputs["climate_zone"] = "3A"
+    user_inputs["therms_savings"] = [1000, 900, 3000, 0, 920]
+    user_inputs["therms_profile"] = "annual"
+    user_inputs["units"] = 1
+    user_inputs["eul"] = 9
+    user_inputs["ntg"] = 0.95
+    user_inputs["discount_rate"] = 0.0766
+    user_inputs["admin"] = [1234, 2345, 3456, 4567, 5678]
+    user_inputs["measure"] = [12340, 23450, 34560, 45670, 56780]
+    user_inputs["incentive"] = [11234, 12345, 13456, 14567, 15678]
+    user_inputs = user_inputs[
+        [
+            "ID",
+            "start_year",
+            "start_quarter",
+            "utility",
+            "climate_zone",
+            "mwh_savings",
+            "load_shape",
+            "therms_savings",
+            "therms_profile",
+            "units",
+            "eul",
+            "ntg",
+            "discount_rate",
+            "admin",
+            "measure",
+            "incentive",
+        ]
+    ]
+    deer_user_input = user_inputs.iloc[0].copy(deep=True)
+    for deer in deer_ls_options:
+        deer_user_input["load_shape"] = deer
+        deer_user_input["ID"] = deer
+        user_inputs = user_inputs.append(deer_user_input, ignore_index=True)
+    return user_inputs

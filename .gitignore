@@ -1,0 +1,10 @@
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
+.Trash*
+db
+!db/.gitkeep
+test_data/
+notebooks/reports
+*.html
+docs/_build

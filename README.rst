@@ -3,7 +3,7 @@ Flexvalue
 
 This library can be used to calculate the avoided costs, TRC, and PAC.
 
-Try it out for yourself by following our `tutorial <https://colab.research.google.com/github/openeemeter/flexvalue/blob/master/notebooks/tutorial.ipynb>`_ or with your own data `here <https://colab.research.google.com/github/openeemeter/flexvalue/blob/master/notebooks/tutorial.ipynb>`_.
+Try it out for yourself by following our `tutorial <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/tutorial.ipynb>`_ or with your own data `here <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/tutorial.ipynb>`_.
 
 Avoided Cost Data
 #################

@@ -16,3 +16,6 @@ sphinx-autobuild==2020.9.1
 nbsphinx==0.8.2
 autoapi==2.0.1
 m2r==0.2.1
+
+# package
+twine

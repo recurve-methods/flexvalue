@@ -1,10 +1,13 @@
 *.pyc
-__pycache__/
-.ipynb_checkpoints/
+__pycache__
+.ipynb_checkpoints
 .Trash*
 db
 !db/.gitkeep
-test_data/
+test_data
 notebooks/reports
 *.html
 docs/_build
+*.egg-info
+build
+dist

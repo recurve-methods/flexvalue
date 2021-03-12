@@ -53,6 +53,7 @@ Before calculating any results, you will need to download the avoided cost data 
 To get an example set of flexvalue results, run the following commands in order.
 
 .. code-block:: shell
+
   flexvalue generate-example-inputs
   flexvalue get-results --user-inputs-filepath ../test_data/example_user_inputs_deer.csv --report-filepath reports/example_report_deer.html
   flexvalue get-results --user-inputs-filepath ../test_data/example_user_inputs_metered.csv  --metered-load-shape-filepath ../test_data/example_metered_load_shape.csv --report-filepath reports/example_report_metered.html
@@ -60,6 +61,7 @@ To get an example set of flexvalue results, run the following commands in order.
 To help generate your user input file, use the following command to see what utilities, climate zones, and deer load shapes are available.
 
 .. code-block:: shell
+
   flexvalue valid-utility-climate-zone-combos
   flexvalue valid-deer-load-shapes
 

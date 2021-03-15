@@ -1,4 +1,4 @@
-Flexvalue
+FLEXvalue
 *********
 
 This library can be used to calculate the avoided costs, TRC, and PAC.
@@ -50,7 +50,7 @@ Before calculating any results, you will need to download the avoided cost data 
 
   flexvalue download-avoided-costs-data-db --year 2020
 
-To get an example set of flexvalue results, run the following commands in order.
+To get an example set of FLEXvalue results, run the following commands in order.
 
 .. code-block:: shell
 

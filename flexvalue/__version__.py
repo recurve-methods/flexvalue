@@ -17,8 +17,8 @@
    limitations under the License.
 
 """
-__title__ = "flexvalue"
-__description__ = "FlexValue: a tool for calculating avoided costs"
+__title__ = "FLEXvalue"
+__description__ = "FLEXvalue: a tool for calculating avoided costs"
 __url__ = "http://github.com/recurve-methods/flexvalue"
 __version__ = "0.0.1"
 __author__ = "Recurve Analytics, Inc."

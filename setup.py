@@ -44,10 +44,6 @@ INSTALL_REQUIRES = [
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-# Import the README and use it as the long-description.
-with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
-    long_description = "\n" + f.read()
-
 # Load the package's __version__.py module as a dictionary.
 about = {}
 with open(os.path.join(here, NAME, "__version__.py")) as f:
@@ -92,11 +88,10 @@ setup(
     name=NAME,
     version=about["__version__"],
     description=about["__description__"],
-    long_description=long_description,
     author=about["__author__"],
     author_email=about["__author_email__"],
     url=about["__url__"],
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(exclude=("tests","db")),
     entry_points={"console_scripts": ["flexvalue=flexvalue.cli:cli"]},
     install_requires=INSTALL_REQUIRES,
     include_package_data=True,

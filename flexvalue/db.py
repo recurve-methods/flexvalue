@@ -46,7 +46,7 @@ def execute_query(database_year, query):
 
 def get_deer_load_shape(database_year):
     con = get_db_connection(database_year=database_year)
-    return pd.read_sql_table("deer_ls", con=con).set_index("hour_of_year")
+    return pd.read_sql_table("deer_load_shapes", con=con).set_index("hour_of_year")
 
 
 def get_filtered_acc_elec(database_year, utility, climate_zone, start_year, end_year):
@@ -102,11 +102,9 @@ def get_all_valid_utility_climate_zone_combinations(database_year, utility=None)
     """Returns all utility-climate zone combinations"""
     where_str = f"WHERE utility = '{utility}'" if utility else ""
     query = f"""
-    SELECT utility, climate_zone
-    FROM acc_electricity
+    SELECT * 
+    FROM acc_electricity_utilities_climate_zones
     {where_str}
-    GROUP BY utility, climate_zone
-    ORDER BY utility, climate_zone
     """
     return execute_query(database_year, query)
 
@@ -115,7 +113,7 @@ def get_all_valid_deer_load_shapes(database_year):
     """Returns all valid DEER load shapes"""
     query = """
         SELECT *
-        FROM deer_ls
+        FROM deer_load_shapes
         limit 1
         """
     valid_deer_load_shapes = execute_query(database_year, query)

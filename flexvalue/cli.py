@@ -88,6 +88,7 @@ def generate_example_inputs(test_data_filepath):
 @click.option("--metered-load-shape-filepath")
 @click.option("--include-report/--exclude-report", default=True, show_default=True)
 @click.option("--report-filepath", default="report.html", show_default=True)
+@click.option("--outputs-table-filepath", default="outputs_table.csv", show_default=True)
 def get_results(
     user_inputs_filepath, metered_load_shape_filepath, include_report, report_filepath
 ):
@@ -104,6 +105,7 @@ def get_results(
             elec_benefits,
             gas_benefits,
         ) = flexvalue_run.get_flexvalue_results(user_inputs)
+        outputs_table.to_csv(outputs_table_filepath, index=False)
     else:
         Path(ntpath.dirname(report_filepath)).mkdir(parents=True, exist_ok=True)
         nbf_nt = Notebook()

@@ -295,6 +295,11 @@ class FlexValueRun:
             if metered_load_shape is not None
             else self.deer_load_shape
         )
+        # Make all columns upper-cased so matching can be case insensitive
+        self.all_load_shapes_df.rename(
+            columns={col: col.upper() for col in self.all_load_shapes_df.columns},
+            inplace=True,
+        )
 
     def get_flexvalue_meters(self, user_inputs):
         def _get_load_shape_df(load_shape, mwh_savings):
@@ -326,7 +331,7 @@ class FlexValueRun:
                 measure=user_input["measure"],
                 incentive=user_input["incentive"],
                 load_shape_df=_get_load_shape_df(
-                    user_input["load_shape"], user_input["mwh_savings"]
+                    user_input["load_shape"].upper(), user_input["mwh_savings"]
                 ),
                 database_year=self.database_year,
             )
@@ -395,7 +400,7 @@ class FlexValueRun:
             "PAC Costs ($)"
         ].round(2)
 
-        outputs_table['Totals'] = outputs_table_totals
+        outputs_table["Totals"] = outputs_table_totals
         return outputs_table.T
 
     def get_electric_benefits_full_outputs(self, user_inputs):

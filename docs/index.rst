@@ -1,6 +1,3 @@
-FlexValue (TM): tools for calculating avoided costs
------==============================================
-
 .. toctree::
    :maxdepth: 3 
 

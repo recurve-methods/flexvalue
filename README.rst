@@ -1,5 +1,5 @@
 FLEXvalue (TM)
-*********
+**************
 
 This library can be used to calculate the avoided costs, TRC, and PAC.
 

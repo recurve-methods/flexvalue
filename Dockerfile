@@ -1,5 +1,8 @@
 FROM python:3.7.4
 
+RUN apt-get update\
+ && apt-get install -y --no-install-recommends graphviz
+
 RUN pip install --upgrade pip==21.0.1
 
 COPY requirements.txt ./

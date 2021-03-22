@@ -7,7 +7,22 @@ FLEXvalue (TM)
 
 This library can be used to calculate the avoided costs, TRC, and PAC.
 
-Try it out for yourself by following our `tutorial <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/tutorial.ipynb>`_ or with your own data `here <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb>`_.
+Try it out for yourself by following our tutorial: 
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/tutorial.ipynb
+
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/recurve-methods/flexvalue/HEAD?filepath=notebooks/tutorial.ipynb
+
+
+Or use the following notebook which allows you to put in your own inputs: 
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb
+
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/recurve-methods/flexvalue/HEAD?filepath=notebooks/colab.ipynb
 
 Avoided Cost Data
 #################

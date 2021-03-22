@@ -1,7 +1,9 @@
 version: '3'
 services:
   shell:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile.nobinder
     image: flexvalue_shell
     stdin_open: true
     tty: true

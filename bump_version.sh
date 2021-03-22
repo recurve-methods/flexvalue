@@ -12,6 +12,7 @@ echo "git pull"
 echo "git checkout -b release/v${NEW_VERSION}"
 echo ""
 echo "sed -i -e 's/${OLD_VERSION}/${NEW_VERSION}/g' flexvalue/__version__.py"
+echo "sed -i -e 's/${OLD_VERSION}/${NEW_VERSION}/g' docs/conf.py"
 echo "sed -i -e '/Development/,/-----------/ c\\
 Development\\
 -----------\\

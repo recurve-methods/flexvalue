@@ -73,12 +73,12 @@ def calculate_trc_costs(admin, measure, incentive, discount_rate, ntg):
     discount_rate: float
         The quarterly discount rate to be applied to the net present value calculation
     ntg: float
+        Net to gross ratio
 
     Returns
     -------
     trc_costs: float
     """
-    import pdb;pdb.set_trace()
     return admin + ((1 - ntg) * incentive + ntg * measure) / (1 + (discount_rate / 4))
 
 
@@ -91,10 +91,13 @@ def calculate_pac_costs(admin, incentive, discount_rate, ntg):
     Parameters
     ----------
     admin: float
-        The administrative costs assigned to a project
+        The administrative costs assigned to a given measure, project, or portfolio
     incentive: float
+        The incentive costs assigned to given measure, project, or portfolio
     discount_rate: float
+        The quarterly discount rate to be applied to the net present value calculation
     ntg: float
+        Net to gross ratio
 
     Returns
     -------
@@ -104,7 +107,7 @@ def calculate_pac_costs(admin, incentive, discount_rate, ntg):
 
 
 class FlexValueProject:
-    """Representation of the parameters and calculations for a single project"""
+    """Parameters and calculations for a given measure, project, or portfolio"""
     def __init__(
         self,
         identifier,
@@ -146,13 +149,34 @@ class FlexValueProject:
         self.database_year = database_year
 
     def calculate_trc_electricity_benefits(self):
-        """Calculate electric TRC benefits"""
+        """Calculate electric TRC benefits
+
+        Returns
+        -------
+        electricity_benefits: pd.DataFrame 
+            hourly benefits for every quarter of every year from the start year through
+            the EUL
+        """
 
         load_shape_df = self.load_shape_df.copy(deep=True)
         load_shape_df["hourly_savings"] = (
             self.mwh_savings * self.units * self.ntg * load_shape_df
         )
-        avoided_costs_electricity_df = self.get_avoided_costs_electricity_df()
+
+        def _get_avoided_costs_electricity_df():
+
+            end_year_adjustment = 0 if self.start_quarter == 1 else 1
+            acc_unbounded = get_filtered_acc_elec(
+                self.database_year,
+                self.utility,
+                self.climate_zone,
+                self.start_year,
+                end_year=self.start_year + self.eul + end_year_adjustment,
+            )
+            return self._add_quarter_col_to_avoided_costs(acc_unbounded)
+
+
+        avoided_costs_electricity_df = _get_avoided_costs_electricity_df()
 
         non_discounted = pd.merge(
             load_shape_df,
@@ -182,13 +206,31 @@ class FlexValueProject:
             non_discounted["total"] * discounted["discount"]
         )
         discounted["identifier"] = self.identifier
-
         return discounted
 
     def calculate_trc_gas_benefits(self):
-        """Calculate gas TRC benefits"""
+        """Calculate gas TRC benefits
+
+        Returns
+        -------
+        gas_benefits: pd.DataFrame 
+            quarterly benefits for every year from the start year through
+            the EUL
+
+        """
+        def _get_avoided_costs_gas_df():
+            """Assemble non-discounted monthly gas avoided costs for the duration of the EUL"""
+            end_year_adjustment = 0 if self.start_quarter == 1 else 1
+
+            acc_gas_unbounded = get_filtered_acc_gas(
+                self.database_year,
+                self.start_year,
+                self.start_year + self.eul + end_year_adjustment,
+            )
+            return self._add_quarter_col_to_avoided_costs(acc_gas_unbounded)
+
         non_discounted_gas = (
-            self.get_avoided_costs_gas_df()
+            _get_avoided_costs_gas_df()
             .groupby(["year", "quarter"])
             .mean()
             .reset_index()
@@ -229,7 +271,6 @@ class FlexValueProject:
             non_discounted_gas["total"] * discounted_gas["discount"]
         )
         discounted_gas["identifier"] = self.identifier
-
         return discounted_gas
 
     def _add_quarter_col_to_avoided_costs(self, avoided_costs_df):
@@ -245,32 +286,16 @@ class FlexValueProject:
             & (avoided_costs_df["quarter"] <= self.eul * 4)
         ]
 
-    def get_avoided_costs_electricity_df(self):
-        """Assemble the non-discounted hourly avoided costs and GHG by component for the duration of the EUL"""
-
-        end_year_adjustment = 0 if self.start_quarter == 1 else 1
-        acc_unbounded = get_filtered_acc_elec(
-            self.database_year,
-            self.utility,
-            self.climate_zone,
-            self.start_year,
-            end_year=self.start_year + self.eul + end_year_adjustment,
-        )
-        return self._add_quarter_col_to_avoided_costs(acc_unbounded)
-
-    def get_avoided_costs_gas_df(self):
-        """Assemble non-discounted monthly gas avoided costs for the duration of the EUL"""
-        end_year_adjustment = 0 if self.start_quarter == 1 else 1
-
-        acc_gas_unbounded = get_filtered_acc_gas(
-            self.database_year,
-            self.start_year,
-            self.start_year + self.eul + end_year_adjustment,
-        )
-        return self._add_quarter_col_to_avoided_costs(acc_gas_unbounded)
-
     def get_output_table(self):
-        """Establish project-level outputs dataframe"""
+        """Aggregate benefits and calculate TRC and PAC
+        
+        Returns 
+        -------
+        output_table: pd.DataFrame
+            A table with summarized outputs including TRC and PAC, total costs,
+            and GHG impacts
+
+        """
 
         trc_electricity_benefits = self.calculate_trc_electricity_benefits()
         trc_gas_benefits = self.calculate_trc_gas_benefits()
@@ -367,17 +392,20 @@ class FlexValueRun:
             inplace=True,
         )
 
-    def get_flexvalue_meters(self, user_inputs_df):
+    def get_flexvalue_projects(self, user_inputs_df):
         """Translate the user inputs dataframe into a dictionary of FlexValueProject objects
         
         Parameters
         ----------
         user_inputs_df: pd.DataFrame
-            A dataframe containing all of the inputs for each project in the FlexValueRun
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
 
         Returns
         -------
-        
+        flex_value_projects: dict
+            A dictionary keyed on the id of the measure/project/portfolio withe value
+            being an instantiation of the FlexValueProject using those inputs
         """
         def _get_load_shape_df(load_shape, mwh_savings):
             # Check that if electricity savings are supplied, a load shape is available
@@ -415,31 +443,73 @@ class FlexValueRun:
             for user_input in user_inputs_df.reset_index().to_dict("records")
         }
 
-    def get_all_trc_electricity_benefits_df(self, user_inputs, metered_load_shape=None):
+    def get_all_trc_electricity_benefits_df(self, user_inputs):
+        '''Concatanates the electricity benefits across all FlexValueProjects
+
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------
+        elec_benefits: pd.DataFrame
+            A dataframe containing the electricity benefits for all of the measure/
+            project/portoflio entries.
+        '''
         return (
             pd.concat(
                 [
-                    flx_meter.calculate_trc_electricity_benefits()
-                    for flx_meter in self.get_flexvalue_meters(user_inputs).values()
+                    flx_project.calculate_trc_electricity_benefits()
+                    for flx_project in self.get_flexvalue_projects(user_inputs).values()
                 ]
             )
             .sort_values(["identifier", "year", "hour_of_year"])
             .reset_index(drop=True)
         )
 
-    def get_total_trc_gas_benefits(self, user_inputs, metered_load_shape=None):
+    def get_total_trc_gas_benefits(self, user_inputs):
+        '''The total gas benefits across all FlexValueProjects
+
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------
+        gas_benefits: float
+            The sum of all gas benefits across all measure/project/portfolio entries.
+        '''
         return sum(
             [
-                flx_meter.calculate_trc_gas_benefits()["total"].sum()
-                for flx_meter in self.get_flexvalue_meters(user_inputs).values()
+                flx_project.calculate_trc_gas_benefits()["total"].sum()
+                for flx_project in self.get_flexvalue_projects(user_inputs).values()
             ],
         )
 
-    def get_all_output_tables(self, user_inputs, metered_load_shape=None):
-        """Returns a table containing the aggregated outputs for each project"""
+    def get_all_output_tables(self, user_inputs):
+        """Returns a table containing the aggregated outputs for each project
+        
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------
+        outputs_table pd.DataFrame
+            A table with summarized outputs including TRC and PAC, total costs,
+            and GHG impacts summed across all measure/project/portfolio entries.
+            The TRC and PAC values are then recalculated based on the summed benefits
+            and costs.
+        """
         all_output_tables = [
-            flx_meter.get_output_table()
-            for flx_meter in self.get_flexvalue_meters(user_inputs).values()
+            flx_project.get_output_table()
+            for flx_project in self.get_flexvalue_projects(user_inputs).values()
         ]
         outputs_table = pd.concat(all_output_tables, axis=1)
         outputs_table_totals = outputs_table.sum(axis=1)
@@ -453,16 +523,6 @@ class FlexValueRun:
             outputs_table_totals["TRC (and PAC) Electric Benefits ($)"]
             + outputs_table_totals["TRC (and PAC) Gas Benefits ($)"]
         ) / outputs_table_totals["PAC Costs ($)"]
-        """
-        outputs_table.loc["TRC", "Totals"] = (
-            outputs_table["Totals"]["TRC (and PAC) Electric Benefits ($)"]
-            + outputs_table["Totals"]["TRC (and PAC) Gas Benefits ($)"]
-        ) / outputs_table["Totals"]["TRC Costs ($)"]
-        outputs_table.loc["PAC", "Totals"] = (
-            outputs_table["Totals"]["TRC (and PAC) Electric Benefits ($)"]
-            + outputs_table["Totals"]["TRC (and PAC) Gas Benefits ($)"]
-        ) / outputs_table["Totals"]["PAC Costs ($)"]
-        """
 
         outputs_table = outputs_table.round(3)
         outputs_table.loc["TRC Costs ($)"] = outputs_table.loc["TRC Costs ($)"].round(2)
@@ -480,11 +540,25 @@ class FlexValueRun:
         return outputs_table.T
 
     def get_electric_benefits_full_outputs(self, user_inputs):
-        """Returns detailed project-level output table that can be used for further analysis"""
+        """Aggregates the electricity benefits into a year-month average daily loadshape
+
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------
+        load_shape_df: pd.DataFrame
+            Returns a year-month average daily load shape for each 
+            measure/project/portoflio, concatanated into a single dataframe
+        
+        """
         # Year-Month average daily loadshape
         return pd.concat(
             [
-                flx_meter.calculate_trc_electricity_benefits()
+                flx_project.calculate_trc_electricity_benefits()
                 .groupby(["identifier", "hour_of_day", "year", "month"])
                 .agg(
                     {
@@ -498,12 +572,32 @@ class FlexValueRun:
                         },
                     }
                 )
-                for flx_meter in self.get_flexvalue_meters(user_inputs).values()
+                for flx_project in self.get_flexvalue_projects(user_inputs).values()
             ],
         ).reset_index()
 
     def get_results(self, user_inputs):
-        """Assemble and report tabular project and portfolio-level inputs and outputs"""
+        """Assemble and report tabular project and portfolio-level inputs and outputs
+        
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------
+        outputs_table pd.DataFrame
+            A table with summarized outputs including TRC and PAC, total costs,
+            and GHG impacts summed across all measure/project/portfolio entries.
+            The TRC and PAC values are then recalculated based on the summed benefits
+            and costs.
+        elec_benefits: pd.DataFrame
+            Returns a year-month average daily load shape for each 
+            measure/project/portoflio, concatanated into a single dataframe
+        gas_benefits: float
+            The sum of all gas benefits across all measure/project/portfolio entries.
+        """
         outputs_table = self.get_all_output_tables(user_inputs=user_inputs)
         elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
         gas_benefits = self.get_total_trc_gas_benefits(user_inputs)

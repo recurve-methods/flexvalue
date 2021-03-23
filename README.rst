@@ -1,6 +1,8 @@
 FLEXvalue (TM)
 **************
 
+`Read The Docs Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/>`_
+
 .. image:: https://readthedocs.com/projects/recurve-analytics-inc-flexvalue/badge/?version=latest&token=03dc3e4930d430d47b5d1169ec38ad7df5d2bc70f69689d1e845b56596bcf590
     :target: https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/?badge=latest
     :alt: Documentation Status

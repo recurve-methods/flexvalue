@@ -34,7 +34,7 @@ Classes
 =======
 
 - :py:class:`FlexValueProject`:
-  Representation of the parameters and calculations for a single project
+  Parameters and calculations for a given measure, project, or portfolio
 
 - :py:class:`FlexValueRun`:
   Representation of a single calculation for a set of projects

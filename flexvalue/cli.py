@@ -69,10 +69,11 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
 
 
 @cli.command()
+@click.option("-y", "--year", default="2020", show_default=True)
 @click.option("--test-data-filepath", default="test_data", show_default=True)
-def generate_example_inputs(test_data_filepath):
+def generate_example_inputs(test_data_filepath, year):
     Path(test_data_filepath).mkdir(parents=True, exist_ok=True)
-    get_example_user_inputs_deer().to_csv(
+    get_example_user_inputs_deer(year).to_csv(
         os.path.join(test_data_filepath, "example_user_inputs_deer.csv")
     )
     get_example_user_inputs_metered().to_csv(

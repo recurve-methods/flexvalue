@@ -33,21 +33,6 @@ def deer_ls_options():
         "Res_RefgFrzr_HighEff",
         "Res_RefgFrzr_Recyc_Conditioned",
         "Res_RefgFrzr_Recyc_UnConditioned",
-        "Res_HVAC_Eff_AC",
-        "Res_HVAC_Eff_HP",
-        "Res_HVAC_Duct_Sealing",
-        "Res_HVAC_Refrig_Charge",
-        "Res_Refg_Chrg_Duct_Seal",
-        "Res_RefgFrzr_Recycling",
-        "NonRes_Indoor_CFL_Ltg",
-        "NonRes_Indoor_Non_CFL_Ltg",
-        "NonRes_HVAC_Chillers",
-        "Non_Res_HVAC_Refrig_Charge",
-        "NonRes_HVAC_Split_Package_AC",
-        "NonRes_HVAC_Duct_Sealing",
-        "NonRes_HVAC_Split_Package_HP",
-        "Res_ClothesDishWasher",
-        "Res_BldgShell_Ins",
     ]
 
 

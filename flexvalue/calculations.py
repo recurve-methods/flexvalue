@@ -34,23 +34,77 @@ __all__ = (
 
 
 def get_quarterly_discount_df(eul, discount_rate):
-    """Calculate quarterly discount factor for the duration of the EUL"""
+    """Calculates the quarterly discount factor for the duration of the EUL
+
+    .. math::
+        discount = 1/((1+(discountRate/4))^{quarter - 1})
+        
+    Parameters
+    ----------
+    eul: int
+        Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
+    discount_rate: float
+
+    Returns
+    -------
+    quarterly_discount: pd.DataFrame
+        A dataframe containing a discount to be applied to every quarter for every year of the EUL.
+    
+    """
     qd = pd.DataFrame(np.arange(1, eul * 4 + 1)).rename({0: "quarter"}, axis=1)
     qd["discount"] = 1 / ((1 + (discount_rate / 4)) ** (qd["quarter"] - 1))
     return qd
 
 
 def calculate_trc_costs(admin, measure, incentive, discount_rate, ntg):
-    """Calculate TRC costs"""
+    """Calculates the TRC costs
+
+    .. math::
+        admin + ((1 - ntg) * incentive + ntg * measure) / (1 + (discountRate / 4))
+
+    Parameters
+    ----------
+    admin: float
+        The administrative costs assigned to a given measure, project, or portfolio
+    measure: float
+        The measure costs assigned to given measure, project, or portfolio
+    incentive: float
+        The incentive costs assigned to given measure, project, or portfolio
+    discount_rate: float
+        The quarterly discount rate to be applied to the net present value calculation
+    ntg: float
+
+    Returns
+    -------
+    trc_costs: float
+    """
+    import pdb;pdb.set_trace()
     return admin + ((1 - ntg) * incentive + ntg * measure) / (1 + (discount_rate / 4))
 
 
 def calculate_pac_costs(admin, incentive, discount_rate, ntg):
-    """Calculate PAC costs"""
+    """Calculate PAC costs
+
+    .. math::
+        admin + incentive / (1 + (discountRate / 4))
+
+    Parameters
+    ----------
+    admin: float
+        The administrative costs assigned to a project
+    incentive: float
+    discount_rate: float
+    ntg: float
+
+    Returns
+    -------
+    pac_costs: float
+    """
     return admin + incentive / (1 + (discount_rate / 4))
 
 
 class FlexValueProject:
+    """Representation of the parameters and calculations for a single project"""
     def __init__(
         self,
         identifier,
@@ -270,21 +324,33 @@ class FlexValueProject:
         outputs_df = pd.DataFrame.from_dict(
             outputs_dict, orient="index", columns=[self.identifier]
         )
-        # Rounding $'s to 2 decimals and GHG to 3
-        # TODO (ssuffian): Simplify by including a $ in all 2-round columns
-        numeric_cols = [
-            "Lifecycle Electric GHG Savingsons)",
-            "Lifecycle Gas GHG Savings (Tons)",
-            "Lifecycle Total GHG Savings (Tons)",
-            "TRC",
-            "PAC",
-        ]
-        outputs_df.round({c: 3 if c in numeric_cols else 2 for c in outputs_df.columns})
+        outputs_df = outputs_df.round(
+            {c: 2 if "($)" in c else 3 for c in outputs_df.columns}
+        )
         outputs_df.index.name = "Outputs"
         return outputs_df
 
 
 class FlexValueRun:
+    """Representation of a single calculation for a set of projects
+
+    Parameters
+    ----------
+    metered_load_shape: pd.DataFrame
+        Optionally a dataframe containing up to 8760 rows with each column
+        representing the savings attributed to a single electricity meter. 
+        This dataframe is joined with the built-in 8760 DEER 
+        load shapes to provide additional available load shapes when 
+        later constructing a user_inputs table.
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+
+    Returns
+    -------
+    FlexValueRun object: FlexValueRun
+    """
     def __init__(self, metered_load_shape=None, database_year="2020"):
         self.database_year = database_year
 
@@ -301,7 +367,18 @@ class FlexValueRun:
             inplace=True,
         )
 
-    def get_flexvalue_meters(self, user_inputs):
+    def get_flexvalue_meters(self, user_inputs_df):
+        """Translate the user inputs dataframe into a dictionary of FlexValueProject objects
+        
+        Parameters
+        ----------
+        user_inputs_df: pd.DataFrame
+            A dataframe containing all of the inputs for each project in the FlexValueRun
+
+        Returns
+        -------
+        
+        """
         def _get_load_shape_df(load_shape, mwh_savings):
             # Check that if electricity savings are supplied, a load shape is available
             if load_shape in self.all_load_shapes_df.columns:
@@ -335,7 +412,7 @@ class FlexValueRun:
                 ),
                 database_year=self.database_year,
             )
-            for user_input in user_inputs.reset_index().to_dict("records")
+            for user_input in user_inputs_df.reset_index().to_dict("records")
         }
 
     def get_all_trc_electricity_benefits_df(self, user_inputs, metered_load_shape=None):
@@ -387,7 +464,6 @@ class FlexValueRun:
         ) / outputs_table["Totals"]["PAC Costs ($)"]
         """
 
-        # TODO (ssuffian) Simplify rounding after no longer comparing to original script
         outputs_table = outputs_table.round(3)
         outputs_table.loc["TRC Costs ($)"] = outputs_table.loc["TRC Costs ($)"].round(2)
         outputs_table.loc["PAC Costs ($)"] = outputs_table.loc["PAC Costs ($)"].round(2)
@@ -405,7 +481,6 @@ class FlexValueRun:
 
     def get_electric_benefits_full_outputs(self, user_inputs):
         """Returns detailed project-level output table that can be used for further analysis"""
-        # TODO (ssuffian): Column order is to ensure test results are the same
         # Year-Month average daily loadshape
         return pd.concat(
             [
@@ -415,11 +490,12 @@ class FlexValueRun:
                     {
                         **{
                             "hourly_savings": "sum",
+                            "marginal_ghg": "sum",
+                            "av_csts_levelized": "mean",
                         },
                         **{
                             component: "sum" for component in ACC_COMPONENTS_ELECTRICITY
                         },
-                        **{"marginal_ghg": "sum", "av_csts_levelized": "mean"},
                     }
                 )
                 for flx_meter in self.get_flexvalue_meters(user_inputs).values()

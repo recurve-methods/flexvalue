@@ -14,10 +14,10 @@ Functions
 =========
 
 - :py:func:`get_quarterly_discount_df`:
-  Calculate quarterly discount factor for the duration of the EUL
+  Calculates the quarterly discount factor for the duration of the EUL
 
 - :py:func:`calculate_trc_costs`:
-  Calculate TRC costs
+  Calculates the TRC costs
 
 - :py:func:`calculate_pac_costs`:
   Calculate PAC costs
@@ -34,10 +34,10 @@ Classes
 =======
 
 - :py:class:`FlexValueProject`:
-  Undocumented.
+  Representation of the parameters and calculations for a single project
 
 - :py:class:`FlexValueRun`:
-  Undocumented.
+  Representation of a single calculation for a set of projects
 
 
 .. autoclass:: FlexValueProject

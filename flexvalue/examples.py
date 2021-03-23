@@ -19,9 +19,9 @@
 """
 import random
 import pandas as pd
+from .db import get_all_valid_deer_load_shapes
 
 __all__ = (
-    "get_deer_load_shape_options",
     "get_example_user_inputs_deer",
     "get_example_user_inputs_metered",
 )
@@ -51,30 +51,6 @@ def get_example_metered_load_shape():
     return df
 
 
-def get_deer_load_shape_options():
-    return [
-        "Res_Indoor_CFL_Ltg",
-        "Res_RefgFrzr_HighEff",
-        "Res_RefgFrzr_Recyc_Conditioned",
-        "Res_RefgFrzr_Recyc_UnConditioned",
-        "Res_HVAC_Eff_AC",
-        "Res_HVAC_Eff_HP",
-        "Res_HVAC_Duct_Sealing",
-        "Res_HVAC_Refrig_Charge",
-        "Res_Refg_Chrg_Duct_Seal",
-        "Res_RefgFrzr_Recycling",
-        "NonRes_Indoor_CFL_Ltg",
-        "NonRes_Indoor_Non_CFL_Ltg",
-        "NonRes_HVAC_Chillers",
-        "Non_Res_HVAC_Refrig_Charge",
-        "NonRes_HVAC_Split_Package_AC",
-        "NonRes_HVAC_Duct_Sealing",
-        "NonRes_HVAC_Split_Package_HP",
-        "Res_ClothesDishWasher",
-        "Res_BldgShell_Ins",
-    ]
-
-
 def get_example_user_inputs_metered():
     metered_load_shape = get_example_metered_load_shape()
     return pd.DataFrame(
@@ -102,13 +78,13 @@ def get_example_user_inputs_metered():
     ).set_index("ID")
 
 
-def get_example_user_inputs_deer():
+def get_example_user_inputs_deer(database_year):
     return pd.DataFrame(
         [
             {
                 "ID": f"deer_id_{i}",
                 "load_shape": deer,
-                "start_year": 2021,
+                "start_year": database_year,
                 "start_quarter": (i % 4) + 1,
                 "utility": "PGE",
                 "climate_zone": "CZ3A",
@@ -123,6 +99,6 @@ def get_example_user_inputs_deer():
                 "therms_savings": (i + 1) * 100,
                 "mwh_savings": (i + 1) * 1000,
             }
-            for i, deer in enumerate(get_deer_load_shape_options()[:5])
+            for i, deer in enumerate(get_all_valid_deer_load_shapes(database_year)[:5])
         ]
     ).set_index("ID")

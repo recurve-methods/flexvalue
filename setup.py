@@ -33,7 +33,6 @@ NAME = "flexvalue"
 INSTALL_REQUIRES = [
     "click",
     "pandas",
-    "pycurl",
     "statsmodels",
     "scipy",
     "seaborn",

@@ -37,7 +37,7 @@ def get_quarterly_discount_df(eul, discount_rate):
 
     .. math::
         discount = 1/((1+(discountRate/4))^{quarter - 1})
-        
+
     Parameters
     ----------
     eul: int
@@ -49,7 +49,7 @@ def get_quarterly_discount_df(eul, discount_rate):
     -------
     quarterly_discount: pd.DataFrame
         A dataframe containing a discount to be applied to every quarter for every year of the EUL.
-    
+
     """
     qd = pd.DataFrame(np.arange(1, eul * 4 + 1)).rename({0: "quarter"}, axis=1)
     qd["discount"] = 1 / ((1 + (discount_rate / 4)) ** (qd["quarter"] - 1))
@@ -121,15 +121,18 @@ class FlexValueProject:
     climate_zone: str
         Which climate zone to filter by when loading avoided costs data
     mwh_savings:
-        The 
+        The first year electricity gross savings in MWh
     load_shape: str
-        Either the name of a DEER loadshape or a reference to a meter id in the 
+        Either the name of a DEER loadshape or a reference to a meter id in the
         `metered_load_shapes` dataframe.
     load_shape_df: pd.DataFrame
-        A dataframe containing up to 8760 rows that contains the load shape for 
+        A dataframe containing up to 8760 rows that contains the load shape for
         the given `load_shape`.
-    therms_savings,
-    therms_profile,
+    therms_savings: float
+        The first year gas gross savings in Therms
+    therms_profile: float
+        Indicates what sort of adjustment to make on the therms savings,
+        can be one of ['annual', 'summer', 'winter']
     units: int
         Multiplier of the therms_savings and mhw_savings
     eul: int
@@ -145,14 +148,15 @@ class FlexValueProject:
     measure: float
         The measure costs assigned to given measure, project, or portfolio
     database_year: str
-        The year corresponding to the database that contains the avoided costs data. 
-        Requires that year's database to have already been downloaded 
+        The year corresponding to the database that contains the avoided costs data.
+        Requires that year's database to have already been downloaded
         using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
 
     Returns
     -------
     FlexValueProject object: FlexValueProject
     """
+
     def __init__(
         self,
         identifier,
@@ -198,7 +202,7 @@ class FlexValueProject:
 
         Returns
         -------
-        electricity_benefits: pd.DataFrame 
+        electricity_benefits: pd.DataFrame
             hourly benefits for every quarter of every year from the start year through
             the EUL
         """
@@ -219,7 +223,6 @@ class FlexValueProject:
                 end_year=self.start_year + self.eul + end_year_adjustment,
             )
             return self._add_quarter_col_to_avoided_costs(acc_unbounded)
-
 
         avoided_costs_electricity_df = _get_avoided_costs_electricity_df()
 
@@ -258,11 +261,12 @@ class FlexValueProject:
 
         Returns
         -------
-        gas_benefits: pd.DataFrame 
+        gas_benefits: pd.DataFrame
             quarterly benefits for every year from the start year through
             the EUL
 
         """
+
         def _get_avoided_costs_gas_df():
             """Assemble non-discounted monthly gas avoided costs for the duration of the EUL"""
             end_year_adjustment = 0 if self.start_quarter == 1 else 1
@@ -291,6 +295,11 @@ class FlexValueProject:
             therms_profile_adjustment = 0.853
         elif self.therms_profile.lower() == "winter":
             therms_profile_adjustment = 1.072
+        else:
+            raise ValueError(
+                "Must supply a therms_profile that is one of: "
+                "['annual', 'summer', 'winter']"
+            )
 
         non_discounted_gas["therms_profile_adjustment"] = therms_profile_adjustment
 
@@ -333,8 +342,8 @@ class FlexValueProject:
 
     def get_output_table(self):
         """Aggregate benefits and calculate TRC and PAC
-        
-        Returns 
+
+        Returns
         -------
         output_table: pd.DataFrame
             A table with summarized outputs including TRC and PAC, total costs,
@@ -408,19 +417,20 @@ class FlexValueRun:
     ----------
     metered_load_shape: pd.DataFrame
         Optionally a dataframe containing up to 8760 rows with each column
-        representing the savings attributed to a single electricity meter. 
-        This dataframe is joined with the built-in 8760 DEER 
-        load shapes to provide additional available load shapes when 
+        representing the savings attributed to a single electricity meter.
+        This dataframe is joined with the built-in 8760 DEER
+        load shapes to provide additional available load shapes when
         later constructing a user_inputs table.
     database_year: str
-        The year corresponding to the database that contains the avoided costs data. 
-        Requires that year's database to have already been downloaded 
+        The year corresponding to the database that contains the avoided costs data.
+        Requires that year's database to have already been downloaded
         using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
 
     Returns
     -------
     FlexValueRun object: FlexValueRun
     """
+
     def __init__(self, metered_load_shape=None, database_year="2020"):
         self.database_year = database_year
 
@@ -439,7 +449,7 @@ class FlexValueRun:
 
     def get_flexvalue_projects(self, user_inputs_df):
         """Translate the user inputs dataframe into a dictionary of FlexValueProject objects
-        
+
         Parameters
         ----------
         user_inputs_df: pd.DataFrame
@@ -452,6 +462,7 @@ class FlexValueRun:
             A dictionary keyed on the id of the measure/project/portfolio withe value
             being an instantiation of the FlexValueProject using those inputs
         """
+
         def _get_load_shape_df(load_shape, mwh_savings):
             # Check that if electricity savings are supplied, a load shape is available
             if load_shape in self.all_load_shapes_df.columns:
@@ -489,7 +500,7 @@ class FlexValueRun:
         }
 
     def get_all_trc_electricity_benefits_df(self, user_inputs):
-        '''Concatanates the electricity benefits across all FlexValueProjects
+        """Concatanates the electricity benefits across all FlexValueProjects
 
         Parameters
         ----------
@@ -502,7 +513,7 @@ class FlexValueRun:
         elec_benefits: pd.DataFrame
             A dataframe containing the electricity benefits for all of the measure/
             project/portoflio entries.
-        '''
+        """
         return (
             pd.concat(
                 [
@@ -515,7 +526,7 @@ class FlexValueRun:
         )
 
     def get_total_trc_gas_benefits(self, user_inputs):
-        '''The total gas benefits across all FlexValueProjects
+        """The total gas benefits across all FlexValueProjects
 
         Parameters
         ----------
@@ -527,7 +538,7 @@ class FlexValueRun:
         -------
         gas_benefits: float
             The sum of all gas benefits across all measure/project/portfolio entries.
-        '''
+        """
         return sum(
             [
                 flx_project.calculate_trc_gas_benefits()["total"].sum()
@@ -537,7 +548,7 @@ class FlexValueRun:
 
     def get_all_output_tables(self, user_inputs):
         """Returns a table containing the aggregated outputs for each project
-        
+
         Parameters
         ----------
         user_inputs: pd.DataFrame
@@ -596,9 +607,9 @@ class FlexValueRun:
         Returns
         -------
         load_shape_df: pd.DataFrame
-            Returns a year-month average daily load shape for each 
+            Returns a year-month average daily load shape for each
             measure/project/portoflio, concatanated into a single dataframe
-        
+
         """
         # Year-Month average daily loadshape
         return pd.concat(
@@ -623,7 +634,7 @@ class FlexValueRun:
 
     def get_results(self, user_inputs):
         """Assemble and report tabular project and portfolio-level inputs and outputs
-        
+
         Parameters
         ----------
         user_inputs: pd.DataFrame
@@ -638,7 +649,7 @@ class FlexValueRun:
             The TRC and PAC values are then recalculated based on the summed benefits
             and costs.
         elec_benefits: pd.DataFrame
-            Returns a year-month average daily load shape for each 
+            Returns a year-month average daily load shape for each
             measure/project/portoflio, concatanated into a single dataframe
         gas_benefits: float
             The sum of all gas benefits across all measure/project/portfolio entries.

@@ -56,6 +56,7 @@ def cli():
 )
 @click.option("--skip-if-exists/--overwrite-if-exists", default=False)
 def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
+    """Downloads the avoided costs database"""
     db_filename = f"{year}.db"
     output_filepath = os.path.join(database_location(), db_filename)
     Path(database_location()).mkdir(parents=True, exist_ok=True)
@@ -69,30 +70,76 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
 
 
 @cli.command()
-@click.option("-y", "--year", default="2020", show_default=True)
-@click.option("--test-data-filepath", default="test_data", show_default=True)
-def generate_example_inputs(test_data_filepath, year):
+@click.option(
+    "-y",
+    "--year",
+    default="2020",
+    show_default=True,
+    help="What year of the avoided costs data to use in the analysis",
+)
+@click.option(
+    "--output-filepath",
+    default="test_data",
+    show_default=True,
+    help="Filepath to where the example inputs will be stored",
+)
+def generate_example_inputs(output_filepath, year):
+    """Generates the sample inputs that can be used in the get-results command"""
     Path(test_data_filepath).mkdir(parents=True, exist_ok=True)
     get_example_user_inputs_deer(year).to_csv(
-        os.path.join(test_data_filepath, "example_user_inputs_deer.csv")
+        os.path.join(output_filepath, "example_user_inputs_deer.csv")
     )
     get_example_user_inputs_metered().to_csv(
-        os.path.join(test_data_filepath, "example_user_inputs_metered.csv")
+        os.path.join(output_filepath, "example_user_inputs_metered.csv")
     )
     get_example_metered_load_shape().to_csv(
-        os.path.join(test_data_filepath, "example_metered_load_shape.csv")
+        os.path.join(output_filepath, "example_metered_load_shape.csv")
     )
 
 
 @cli.command()
-@click.option("--user-inputs-filepath", required=True)
-@click.option("--metered-load-shape-filepath")
-@click.option("--include-report/--exclude-report", default=True, show_default=True)
-@click.option("--report-filepath", default="report.html", show_default=True)
-@click.option("--outputs-table-filepath", default="outputs_table.csv", show_default=True)
+@click.option(
+    "--user-inputs-filepath",
+    required=True,
+    help="Filepath to the user-inputs CSV file that is used to calculate results",
+)
+@click.option(
+    "--metered-load-shape-filepath",
+    help="Optional filepath to the CSV file containing metered load shapes",
+)
+@click.option(
+    "--include-report/--exclude-report",
+    default=True,
+    show_default=True,
+    help="Whether to include an HTML report in the outputs",
+)
+@click.option(
+    "--report-filepath",
+    default="report.html",
+    show_default=True,
+    help="Filepath to where the report will be saved",
+)
+@click.option(
+    "--outputs-table-filepath",
+    default="outputs_table.csv",
+    show_default=True,
+    help="Filepath to where the outputs table CSV will be saved",
+)
+@click.option(
+    "-y",
+    "--year",
+    default="2020",
+    show_default=True,
+    help="What year of the avoided costs data to use in the analysis",
+)
 def get_results(
-    user_inputs_filepath, metered_load_shape_filepath, include_report, report_filepath
+    user_inputs_filepath,
+    metered_load_shape_filepath,
+    include_report,
+    report_filepath,
+    year,
 ):
+    """Calculates results and optionally writes a report"""
     if not include_report:
         metered_load_shape = (
             pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
@@ -100,7 +147,9 @@ def get_results(
             else None
         )
         user_inputs = pd.read_csv(user_inputs_filepath)
-        flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape)
+        flexvalue_run = FlexValueRun(
+            metered_load_shape=metered_load_shape, database_year=year
+        )
         (
             outputs_table,
             elec_benefits,
@@ -147,7 +196,13 @@ def get_results(
 
 @cli.command()
 @click.option("--utility", default=None, show_default=True)
-@click.option("-y", "--year", default="2020", show_default=True)
+@click.option(
+    "-y",
+    "--year",
+    default="2020",
+    show_default=True,
+    help="What year of the avoided costs data to use in the analysis",
+)
 def valid_utility_climate_zone_combos(utility, year):
     """Returns all utility-climate zone combinations"""
     utility_cz = get_all_valid_utility_climate_zone_combinations(year, utility)
@@ -162,7 +217,13 @@ def valid_utility_climate_zone_combos(utility, year):
 
 
 @cli.command()
-@click.option("-y", "--year", default="2020", show_default=True)
+@click.option(
+    "-y",
+    "--year",
+    default="2020",
+    show_default=True,
+    help="What year of the avoided costs data to use in the analysis",
+)
 def valid_deer_load_shapes(year):
     """Returns all valid DEER load shapes"""
     click.echo("\n".join(get_all_valid_deer_load_shapes(year)))

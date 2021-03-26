@@ -44,6 +44,7 @@ def get_quarterly_discount_df(eul, discount_rate):
     eul: int
         Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
     discount_rate: float
+        The quarterly discount rate to be applied to the net present value calculation
 
     Returns
     -------
@@ -107,7 +108,52 @@ def calculate_pac_costs(admin, incentive, discount_rate, ntg):
 
 
 class FlexValueProject:
-    """Parameters and calculations for a given measure, project, or portfolio"""
+    """Parameters and calculations for a given measure, project, or portfolio
+    Parameters
+    ----------
+    identifier: str
+        A unique identifier used to reference this measure, project, or portfolio
+    start_year: int
+        The year to start with when using avoided costs data
+    start_quarter: int
+        The quarter to start with when using avoided costs data
+    utility: str
+        Which uility to filter by when loading avoided costs data
+    climate_zone: str
+        Which climate zone to filter by when loading avoided costs data
+    mwh_savings:
+        The 
+    load_shape: str
+        Either the name of a DEER loadshape or a reference to a meter id in the 
+        `metered_load_shapes` dataframe.
+    load_shape_df: pd.DataFrame
+        A dataframe containing up to 8760 rows that contains the load shape for 
+        the given `load_shape`.
+    therms_savings,
+    therms_profile,
+    units: int
+        Multiplier of the therms_savings and mhw_savings
+    eul: int
+        Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
+    incentive: float
+        The incentive costs assigned to given measure, project, or portfolio
+    discount_rate: float
+        The quarterly discount rate to be applied to the net present value calculation
+    ntg: float
+        Net to gross ratio
+    admin: float
+        The administrative costs assigned to a given measure, project, or portfolio
+    measure: float
+        The measure costs assigned to given measure, project, or portfolio
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+
+    Returns
+    -------
+    FlexValueProject object: FlexValueProject
+    """
     def __init__(
         self,
         identifier,

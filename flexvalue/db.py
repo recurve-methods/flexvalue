@@ -32,6 +32,13 @@ __all__ = (
 
 
 def get_db_connection(database_year="2020"):
+    """
+
+    Parameters
+    ----------
+    database_year: str
+        What  
+    """
     full_db_path = os.path.join(database_location(), f"{database_year}.db")
     if not os.path.exists(full_db_path):
         raise ValueError(f"Can not find SQLite file at this path: {full_db_path}")

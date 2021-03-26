@@ -14,7 +14,7 @@ Functions
 =========
 
 - :py:func:`get_db_connection`:
-  Undocumented.
+  Parameters
 
 - :py:func:`get_deer_load_shape`:
   Undocumented.

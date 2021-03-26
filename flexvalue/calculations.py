@@ -19,7 +19,6 @@
 """
 import pandas as pd
 import numpy as np
-from IPython.display import display, HTML
 
 from .db import get_filtered_acc_elec, get_filtered_acc_gas, get_deer_load_shape
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS

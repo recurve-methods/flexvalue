@@ -28,5 +28,6 @@ jobs:
           pip install -r requirements.txt
           python setup.py develop
 
-      - name: Run tests
-        run: py.test
+     # Tests currently require download of db
+     # - name: Run tests
+     #   run: py.test

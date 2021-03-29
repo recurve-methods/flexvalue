@@ -52,7 +52,7 @@ The `user_inputs` CSV requires the following columns:
     - **inecentive**: The incentive costs assigned to given measure, project, or portfolio
     - **therms_profile**: Indicates what sort of adjustment to make on the therms savings, can be one of ['annual', 'summer', 'winter']
     - **therms_savings**: The first year gas gross savings in Therms
-    - **mwh_savings**: The first year electricity gross savings in MWh
+    - **mwh_savings**: The first year electricity gross savings in MWh (used to scale the load shape savings data if using custom load shape)
 
 and looks like the following format:
 
@@ -80,10 +80,10 @@ metered_load_shape
 The `metered_load_shape` CSV requires the following columns:
 
     - **hour_of_year**: Hour of the year (should be one row for each of 0-8759)
-    - **meter_id1**: the name to reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id1
-    - **meter_id2**: the name to reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id2
+    - **meter_id1**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id1
+    - **meter_id2**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id2
     - ...
-    - **meter_id_n**: the name to reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id_n
+    - **meter_id_n**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id_n
 
 
 and looks like the following format:

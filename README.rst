@@ -86,3 +86,10 @@ License
 #######
 
 This project is licensed under `Apache 2.0 <LICENSE.md>`_.
+
+Other resources
+---------------
+
+- `MAINTAINERS <MAINTAINERS.md>`_: an ordered list of project maintainers.
+- `CHARTER <CHARTER.md>`_: open source project charter.
+- `CODE_OF_CONDUCT <CODE_OF_CONDUCT.md>`_: Code of conduct for contributors.

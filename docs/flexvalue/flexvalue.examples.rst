@@ -14,11 +14,13 @@ Functions
 =========
 
 - :py:func:`get_example_user_inputs_deer`:
-  Undocumented.
+  Generates an example user_inputs file tied to a few deer load shapes
 
 - :py:func:`get_example_user_inputs_metered`:
-  Undocumented.
+  Generates an example user_inputs file that references the example metered load shape
 
+- :py:func:`get_example_metered_load_shape()`:
+  Generates an example metered load shape file for use in evaluating this tool
 
 .. autofunction:: get_example_user_inputs_deer
 

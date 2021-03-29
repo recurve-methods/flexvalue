@@ -8,3 +8,7 @@
       :local:
 
 .. currentmodule:: flexvalue.cli
+
+.. click:: flexvalue.cli:cli
+   :prog: flexvalue
+   :nested: full

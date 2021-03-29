@@ -19,7 +19,5 @@ Submodules
    flexvalue.db
    flexvalue.examples
    flexvalue.plots
-   flexvalue.report
-   flexvalue.settings
 
 .. currentmodule:: flexvalue

@@ -24,6 +24,7 @@ from .db import get_all_valid_deer_load_shapes
 __all__ = (
     "get_example_user_inputs_deer",
     "get_example_user_inputs_metered",
+    "get_example_metered_load_shape",
 )
 
 
@@ -32,6 +33,12 @@ def _generate_example_ids():
 
 
 def get_example_metered_load_shape():
+    """Generates an example metered load shape file for use in evaluating this tool
+    
+    Returns
+    -------
+    metered load shape: pd.DataFrame
+    """
     test_ids = _generate_example_ids()
     random.seed(0)
     output = []
@@ -52,6 +59,12 @@ def get_example_metered_load_shape():
 
 
 def get_example_user_inputs_metered():
+    """Generates an example user_inputs file that references the example metered load shape
+    
+    Returns
+    -------
+    user_inputs: pd.DataFrame
+    """
     metered_load_shape = get_example_metered_load_shape()
     return pd.DataFrame(
         [
@@ -79,6 +92,17 @@ def get_example_user_inputs_metered():
 
 
 def get_example_user_inputs_deer(database_year):
+    """Generates an example user_inputs file tied to a few deer load shapes
+    
+    Parameters
+    ----------
+    database_year: str
+        The year of the database to use when selecting DEER load shapes to reference
+
+    Returns
+    -------
+    user_inputs: pd.DataFrame
+    """
     return pd.DataFrame(
         [
             {

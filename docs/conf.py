@@ -40,6 +40,7 @@ extensions = [
     "autoapi.sphinx",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.graphviz",
+    "sphinx_click"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -63,5 +64,5 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['']
 
-autoapi_dirs = ['../flexvalue']
-autoapi_modules = {"flexvalue": None}
+#autoapi_dirs = ['../flexvalue']
+#autoapi_modules = {"flexvalue": None}

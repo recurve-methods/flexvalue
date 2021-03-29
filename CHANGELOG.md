@@ -4,7 +4,8 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Update in-line documentation.
+* Update default filepaths for input and output.
 
 0.1.0
 -----

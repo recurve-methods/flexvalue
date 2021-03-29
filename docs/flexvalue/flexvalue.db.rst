@@ -14,16 +14,16 @@ Functions
 =========
 
 - :py:func:`get_db_connection`:
-  Parameters
+  Get the db connection for a given year
 
 - :py:func:`get_deer_load_shape`:
-  Undocumented.
+  Returns all of the deer load shape 8760 load profiles
 
 - :py:func:`get_filtered_acc_elec`:
-  Undocumented.
+  Returns the electricity avoided costs data
 
 - :py:func:`get_filtered_acc_gas`:
-  Undocumented.
+  Returns gas avoided costs data
 
 
 .. autofunction:: get_db_connection

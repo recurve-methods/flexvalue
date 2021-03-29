@@ -61,7 +61,7 @@ CLI Commands
 
 If you are calling these commands using the repo code and docker, replace `flexvalue` with `./flexvalue.sh`.
 
-Before calculating any results, you will need to download the avoided cost data for a given year. 
+Before calculating any results, you will need to download the avoided cost data for a given year. By default, this downloads to a folder `$DATABASE_LOCATION/{year}.db`. If you do not set the environment variable `DATABASE_LOCATION`, it will default to `DATABASE_LOCATION=.`.
 
 .. code-block:: shell
 

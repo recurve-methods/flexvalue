@@ -108,6 +108,7 @@ def calculate_pac_costs(admin, incentive, discount_rate, ntg):
 
 class FlexValueProject:
     """Parameters and calculations for a given measure, project, or portfolio
+
     Parameters
     ----------
     identifier: str
@@ -136,7 +137,9 @@ class FlexValueProject:
     units: int
         Multiplier of the therms_savings and mhw_savings
     eul: int
-        Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
+        Effective Useful Life (EUL) means the average time over which an energy 
+        efficiency measure results in energy savings, including the effects of 
+        equipment failure, removal, and cessation of use.
     incentive: float
         The incentive costs assigned to given measure, project, or portfolio
     discount_rate: float
@@ -643,7 +646,7 @@ class FlexValueRun:
 
         Returns
         -------
-        outputs_table pd.DataFrame
+        outputs_table: pd.DataFrame
             A table with summarized outputs including TRC and PAC, total costs,
             and GHG impacts summed across all measure/project/portfolio entries.
             The TRC and PAC values are then recalculated based on the summed benefits

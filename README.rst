@@ -27,6 +27,97 @@ downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapi
 
 A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file provided by the `CPUC <https://www.cpuc.ca.gov/general.aspx?id=5267>`_ As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
 
+Inputs
+######
+
+There is one required input that is referred to as the `user_inputs`, and another optional `metered_load_shape` input. These inputs are CSV files if using the command line, and pandas dataframes if directly calling from python. 
+
+user_inputs
+-----------
+
+The `user_inputs` CSV requires the following columns:
+
+    - **ID**: A unique identifier used to reference this measure, project, or portfolio
+    - **load_shape**: the name of the load shape to use (either referencing a column in the `metered_load_shape` file or an available DEER load shape)
+    - **start_year**: The year to start with when using avoided costs data
+    - **start_quarter**: The quarter to start with when using avoided costs data
+    - **utility**: Which uility to filter by when loading avoided costs data
+    - **climate_zone**: Which climate zone to filter by when loading avoided costs data
+    - **units**: Multiplier of the therms_savings and mwh_savings
+    - **eul**: Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
+    - **ntg**: Net to gross ratio
+    - **discount_rate**: The quarterly discount rate to be applied to the net present value calculation
+    - **admin**: The administrative costs assigned to a given measure, project, or portfolio
+    - **measure**: The measure costs assigned to given measure, project, or portfolio
+    - **inecentive**: The incentive costs assigned to given measure, project, or portfolio
+    - **therms_profile**: Indicates what sort of adjustment to make on the therms savings, can be one of ['annual', 'summer', 'winter']
+    - **therms_savings**: The first year gas gross savings in Therms
+    - **mwh_savings**: The first year electricity gross savings in MWh
+
+and looks like the following format:
+
+.. list-table:: user_inputs
+    :header-rows: 1
+
+    * - ID
+      - load_shape
+      - start_year
+      - start_quarter
+      - utility
+      - climate_zone
+      - ...
+    * - heat_pump_impact1
+      - heat_pump_impact1
+      - 2021
+      - 1
+      - PGE
+      - CZ1
+      - ...
+
+metered_load_shape
+------------------
+
+The `metered_load_shape` CSV requires the following columns:
+
+    - **hour_of_year**: Hour of the year (should be one row for each of 0-8759)
+    - **meter_id1**: the name to reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id1
+    - **meter_id2**: the name to reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id2
+    - ...
+    - **meter_id_n**: the name to reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id_n
+
+
+and looks like the following format:
+
+.. list-table:: metered_load_shape
+    :header-rows: 1
+
+    * - hour_of_year
+      - meter_id1
+      - meter_id2
+      - ...
+      - meter_id_n
+    * - 0
+      - .15
+      - .001
+      - ...
+      - .23
+    * - 1
+      - .15
+      - .001
+      - ...
+      - .23
+    * - ...
+      - ...
+      - ...
+      - ...
+      - ...
+    * - 8759
+      - 0.1
+      - 0.35
+      - 0.3
+      - 0.2
+
+
 Installation from Source
 ########################
 
@@ -72,8 +163,8 @@ To get an example set of FLEXvalue (TM) results, run the following commands in o
 .. code-block:: shell
 
     flexvalue generate-example-inputs
-    flexvalue get-results --user-inputs-filepath test_data/example_user_inputs_deer.csv --report-filepath reports/example_report_deer.html
-    flexvalue get-results --user-inputs-filepath test_data/example_user_inputs_metered.csv  --metered-load-shape-filepath ../test_data/example_metered_load_shape.csv --report-filepath reports/example_report_metered.html
+    flexvalue get-results --user-inputs-filepath example_user_inputs_deer.csv --report-filepath reports/example_report_deer.html
+    flexvalue get-results --user-inputs-filepath example_user_inputs_metered.csv  --metered-load-shape-filepath example_metered_load_shape.csv --report-filepath reports/example_report_metered.html
 
 To help generate your user input file, use the following command to see what utilities, climate zones, and deer load shapes are available.
 

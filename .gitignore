@@ -13,3 +13,5 @@ docs/_build
 build
 dist
 .envrc
+*.csv
+!flexvalue/example_csvs

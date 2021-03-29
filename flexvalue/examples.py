@@ -17,8 +17,12 @@
    limitations under the License.
 
 """
+from io import BytesIO
+import os
 import random
+import requests
 import pandas as pd
+
 from .db import get_all_valid_deer_load_shapes
 
 __all__ = (
@@ -28,18 +32,16 @@ __all__ = (
 )
 
 
-def _generate_example_ids():
-    return [f"id_{i}" for i in range(5)]
-
-
 def get_example_metered_load_shape():
     """Generates an example metered load shape file for use in evaluating this tool
-    
+
     Returns
     -------
     metered load shape: pd.DataFrame
     """
-    test_ids = _generate_example_ids()
+
+    test_ids = [f"id_{i}" for i in range(5)]
+
     random.seed(0)
     output = []
     for _id in test_ids:
@@ -55,45 +57,49 @@ def get_example_metered_load_shape():
         .set_index("hour_of_year")
     )
     df.columns.name = None
+
+    url_prefix = "https://storage.googleapis.com/flexvalue-public-resources/examples/"
+    url = os.path.join(url_prefix, "example_metered_load_shapes.csv")
+    response = requests.get(url)
+    df = pd.read_csv(BytesIO(response.content)).set_index("hour_of_year")
     return df
 
 
-def get_example_user_inputs_metered():
+def get_example_user_inputs_metered(ids):
     """Generates an example user_inputs file that references the example metered load shape
-    
+
     Returns
     -------
     user_inputs: pd.DataFrame
     """
-    metered_load_shape = get_example_metered_load_shape()
     return pd.DataFrame(
         [
             {
-                "ID": _id,
-                "load_shape": _id,
+                "ID": id_,
+                "load_shape": id_,
                 "start_year": 2021,
-                "start_quarter": (i % 4) + 1,
+                "start_quarter": 1,
                 "utility": "PGE",
-                "climate_zone": "CZ3A",
+                "climate_zone": "CZ12",
                 "units": 1,
-                "eul": 9,
-                "ntg": 0.95,
+                "eul": 15,
+                "ntg": 1.0,
                 "discount_rate": 0.0766,
-                "admin": 10000 * (i + 1),
-                "measure": 2000 * (i + 1),
-                "incentive": 3000 * (i + 1),
-                "therms_profile": "annual",
-                "therms_savings": (i + 1) * 100,
-                "mwh_savings": metered_load_shape[_id].sum(),
+                "admin": 100,
+                "measure": 2000,
+                "incentive": 1000,
+                "therms_profile": "winter",
+                "therms_savings": 400,
+                "mwh_savings": 1,
             }
-            for i, _id in enumerate(_generate_example_ids())
+            for id_ in ids
         ]
     ).set_index("ID")
 
 
 def get_example_user_inputs_deer(database_year):
     """Generates an example user_inputs file tied to a few deer load shapes
-    
+
     Parameters
     ----------
     database_year: str

@@ -4,6 +4,7 @@ Changelog
 Development
 -----------
 
+* Add git workflow for testing.
 * Update in-line documentation.
 * Update default filepaths for input and output.
 

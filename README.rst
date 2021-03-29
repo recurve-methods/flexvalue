@@ -27,6 +27,38 @@ downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapi
 
 A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file provided by the `CPUC <https://www.cpuc.ca.gov/general.aspx?id=5267>`_ As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
 
+deer_load_shapes
+----------------
+
+The DEER load shapes are normalized 8,760 hourly savings profiles that correspond to different end-use sectors and technologies (residential HVAC or commercial lighting for example). A full list is provided in reference . Annual deemed kWh savings values are typically assigned to a specific DEER load shape. The resulting 8,760 hourly savings values are then multiplied by the hourly electric avoided costs to produce the electric cost effectiveness benefits.
+
+__*Additional ETL*__
+
+Recurve has made a few changes to column names to incorporate residential and commercial naming conventions but otherwise the format of the DEER load shapes does not need to be updated. Additional ETL is needed because the electric avoided costs begin on a day of the week that does not align with the DEER load shapes. Recurve has conducted extensive testing and has found that the DEER load shapes need to be shifted by -2 days in order to provide the best alignment with the CPUC’s existing Cost Effectiveness Tool.
+
+__*Notes*__
+
+There are different versions of the DEER load shape files for each of the four California IOUs. At this point Recurve have not explicitly tested these different versions to gauge any differences. Recurve is currently using  the PG&E version. This database may need to be updated to incorporate each version of the DEER load shapes. It is also not known at this point if a different shift will need to be incorporated upon release of the next electric avoided cost calculator.
+
+acc_electricity
+---------------
+
+The electric avoided cost calculator compiles hourly marginal utility avoided costs for electric savings. Costs are provided for ten different components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas) and Climate Zone combination. The electric avoided cost calculator also contains hourly marginal greenhouse gas emissions data, which are also forecasted to 2050.
+
+The electric avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267)>`_.
+
+The electric avoided cost calculator is a macro-driven Excel file, so several ETL steps were done to combine all calculator results into a single table.
+
+acc_gas
+-------
+
+The gas avoided cost calculator compiles monthly marginal utility avoided costs for gas savings. Costs are provided for four different components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas). Avoided costs are also somewhat different for distinct end use categories.
+
+The gas avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267)>`_.
+
+The gas avoided cost calculator is a macro-driven Excel file, so several ETL steps were done to combine all calculator results into a single table.
+
+
 Inputs
 ######
 

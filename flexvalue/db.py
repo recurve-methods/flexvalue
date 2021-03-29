@@ -32,12 +32,18 @@ __all__ = (
 
 
 def get_db_connection(database_year="2020"):
-    """
+    """Get the db connection for a given year
 
     Parameters
     ----------
     database_year: str
-        What  
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+
+    Returns
+    -------
+    db_connection: sqlalchemy.engine.Engine
     """
     full_db_path = os.path.join(database_location(), f"{database_year}.db")
     if not os.path.exists(full_db_path):
@@ -47,16 +53,63 @@ def get_db_connection(database_year="2020"):
 
 
 def execute_query(database_year, query):
+    """Execute arbitrary query on the avoided costs db
+
+    Parameters
+    ----------
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+
+    Returns
+    -------
+    result: pd.DataFrame
+    """
     con = get_db_connection(database_year=database_year)
     return pd.read_sql(query, con=con)
 
 
 def get_deer_load_shape(database_year):
+    """Returns all of the deer load shape 8760 load profiles
+
+    Parameters
+    ----------
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+
+    Returns
+    -------
+    result: pd.DataFrame
+    """
     con = get_db_connection(database_year=database_year)
     return pd.read_sql_table("deer_load_shapes", con=con).set_index("hour_of_year")
 
 
 def get_filtered_acc_elec(database_year, utility, climate_zone, start_year, end_year):
+    """Returns the electricity avoided costs data
+
+    Parameters
+    ----------
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+    utility: str
+        Which uility to filter by when loading avoided costs data
+    climate_zone: str
+        Which climate zone to filter by when loading avoided costs data
+    start_year: int
+        Which year to start the filter of avoided costs data
+    end_year: int
+        Which year to end the filter of avoided costs data
+
+    Returns
+    -------
+    result: pd.DataFrame
+    """
     columns = [
         "year",
         "month",
@@ -89,6 +142,23 @@ def get_filtered_acc_elec(database_year, utility, climate_zone, start_year, end_
 
 
 def get_filtered_acc_gas(database_year, start_year, end_year):
+    """Returns gas avoided costs data
+
+    Parameters
+    ----------
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+    start_year: int
+        Which year to start the filter of avoided costs data
+    end_year: int
+        Which year to end the filter of avoided costs data
+
+    Returns
+    -------
+    result: pd.DataFrame
+    """
     columns = [
         "year",
         "month",
@@ -106,7 +176,21 @@ def get_filtered_acc_gas(database_year, start_year, end_year):
 
 
 def get_all_valid_utility_climate_zone_combinations(database_year, utility=None):
-    """Returns all utility-climate zone combinations"""
+    """Returns all utility-climate zone combinations
+    
+    Parameters
+    ----------
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+    utility: str
+        (optional) Which uility to filter by when loading avoided costs data
+
+    Returns
+    -------
+    result: pd.DataFrame
+    """
     where_str = f"WHERE utility = '{utility}'" if utility else ""
     query = f"""
     SELECT * 
@@ -117,7 +201,19 @@ def get_all_valid_utility_climate_zone_combinations(database_year, utility=None)
 
 
 def get_all_valid_deer_load_shapes(database_year):
-    """Returns all valid DEER load shapes"""
+    """Returns all valid DEER load shapes
+    
+    Parameters
+    ----------
+    database_year: str
+        The year corresponding to the database that contains the avoided costs data. 
+        Requires that year's database to have already been downloaded 
+        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+
+    Returns
+    -------
+    deer load shapes: list
+    """
     query = """
         SELECT *
         FROM deer_load_shapes

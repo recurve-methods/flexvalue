@@ -4,7 +4,9 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Add git workflow for testing.
+* Update in-line documentation.
+* Update default filepaths for input and output.
 
 0.1.0
 -----

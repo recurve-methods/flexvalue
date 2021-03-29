@@ -41,6 +41,14 @@ from .examples import (
 )
 from .report import Notebook
 
+__all__ = (
+    "download_avoided_costs_data_db",
+    "generate_example_inputs",
+    "get_results",
+    "valid_utility_climate_zone_combos",
+    "valid_deer_load_shapes",
+)
+
 
 @click.group()
 def cli():
@@ -56,7 +64,14 @@ def cli():
 )
 @click.option("--skip-if-exists/--overwrite-if-exists", default=False)
 def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
-    """Downloads the avoided costs database"""
+    """Downloads the avoided costs database
+
+    If you are having trouble downlading this database,
+    you can instead use the following command. Currently 2020 is the only year available, but in the future there may be additional years available:
+
+    `curl --output 2020.db https://storage.googleapis.com/flexvalue-public-resources/2020.db`
+
+    """
     db_filename = f"{year}.db"
     output_filepath = os.path.join(database_location(), db_filename)
     Path(database_location()).mkdir(parents=True, exist_ok=True)
@@ -79,7 +94,7 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
 )
 @click.option(
     "--output-filepath",
-    default="test_data",
+    default=".",
     show_default=True,
     help="Filepath to where the example inputs will be stored",
 )

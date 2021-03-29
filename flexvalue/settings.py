@@ -20,8 +20,9 @@
 import os
 
 def database_location():
-    return os.environ.get("DATABASE_LOCATION", "db")
+    return os.environ.get("DATABASE_LOCATION", ".")
 
+#: Columns that represent the electricity avoided costs components that must be aggregated
 ACC_COMPONENTS_ELECTRICITY = [
     "total",
     "energy",

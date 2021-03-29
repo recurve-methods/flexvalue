@@ -25,7 +25,24 @@ import numpy as np
 
 from .settings import ACC_COMPONENTS_ELECTRICITY
 
+__all__ = ('plot_results',)
+
 def plot_results(outputs_table_t, elec_benefits, gas_benefits):
+    """Generate a series of plots based on the results of the FlexValueRun
+
+    Parameters
+    ----------
+    outputs_table_t: pd.DataFrame
+        A table with summarized outputs including TRC and PAC, total costs,
+        and GHG impacts summed across all measure/project/portfolio entries.
+        The TRC and PAC values are then recalculated based on the summed benefits
+        and costs.
+    elec_benefits: pd.DataFrame
+        Returns a year-month average daily load shape for each
+        measure/project/portoflio, concatanated into a single dataframe
+    gas_benefits: float
+        The sum of all gas benefits across all measure/project/portfolio entries.
+    """
     outputs_table = outputs_table_t.T # due to reshaping of output table
     summer_months = [6, 7, 8, 9]
     shoulder_months = [3, 4, 5, 10]

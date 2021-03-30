@@ -173,7 +173,13 @@ class CET_Scan:
         print('ACC_Version'+',Program_Year'+',PA'+',Climate_Zone'+',MWh_Savings'+',Therms_Savings'+',NTG'+',Sector'+',Admin'+',Measure_Cost'+',Incentive'+',DEER_Load_Shape'+',Elec_Benefits'+',Gas_Benefits'+',PAC_Costs'+',TRC_Costs'+',PAC'+',TRC', file = fhand_w)
 
         # Find and transfer output .zip file from folder with CET output file - can set cet_output_folder to download folder but default is current directory
-        loc = (glob.glob(cet_output_folder+self.scan_name+'_*.zip')[0])
+        glob_search_str = os.path.join(cet_output_folder, self.scan_name +'_*.zip')
+
+        loc_search = glob.glob(glob_search_str)
+        if loc_search:
+            loc = loc_search[0]
+        else:
+            raise ValueError(f"Can not find CET output zip file in {glob_search_str}")
         fname = os.path.basename(loc)
         fnum = re.findall('.*cet_ui_run_([0-9]+)', fname)[0]
         if loc != self.path+'/':

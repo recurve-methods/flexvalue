@@ -4,5 +4,3 @@
    flexvalue/flexvalue
     
 .. include:: ../README.rst
-
-

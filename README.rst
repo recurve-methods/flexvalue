@@ -193,7 +193,7 @@ Local
   # for running cli commands
   flexvalue --help
 
-  # tutorial (assuming you have jupyter installed
+  # tutorial (assuming you have jupyter installed)
   jupyter notebooks/
 
 CLI Commands

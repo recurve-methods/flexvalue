@@ -1,10 +1,12 @@
 import os
+import pytest
 
 from flexvalue.cet_flexvalue_compare import CET_Scan
 
 
-def test_cet_scan():
-    cet_flexvalue_test = CET_Scan(
+@pytest.fixture
+def cet_scan():
+    return CET_Scan(
         directory=os.getcwd(),
         scan_name="Test_Run",
         program_year="2021",
@@ -28,4 +30,11 @@ def test_cet_scan():
         measure_cost=[220000, 310, 4044],
         incentive=[200000, 66, 800],
     )
-    cet_flexvalue_test.generate_cet_input_file()
+
+def test_generate_cet_input_file(cet_scan):
+    cet_scan.generate_cet_input_file()
+
+def test_parse_cet_output(cet_scan):
+    cet_scan.parse_cet_output()
+
+    # Results -> Results_test_run.csv compare to Flexvalue

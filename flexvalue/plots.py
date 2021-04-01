@@ -25,7 +25,8 @@ import numpy as np
 
 from .settings import ACC_COMPONENTS_ELECTRICITY
 
-__all__ = ('plot_results',)
+__all__ = ("plot_results",)
+
 
 def plot_results(outputs_table_t, elec_benefits, gas_benefits):
     """Generate a series of plots based on the results of the FlexValueRun
@@ -43,7 +44,7 @@ def plot_results(outputs_table_t, elec_benefits, gas_benefits):
     gas_benefits: float
         The sum of all gas benefits across all measure/project/portfolio entries.
     """
-    outputs_table = outputs_table_t.T # due to reshaping of output table
+    outputs_table = outputs_table_t.T  # due to reshaping of output table
     summer_months = [6, 7, 8, 9]
     shoulder_months = [3, 4, 5, 10]
     winter_months = [11, 12, 1, 2]

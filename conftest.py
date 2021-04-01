@@ -18,9 +18,8 @@ def metered_load_shape(test_ids):
             output.append(
                 {"identifier": _id, "hour_of_year": hour, "hourly_mwh_savings": savings}
             )
-    df = (
-        pd.DataFrame(output)
-        .pivot(index="hour_of_year", columns="identifier", values="hourly_mwh_savings")
+    df = pd.DataFrame(output).pivot(
+        index="hour_of_year", columns="identifier", values="hourly_mwh_savings"
     )
     df.columns.name = None
     return df

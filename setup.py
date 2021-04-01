@@ -90,7 +90,7 @@ setup(
     author=about["__author__"],
     author_email=about["__author_email__"],
     url=about["__url__"],
-    packages=find_packages(exclude=("tests","db")),
+    packages=find_packages(exclude=("tests", "db")),
     entry_points={"console_scripts": ["flexvalue=flexvalue.cli:cli"]},
     install_requires=INSTALL_REQUIRES,
     include_package_data=True,

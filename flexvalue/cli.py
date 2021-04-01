@@ -59,7 +59,7 @@ def cli():
 @click.option("-y", "--year", default="2020", show_default=True)
 @click.option(
     "--url-prefix",
-    default="https://storage.googleapis.com/flexvalue-public-resources/",
+    default="https://storage.googleapis.com/flexvalue-public-resources/db/",
     show_default=True,
 )
 @click.option("--skip-if-exists/--overwrite-if-exists", default=False)
@@ -100,15 +100,15 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
 )
 def generate_example_inputs(output_filepath, year):
     """Generates the sample inputs that can be used in the get-results command"""
-    Path(test_data_filepath).mkdir(parents=True, exist_ok=True)
+    Path(output_filepath).mkdir(parents=True, exist_ok=True)
+    metered_df = get_example_metered_load_shape()
+
+    metered_df.to_csv(os.path.join(output_filepath, "example_metered_load_shape.csv"))
     get_example_user_inputs_deer(year).to_csv(
         os.path.join(output_filepath, "example_user_inputs_deer.csv")
     )
-    get_example_user_inputs_metered().to_csv(
+    get_example_user_inputs_metered(metered_df.columns).to_csv(
         os.path.join(output_filepath, "example_user_inputs_metered.csv")
-    )
-    get_example_metered_load_shape().to_csv(
-        os.path.join(output_filepath, "example_metered_load_shape.csv")
     )
 
 
@@ -151,6 +151,7 @@ def get_results(
     user_inputs_filepath,
     metered_load_shape_filepath,
     include_report,
+    outputs_table_filepath,
     report_filepath,
     year,
 ):

@@ -135,10 +135,10 @@ class FlexValueProject:
         Indicates what sort of adjustment to make on the therms savings,
         can be one of ['annual', 'summer', 'winter']
     units: int
-        Multiplier of the therms_savings and mhw_savings
+        Multiplier of the therms_savings and mwh_savings
     eul: int
-        Effective Useful Life (EUL) means the average time over which an energy 
-        efficiency measure results in energy savings, including the effects of 
+        Effective Useful Life (EUL) means the average time over which an energy
+        efficiency measure results in energy savings, including the effects of
         equipment failure, removal, and cessation of use.
     incentive: float
         The incentive costs assigned to given measure, project, or portfolio
@@ -476,6 +476,20 @@ class FlexValueRun:
                     f"{self.all_load_shapes_df.columns}"
                 )
 
+        # validate user inputs
+        for int_col in ["start_year", "start_quarter", "eul"]:
+            user_inputs_df[int_col] = user_inputs_df[int_col].astype(int)
+        for float_col in [
+            "mwh_savings",
+            "therms_savings",
+            "units",
+            "ntg",
+            "discount_rate",
+            "admin",
+            "measure",
+            "incentive",
+        ]:
+            user_inputs_df[float_col] = user_inputs_df[float_col].astype(float)
         return {
             user_input["ID"]: FlexValueProject(
                 identifier=user_input["ID"],

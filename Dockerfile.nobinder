@@ -14,5 +14,4 @@ COPY flexvalue/ /app/flexvalue/
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-RUN cd /usr/local/lib/python3.7/site-packages && \
-    python /app/setup.py develop
+RUN cd /usr/local/lib/ && python /app/setup.py develop

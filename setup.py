@@ -90,11 +90,11 @@ setup(
     author=about["__author__"],
     author_email=about["__author_email__"],
     url=about["__url__"],
-    packages=find_packages(exclude=("tests", "db")),
+    license=about["__license__"],
+    packages=find_packages(exclude=("tests", "db", "notebooks", "docs")),
     entry_points={"console_scripts": ["flexvalue=flexvalue.cli:cli"]},
     install_requires=INSTALL_REQUIRES,
     include_package_data=True,
-    license=about["__license__"],
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
@@ -102,6 +102,7 @@ setup(
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
     # $ setup.py publish support.
     cmdclass={"upload": UploadCommand},

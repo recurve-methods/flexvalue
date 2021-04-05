@@ -37,4 +37,5 @@ echo "rm -r dist build flexvalue.egg-info"  # reset build dirs
 echo "git checkout v${NEW_VERSION}"
 echo "python setup.py install"
 echo "python setup.py upload"  # requires PyPI credentials
+
 echo "git checkout main"

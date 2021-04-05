@@ -28,12 +28,12 @@ from .settings import ACC_COMPONENTS_ELECTRICITY
 __all__ = ("plot_results",)
 
 
-def plot_results(outputs_table_t, elec_benefits, gas_benefits):
+def plot_results(outputs_table_totals, elec_benefits, gas_benefits):
     """Generate a series of plots based on the results of the FlexValueRun
 
     Parameters
     ----------
-    outputs_table_t: pd.DataFrame
+    outputs_table_totals: pd.DataFrame
         A table with summarized outputs including TRC and PAC, total costs,
         and GHG impacts summed across all measure/project/portfolio entries.
         The TRC and PAC values are then recalculated based on the summed benefits
@@ -44,7 +44,6 @@ def plot_results(outputs_table_t, elec_benefits, gas_benefits):
     gas_benefits: float
         The sum of all gas benefits across all measure/project/portfolio entries.
     """
-    outputs_table = outputs_table_t.T  # due to reshaping of output table
     summer_months = [6, 7, 8, 9]
     shoulder_months = [3, 4, 5, 10]
     winter_months = [11, 12, 1, 2]
@@ -53,13 +52,13 @@ def plot_results(outputs_table_t, elec_benefits, gas_benefits):
     pct_hours_in_shoulder = 2952 / 8760
     pct_hours_in_winter = 2880 / 8760
 
-    trc_costs_record = outputs_table["Totals"]["TRC Costs ($)"]
-    pac_costs_record = outputs_table["Totals"]["PAC Costs ($)"]
-    trc_record = outputs_table["Totals"]["TRC"]
-    pac_record = outputs_table["Totals"]["PAC"]
-    lifecycle_net_mwh = outputs_table["Totals"]["Lifecycle Net MWh Savings"]
-    lifecycle_net_therms = outputs_table["Totals"]["Lifecycle Net Therms Savings"]
-    lifecycle_net_ghg = outputs_table["Totals"]["Lifecycle Total GHG Savings (Tons)"]
+    trc_costs_record = outputs_table_totals["TRC Costs ($)"]
+    pac_costs_record = outputs_table_totals["PAC Costs ($)"]
+    trc_record = outputs_table_totals["TRC"]
+    pac_record = outputs_table_totals["PAC"]
+    lifecycle_net_mwh = outputs_table_totals["Electricity Lifecycle Net Savings (MWh)"]
+    lifecycle_net_therms = outputs_table_totals["Gas Lifecycle Net Savings (Therms)"]
+    lifecycle_net_ghg = outputs_table_totals["Total Lifecycle GHG Savings (Tons)"]
 
     # Getting variables for plots
     elec_benefits_cols = (

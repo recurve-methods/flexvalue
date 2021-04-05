@@ -1,10 +1,11 @@
 import os
 import shutil
-from zipfile import *
+from zipfile import ZipFile
 import glob
 import re
 import pandas as pd
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 programcost_columns = "PrgID|PrgYear|ClaimYearQuarter|AdminCostsOverheadAndGA|AdminCostsOther|MarketingOutreach|DIActivity|DIInstallation|DIHardwareAndMaterials|DIRebateAndInspection|EMV|UserInputIncentive|OnBillFinancing|CostsRecoveredFromOtherSources|PA"
 
@@ -18,6 +19,10 @@ DEER_NonRes = [
 ]
 
 discount_rate = 0.0766
+
+
+def generate_cet_input_id(program_admin, program_year, identifier):
+    return f"{program_admin}-{program_year}-{identifier}"
 
 
 class CET_Scan:
@@ -46,6 +51,13 @@ class CET_Scan:
         self.scan_name = scan_name
         self.path = os.path.join(directory, scan_name)
 
+        self.cet_path = os.path.join(self.path, "cet")
+        Path(self.cet_path).mkdir(parents=True, exist_ok=True)
+        self.cet_zip_path = os.path.join(self.cet_path, f"{self.scan_name}.zip")
+
+        self.flexvalue_path = os.path.join(self.path, "flexvalue")
+        Path(self.flexvalue_path).mkdir(parents=True, exist_ok=True)
+
         self.program_year = program_year
         self.acc_version = acc_version
         self.program_admin = program_admin
@@ -66,14 +78,196 @@ class CET_Scan:
         self.mwh = [m * u for m, u in zip(list(i for i in mwh), units)]
         self.therms = [t * u for t, u in zip(list(i for i in therms), units)]
 
-    def generate_cet_input_file(self, files="both"):
+    def generate_cet_input_file(self):
+
+        # Create Folders and Path
+        Path(self.path).mkdir(parents=True, exist_ok=True)
+
+        # Create ProgramCost.csv file for CET and write columns
+        fname_costs = "ProgramCost.csv"
+
+        # Create Measure.csv file for CET and write columns
+        fname_measure = "Measure.csv"
+
+        # Add lines to CET ProgramCost and Measure files, scanning over variable
+
+        def _generate_program_id(program_admin, identifier):
+            return f"{program_admin}-{identifier}"
+
+        def _generate_claim_year_quarter(program_year):
+            return f"{program_year}Q1"
+
+        def _generate_e3_target_sector(deer_load_shape, sector):
+            return "Non_Res" if deer_load_shape in DEER_NonRes else sector
+
+        for ind in range(len(self.mwh)):
+            if self.sector[ind] == "Res" and self.deer_load_shape[ind] in DEER_NonRes:
+                print(
+                    f"{self.sector[ind]}/{self.deer_load_shape[ind]}"
+                    + " Pairing Not Allowed in CET. Switching to Non_Res"
+                )
+
+        cet_program_costs_df = pd.DataFrame(
+            [
+                {
+                    "PrgID": _generate_program_id(self.program_admin, self.index[ind]),
+                    "PrgYear": self.program_year,
+                    "ClaimYearQuarter": f"{self.program_year}Q1",
+                    "AdminCostsOverheadAndGA": self.admin_cost[ind],
+                    "AdminCostsOther": 0,
+                    "MarketingOutreach": 0,
+                    "DIActivity": 0,
+                    "DIInstallation": 0,
+                    "DIHardwareAndMaterials": 0,
+                    "DIRebateAndInspection": 0,
+                    "EMV": 0,
+                    "UserInputIncentive": 0,
+                    "OnBillFinancing": 0,
+                    "CostsRecoveredFromOtherSources": 0,
+                    "PA": self.program_admin,
+                }
+                for ind in range(len(self.mwh))
+            ]
+        )
+
+        cet_measure_costs_df = pd.DataFrame(
+            [
+                {
+                    "CEInputID": generate_cet_input_id(
+                        self.program_admin, self.program_year, self.index[ind]
+                    ),
+                    "PrgID": _generate_program_id(self.program_admin, self.index[ind]),
+                    "ClaimYearQuarter": f"{self.program_year}Q1",
+                    "Sector": "Commercial",
+                    "DeliveryType": "CustIncentDown",
+                    "BldgType": "Com",
+                    "E3ClimateZone": self.climate_zone[ind],
+                    "E3GasSavProfile": self.gas_savings_profile[ind],
+                    "E3GasSector": self.gas_sector[ind],
+                    "E3MeaElecEndUseShape": self.deer_load_shape[ind],
+                    "E3TargetSector": _generate_e3_target_sector(
+                        self.deer_load_shape[ind], self.sector[ind]
+                    ),
+                    "MeasAppType": "AR",
+                    "MeasCode": "",
+                    "MeasDescription": "NMEC",
+                    "MeasImpactType": "Cust-NMEC",
+                    "MeasureID": "0",
+                    "TechGroup": "",
+                    "TechType": "Pilot",
+                    "UseCategory": "",
+                    "UseSubCategory": "Testing",
+                    "PreDesc": "",
+                    "StdDesc": "",
+                    "SourceDesc": "",
+                    "Version": "",
+                    "NormUnit": "Each",
+                    "NumUnits": 1,
+                    "UnitkW1stBaseline": 0,
+                    "UnitkWh1stBaseline": self.kwh[ind],
+                    "UnitTherm1stBaseline": self.therms[ind],
+                    "UnitkW2ndBaseline": 0,
+                    "UnitkWh2ndBaseline": 0,
+                    "UnitTherm2ndBaseline": 0,
+                    "UnitMeaCost1stBaseline": self.measure_cost[ind],
+                    "UnitMeaCost2ndBaseline": 0,
+                    "UnitDirectInstallLab": 0,
+                    "UnitDirectInstallMat": 0,
+                    "UnitEndUserRebate": self.incentive[ind],
+                    "UnitIncentiveToOthers": 0,
+                    "NTG_ID": "NonRes-sAll-NMEC",
+                    "NTGRkW": self.ntg[ind],
+                    "NTGRkWh": self.ntg[ind],
+                    "NTGRTherm": self.ntg[ind],
+                    "NTGRCost": self.ntg[ind],
+                    "EUL_ID": "",
+                    "EUL_Yrs": self.eul[ind],
+                    "RUL_ID": "",
+                    "RUL_Yrs": 0,
+                    "GSIA_ID": "",
+                    "RealizationRatekW": 1,
+                    "RealizationRatekWh": 1,
+                    "RealizationRateTherm": 1,
+                    "InstallationRatekW": 1,
+                    "InstallationRatekWh": 1,
+                    "InstallationRateTherm": 1,
+                    "Residential_Flag": 0,
+                    "Upstream_Flag": 0,
+                    "PA": self.program_admin,
+                    "MarketEffectsBenefits": "",
+                    "MarketEffectsCosts": "",
+                    "RateScheduleElec": "",
+                    "RateScheduleGas": "",
+                    "CombustionType": "",
+                    "MeasInflation": "",
+                    "Comments": "",
+                }
+                for ind in range(len(self.mwh))
+            ]
+        )
+
+        with TemporaryDirectory() as tmpdirname:
+            program_cost_filepath = os.path.join(tmpdirname, "ProgramCost.csv")
+            cet_program_costs_df.to_csv(program_cost_filepath, index=False, sep="|")
+
+            measure_filepath = os.path.join(tmpdirname, "Measure.csv")
+            cet_measure_costs_df.to_csv(measure_filepath, index=False, sep="|")
+
+            zip_filepath = os.path.join(tmpdirname, "zip_file.zip")
+            with ZipFile(zip_filepath, "w") as zip_obj:
+                zip_obj.write(measure_filepath, arcname="Measure.csv")
+                zip_obj.write(program_cost_filepath, arcname="ProgramCost.csv")
+            shutil.move(zip_filepath, self.cet_zip_path)
+
+        print(f"Your CET input file is at {self.cet_zip_path}")
+
+        def _get_flexvalue_load_shape_name(deer_load_shape, sector):
+            load_shape_suffix = deer_load_shape[5:].upper().replace("-", "_")
+            load_shape_prefix = (
+                "NONRES" if deer_load_shape in DEER_NonRes else sector.upper()
+            )
+            return f"{load_shape_prefix}_{load_shape_suffix}"
+
+        user_inputs = pd.DataFrame(
+            [
+                {
+                    "ID": self.index[ind],
+                    "start_year": self.program_year,
+                    "start_quarter": 1,
+                    "utility": self.program_admin,
+                    "climate_zone": self.climate_zone[ind],
+                    "mwh_savings": self.mwh[ind],
+                    "load_shape": _get_flexvalue_load_shape_name(
+                        self.deer_load_shape[ind], self.sector[ind]
+                    ),
+                    "therms_savings": self.therms[ind],
+                    "therms_profile": self.gas_savings_profile[ind].split(" ")[0],
+                    "units": self.units[ind] / self.units[ind],
+                    "eul": self.eul[ind],
+                    "ntg": self.ntg[ind],
+                    "discount_rate": discount_rate,
+                    "admin": self.admin_cost[ind],
+                    "measure": self.measure_cost[ind],
+                    "incentive": self.incentive[ind],
+                }
+                for ind in range(len(self.mwh))
+            ]
+        )
+
+        user_inputs_filepath = os.path.join(
+            self.flexvalue_path, f"{self.scan_name}_flexvalue_user_inputs.csv"
+        )
+        user_inputs.to_csv(user_inputs_filepath)
+
+        print(f"Your FLEXvalue input file is at {user_inputs_filepath}")
+        return user_inputs.set_index('ID')
+
+    def generate_cet_input_file_orig(self, files="both"):
 
         # Create Folders and Path
         Path(self.path).mkdir(parents=True, exist_ok=True)
 
         if files == "both" or files == "cet_only":
-            cet_path = os.path.join(self.path, "cet")
-            Path(cet_path).mkdir(parents=True, exist_ok=True)
             # Create ProgramCost.csv file for CET and write columns
             fname_costs = "ProgramCost.csv"
             fhand_costs = open(fname_costs, "w")
@@ -146,154 +340,106 @@ class CET_Scan:
             fhand_costs.close()
             fhand_measure.close()
 
-            zip_path = os.path.join(cet_path, f"{self.scan_name}.zip")
-            zipObj = ZipFile(zip_path, "w")
+            zipObj = ZipFile(self.cet_zip_path, "w")
             zipObj.write(fname_measure)
             zipObj.write(fname_costs)
             zipObj.close()
 
-            print(f"Your CET input file is at {zip_path}")
+            print(f"Your CET input file is at {self.cet_zip_path}")
 
         if files == "both" or files == "flexvalue_only":
-            flexvalue_path = os.path.join(self.path, "flexvalue")
-            Path(flexvalue_path).mkdir(parents=True, exist_ok=True)
 
-            input_row_dfs = []
-
-            for ind in range(len(self.mwh)):
-                flexvalue_inputs_dict = {
-                    "ID": self.index[ind],
-                    "start_year": self.program_year,
-                    "start_quarter": 1,
-                    "utility": self.program_admin,
-                    "climate_zone": self.climate_zone[ind],
-                    "mwh_savings": self.mwh[ind],
-                    "load_shape": "NONRES_"
-                    + self.deer_load_shape[ind][5:].upper().replace("-", "_")
-                    if self.deer_load_shape[ind] in DEER_NonRes
-                    else self.sector[ind].upper()
-                    + "_"
-                    + self.deer_load_shape[ind][5:].upper().replace("-", "_"),
-                    "therms_savings": self.therms[ind],
-                    "therms_profile": self.gas_savings_profile[ind].split(" ")[0],
-                    "units": self.units[ind] / self.units[ind],
-                    "eul": self.eul[ind],
-                    "ntg": self.ntg[ind],
-                    "discount_rate": discount_rate,
-                    "admin": self.admin_cost[ind],
-                    "measure": self.measure_cost[ind],
-                    "incentive": self.incentive[ind],
-                }
-
-                flexvalue_inputs_df = pd.DataFrame.from_dict(
-                    flexvalue_inputs_dict, orient="index", columns=[self.index[ind]]
-                )
-
-                input_row_dfs.append(flexvalue_inputs_df)
-
-            user_inputs = pd.concat(input_row_dfs, axis=1).T
+            user_inputs = pd.DataFrame(
+                [
+                    {
+                        "ID": self.index[ind],
+                        "start_year": self.program_year,
+                        "start_quarter": 1,
+                        "utility": self.program_admin,
+                        "climate_zone": self.climate_zone[ind],
+                        "mwh_savings": self.mwh[ind],
+                        "load_shape": "NONRES_"
+                        + self.deer_load_shape[ind][5:].upper().replace("-", "_")
+                        if self.deer_load_shape[ind] in DEER_NonRes
+                        else self.sector[ind].upper()
+                        + "_"
+                        + self.deer_load_shape[ind][5:].upper().replace("-", "_"),
+                        "therms_savings": self.therms[ind],
+                        "therms_profile": self.gas_savings_profile[ind].split(" ")[0],
+                        "units": self.units[ind] / self.units[ind],
+                        "eul": self.eul[ind],
+                        "ntg": self.ntg[ind],
+                        "discount_rate": discount_rate,
+                        "admin": self.admin_cost[ind],
+                        "measure": self.measure_cost[ind],
+                        "incentive": self.incentive[ind],
+                    }
+                    for ind in range(len(self.mwh))
+                ]
+            )
 
             user_inputs_filepath = os.path.join(
-                flexvalue_path, f"{self.scan_name}_flexvalue_user_inputs.csv"
+                self.flexvalue_path, f"{self.scan_name}_flexvalue_user_inputs.csv"
             )
             user_inputs.to_csv(user_inputs_filepath)
 
             print(f"Your FLEXvalue input file is at {user_inputs_filepath}")
             return user_inputs
 
-    def parse_cet_output(self, cet_output_folder="."):
+    def parse_cet_output(self, cet_output_filepath=None):
 
         # Create file to store key results
-        fname_w = f"Results_{self.scan_name}.csv"
-        fhand_w = open(fname_w, "w")
-        print(
-            "ACC_Version"
-            + ",Program_Year"
-            + ",PA"
-            + ",Climate_Zone"
-            + ",MWh_Savings"
-            + ",Therms_Savings"
-            + ",NTG"
-            + ",Sector"
-            + ",Admin"
-            + ",Measure_Cost"
-            + ",Incentive"
-            + ",DEER_Load_Shape"
-            + ",Elec_Benefits"
-            + ",Gas_Benefits"
-            + ",PAC_Costs"
-            + ",TRC_Costs"
-            + ",PAC"
-            + ",TRC",
-            file=fhand_w,
-        )
 
-        # Find and transfer output .zip file from folder with CET output file - can set cet_output_folder to download folder but default is current directory
-        glob_search_str = os.path.join(cet_output_folder, self.scan_name + "_*.zip")
-
+        glob_search_str = os.path.join(self.cet_path, self.scan_name + "_*.zip")
         loc_search = glob.glob(glob_search_str)
         if loc_search:
             loc = loc_search[0]
         else:
             raise ValueError(f"Can not find CET output zip file in {glob_search_str}")
         fname = os.path.basename(loc)
-        fnum = re.findall(".*cet_ui_run_([0-9]+)", fname)[0]
-        if loc != self.path + "/":
-            shutil.move(loc, self.path + "/cet/")
 
         # Unzip output files
         with ZipFile(self.path + "/cet/" + fname, "r") as zip_ref:
             zip_ref.extractall(self.path + "/cet/")
 
         # Extract and print key results to file
-        fhand_r = open(self.path + "/cet/" + fnum + "_outputs.csv")
-        contents = fhand_r.read()
-        parse = contents.split("|")
-        offset = 117
-        rows = len(self.mwh)
+        fnum = re.findall(".*cet_ui_run_([0-9]+)", fname)[0]
+        output_filepath = os.path.join(self.cet_path, f"{fnum}_outputs.csv")
+        return pd.read_csv(output_filepath, delimiter="|")
 
-        for ind in range(len(self.mwh)):
-            print(
-                self.acc_version,
-                ",",
-                self.program_year,
-                ",",
-                self.program_admin,
-                ",",
-                self.climate_zone[ind],
-                ",",
-                self.mwh[ind],
-                ",",
-                self.therms[ind],
-                ",",
-                self.ntg[ind],
-                ",",
-                "Non_Res"
-                if self.deer_load_shape[ind] in DEER_NonRes
-                else self.sector[ind],
-                ",",
-                self.admin_cost[ind],
-                ",",
-                self.measure_cost[ind],
-                ",",
-                self.incentive[ind],
-                ",",
-                self.deer_load_shape[ind],
-                ",",
-                parse[(rows - ind - 1) * offset + 141],
-                ",",
-                parse[(rows - ind - 1) * offset + 142],
-                ",",
-                parse[(rows - ind - 1) * offset + 146],
-                ",",
-                parse[(rows - ind - 1) * offset + 145],
-                ",",
-                parse[(rows - ind - 1) * offset + 151],
-                ",",
-                parse[(rows - ind - 1) * offset + 150],
-                file=fhand_w,
-            )
+    def compare_cet_to_flexvalue(self, cet_output_df, flexvalue_output_df):
+        flexvalue_output_df["CET_ID"] = flexvalue_output_df.apply(
+            lambda x: generate_cet_input_id(x["utility"], x["start_year"], x["ID"]),
+            axis=1,
+        )
+        flexvalue_output_df["source"] = "flexvalue"
+        flexvalue_output_df = flexvalue_output_df.reset_index().set_index(
+            ["CET_ID", "source"]
+        )
 
-        fhand_r.close()
-        fhand_w.close()
-        shutil.move(cwd + "/" + fname_w, self.path + "/cet/")
+        cet_output_df = cet_output_df.set_index("CET_ID").rename(
+            columns={
+                "ElecBen": "TRC (and PAC) Electric Benefits ($)",
+                "GasBen": "TRC (and PAC) Gas Benefits ($)",
+                "TRCCost": "TRC Costs ($)",
+                "PACCost": "PAC Costs ($)",
+                "TRCRatio": "TRC",
+                "PACRatio": "PAC",
+            }
+        )
+        cet_output_df["source"] = "CET"
+
+        compare_cols = [
+            "TRC (and PAC) Electric Benefits ($)",
+            "TRC (and PAC) Gas Benefits ($)",
+            "TRC Costs ($)",
+            "PAC Costs ($)",
+            "TRC",
+            "PAC",
+        ]
+        cet_output_df = cet_output_df.reset_index().set_index(["CET_ID", "source"])
+        return (
+            pd.concat([flexvalue_output_df[compare_cols], cet_output_df[compare_cols]])
+            .sort_index()
+            .round(2)
+        )

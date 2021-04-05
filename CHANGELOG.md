@@ -4,6 +4,11 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.1
+-----
+
 * Add test for parse_cet_output
 * Update the cet output parser so it can more easily discover files.
 

@@ -225,11 +225,11 @@ To help generate your user input file, use the following command to see what uti
 License
 #######
 
-This project is licensed under `Apache 2.0 <LICENSE.md>`_.
+This project is licensed under `Apache 2.0 <https://github.com/recurve-methods/flexvalue/blob/main/LICENSE.md>`_.
 
 Other resources
 ---------------
 
-- `MAINTAINERS <MAINTAINERS.md>`_: an ordered list of project maintainers.
-- `CHARTER <CHARTER.md>`_: open source project charter.
-- `CODE_OF_CONDUCT <CODE_OF_CONDUCT.md>`_: Code of conduct for contributors.
+- `MAINTAINERS <https://github.com/recurve-methods/flexvalue/blob/main/MAINTAINERS.md>`_: an ordered list of project maintainers.
+- `CHARTER <https://github.com/recurve-methods/flexvalue/blob/main/CHARTER.md>`_: open source project charter.
+- `CODE_OF_CONDUCT <https://github.com/recurve-methods/flexvalue/blob/main/CODE_OF_CONDUCT.md>`_: Code of ocnduct for contributors

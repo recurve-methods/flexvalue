@@ -260,7 +260,7 @@ class CET_Scan:
         user_inputs.to_csv(user_inputs_filepath)
 
         print(f"Your FLEXvalue input file is at {user_inputs_filepath}")
-        return user_inputs.set_index('ID')
+        return user_inputs.set_index("ID")
 
     def generate_cet_input_file_orig(self, files="both"):
 
@@ -387,20 +387,38 @@ class CET_Scan:
             return user_inputs
 
     def parse_cet_output(self, cet_output_filepath=None):
+        """Parse the CET output that was provided from the calculator
 
-        # Create file to store key results
+        Parameters
+        ----------
+        cet_output_filepath: str
+            The filepath to the cet output zip file.
+            If this is not provided, it searches in the CET folder
+            (`{directory}/{scan_name}/cet`) for a zip file that matches
+            `{scan_name}*for_cet_ui_run*.zip*`.
+        Returns
+        -------
+        pd.DataFrame
+           The output of the CET as a dataframe.
+        """
 
-        glob_search_str = os.path.join(self.cet_path, self.scan_name + "_*.zip")
-        loc_search = glob.glob(glob_search_str)
-        if loc_search:
-            loc = loc_search[0]
-        else:
-            raise ValueError(f"Can not find CET output zip file in {glob_search_str}")
-        fname = os.path.basename(loc)
+        if not cet_output_filepath:
+            glob_search_str = os.path.join(
+                self.cet_path, self.scan_name + "*for_cet_ui_run*.zip"
+            )
+            loc_search = glob.glob(glob_search_str)
+            if loc_search:
+                loc = loc_search[0]
+            else:
+                raise ValueError(
+                    f"Can not find CET output zip file in {glob_search_str}"
+                )
+            fname = os.path.basename(loc)
+            cet_output_filepath = os.path.join(self.cet_path, fname)
 
         # Unzip output files
-        with ZipFile(self.path + "/cet/" + fname, "r") as zip_ref:
-            zip_ref.extractall(self.path + "/cet/")
+        with ZipFile(cet_output_filepath, "r") as zip_ref:
+            zip_ref.extractall(self.cet_path)
 
         # Extract and print key results to file
         fnum = re.findall(".*cet_ui_run_([0-9]+)", fname)[0]

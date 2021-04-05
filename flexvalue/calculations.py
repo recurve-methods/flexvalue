@@ -47,7 +47,7 @@ def get_quarterly_discount_df(eul, discount_rate):
 
     Returns
     -------
-    quarterly_discount: pd.DataFrame
+    pd.DataFrame
         A dataframe containing a discount to be applied to every quarter for every year of the EUL.
 
     """
@@ -77,7 +77,7 @@ def calculate_trc_costs(admin, measure, incentive, discount_rate, ntg):
 
     Returns
     -------
-    trc_costs: float
+    float
     """
     return admin + ((1 - ntg) * incentive + ntg * measure) / (1 + (discount_rate / 4))
 
@@ -101,7 +101,7 @@ def calculate_pac_costs(admin, incentive, discount_rate, ntg):
 
     Returns
     -------
-    pac_costs: float
+    float
     """
     return admin + incentive / (1 + (discount_rate / 4))
 
@@ -157,7 +157,7 @@ class FlexValueProject:
 
     Returns
     -------
-    FlexValueProject object: FlexValueProject
+    FlexValueProject
     """
 
     def __init__(
@@ -205,7 +205,7 @@ class FlexValueProject:
 
         Returns
         -------
-        electricity_benefits: pd.DataFrame
+        pd.DataFrame
             hourly benefits for every quarter of every year from the start year through
             the EUL
         """
@@ -264,7 +264,7 @@ class FlexValueProject:
 
         Returns
         -------
-        gas_benefits: pd.DataFrame
+        pd.DataFrame
             quarterly benefits for every year from the start year through
             the EUL
 
@@ -348,7 +348,7 @@ class FlexValueProject:
 
         Returns
         -------
-        output_table: pd.DataFrame
+        pd.DataFrame
             A table with summarized outputs including TRC and PAC, total costs,
             and GHG impacts
 
@@ -431,7 +431,7 @@ class FlexValueRun:
 
     Returns
     -------
-    FlexValueRun object: FlexValueRun
+    FlexValueRun
     """
 
     def __init__(self, metered_load_shape=None, database_year="2020"):
@@ -461,7 +461,7 @@ class FlexValueRun:
 
         Returns
         -------
-        flex_value_projects: dict
+        dict
             A dictionary keyed on the id of the measure/project/portfolio withe value
             being an instantiation of the FlexValueProject using those inputs
         """
@@ -527,7 +527,7 @@ class FlexValueRun:
 
         Returns
         -------
-        elec_benefits: pd.DataFrame
+        pd.DataFrame
             A dataframe containing the electricity benefits for all of the measure/
             project/portoflio entries.
         """
@@ -553,7 +553,7 @@ class FlexValueRun:
 
         Returns
         -------
-        gas_benefits: float
+        float
             The sum of all gas benefits across all measure/project/portfolio entries.
         """
         return sum(
@@ -574,7 +574,7 @@ class FlexValueRun:
 
         Returns
         -------
-        outputs_table pd.DataFrame
+        pd.DataFrame
             A table with summarized outputs including TRC and PAC, total costs,
             and GHG impacts summed across all measure/project/portfolio entries.
             The TRC and PAC values are then recalculated based on the summed benefits
@@ -622,7 +622,7 @@ class FlexValueRun:
 
         Returns
         -------
-        load_shape_df: pd.DataFrame
+        pd.DataFrame
             Returns a year-month average daily load shape for each
             measure/project/portoflio, concatanated into a single dataframe
 

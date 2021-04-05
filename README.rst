@@ -59,6 +59,8 @@ The gas avoided cost calculator can be downloaded as a .xlsb file from `here <ht
 
 The gas avoided cost calculator is a macro-driven Excel file, so several ETL steps were done to combine all calculator results into a single table.
 
+*Currently the gas avoided costs data uses the same year-month avoided costs (using Utility: PGE, Class: Total Core, End Use: Small Boiler, Emission Control: Uncontrolled) for all analysis. Future work will bring in the other gas avoided cost data so that more accurate costs can be provided.*
+
 
 Inputs
 ######

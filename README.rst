@@ -1,4 +1,4 @@
-FLEXvalue (TM)
+FLEXvalue™ 
 **************
 
 `Read The Docs Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/>`_
@@ -7,7 +7,7 @@ FLEXvalue (TM)
     :target: https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/?badge=latest
     :alt: Documentation Status
 
-This library can be used to calculate the avoided costs, TRC, and PAC.
+This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. This uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes.
 
 Use the following colab notebook which allows you to put in your own inputs and get results: 
 
@@ -214,7 +214,7 @@ Before calculating any results, you will need to download the avoided cost data 
 
     flexvalue download-avoided-costs-data-db --year 2020
 
-To get an example set of FLEXvalue (TM) results, run the following commands in order.
+To get an example set of FLEXvalue™ results, run the following commands in order.
 
 .. code-block:: shell
 

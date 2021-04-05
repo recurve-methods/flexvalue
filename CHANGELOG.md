@@ -4,6 +4,11 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.0
+-----
+
 * Renamed columns on output table and separated out totals.
 * Add CET comparison code.
 * Add git workflow for testing.

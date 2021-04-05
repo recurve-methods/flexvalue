@@ -476,7 +476,7 @@ class FlexValueRun:
                 return self.all_load_shapes_df[[f"{utility}_{load_shape}"]]
             elif mwh_savings != 0:
                 raise ValueError(
-                    f"{load_shape} can not be found in\n"
+                    f"Neither {load_shape} nor {utility}_{load_shape} can be found in\n"
                     f"{self.all_load_shapes_df.columns}"
                 )
 

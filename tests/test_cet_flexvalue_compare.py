@@ -1,5 +1,8 @@
 import os
+import pandas as pd
 import pytest
+import tempfile
+import zipfile
 
 from flexvalue.cet_flexvalue_compare import CET_Scan
 
@@ -7,7 +10,7 @@ from flexvalue.cet_flexvalue_compare import CET_Scan
 @pytest.fixture
 def cet_scan():
     return CET_Scan(
-        directory=os.getcwd(),
+        directory=tempfile.mkdtemp(),
         scan_name="Test_Run",
         program_year="2021",
         acc_version="2020",
@@ -31,11 +34,18 @@ def cet_scan():
         incentive=[200000, 66, 800],
     )
 
+
 def test_generate_cet_input_file(cet_scan):
     cet_scan.generate_cet_input_file()
 
-def test_parse_cet_output(cet_scan):
-    pass
-    #cet_scan.parse_cet_output()
 
-    # Results -> Results_test_run.csv compare to Flexvalue
+def test_parse_cet_output(cet_scan, monkeypatch):
+    csv_filepath = os.path.join(cet_scan.cet_path, "outputs.csv")
+    run_id = '1234'
+    zip_filename = f'{cet_scan.scan_name}_for_cet_ui_run_{run_id}.zip'
+    zip_filepath = os.path.join(cet_scan.cet_path, zip_filename)
+    pd.DataFrame([{"abc": "def"}]).to_csv(csv_filepath)
+    with zipfile.ZipFile(zip_filepath, "w") as f:
+        f.write(csv_filepath, arcname=f"{run_id}_outputs.csv")
+    cet_scan.parse_cet_output()
+    cet_scan.parse_cet_output(zip_filepath)

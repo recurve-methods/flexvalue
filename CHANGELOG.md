@@ -4,6 +4,7 @@ Changelog
 Development
 -----------
 
+* Add test for parse_cet_output
 * Update the cet output parser so it can more easily discover files.
 
 0.2.0

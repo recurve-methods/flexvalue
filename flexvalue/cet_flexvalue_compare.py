@@ -262,130 +262,6 @@ class CET_Scan:
         print(f"Your FLEXvalue input file is at {user_inputs_filepath}")
         return user_inputs.set_index("ID")
 
-    def generate_cet_input_file_orig(self, files="both"):
-
-        # Create Folders and Path
-        Path(self.path).mkdir(parents=True, exist_ok=True)
-
-        if files == "both" or files == "cet_only":
-            # Create ProgramCost.csv file for CET and write columns
-            fname_costs = "ProgramCost.csv"
-            fhand_costs = open(fname_costs, "w")
-            print(programcost_columns, file=fhand_costs)
-
-            # Create Measure.csv file for CET and write columns
-            fname_measure = "Measure.csv"
-            fhand_measure = open(fname_measure, "w")
-            print(measure_columns, file=fhand_measure)
-
-            # Add lines to CET ProgramCost and Measure files, scanning over variable
-
-            for ind in range(len(self.mwh)):
-
-                print(
-                    "%s0%g|%s|%sQ1|%g|0|0|0|0|0|0|0|0|0|0|%s"
-                    % (
-                        self.program_admin,
-                        self.index[ind],
-                        self.program_year,
-                        self.program_year,
-                        self.admin_cost[ind],
-                        self.program_admin,
-                    ),
-                    file=fhand_costs,
-                )
-
-                print(
-                    "%s-%s-0%g|%s0%g|%sQ1|Commercial|CustIncentDown|Com|%s|%s|%s|%s|%s|AR||NMEC|Cust-NMEC|0||Pilot||Testing|||||Each|1|0|%g|%g|0|0|0|%g|0|0|0|%g|0|NonRes-sAll-NMEC|%g|%g|%g|%g||%g||0||1|1|1|1|1|1|0|0|%s|||||||"
-                    % (
-                        self.program_admin,
-                        self.program_year,
-                        self.index[ind],
-                        self.program_admin,
-                        self.index[ind],
-                        self.program_year,
-                        self.climate_zone[ind],
-                        self.gas_savings_profile[ind],
-                        self.gas_sector[ind],
-                        self.deer_load_shape[ind],
-                        "Non_Res"
-                        if self.deer_load_shape[ind] in DEER_NonRes
-                        else self.sector[ind],
-                        self.kwh[ind],
-                        self.therms[ind],
-                        self.measure_cost[ind],
-                        self.incentive[ind],
-                        self.ntg[ind],
-                        self.ntg[ind],
-                        self.ntg[ind],
-                        self.ntg[ind],
-                        self.eul[ind],
-                        self.program_admin,
-                    ),
-                    file=fhand_measure,
-                )
-
-                if (
-                    self.sector[ind] == "Res"
-                    and self.deer_load_shape[ind] in DEER_NonRes
-                ):
-                    print(
-                        self.sector[ind]
-                        + "/"
-                        + self.deer_load_shape[ind]
-                        + " Pairing Not Allowed in CET. Switching to Non_Res"
-                    )
-
-            # Close ProgramCost and Measure files
-            fhand_costs.close()
-            fhand_measure.close()
-
-            zipObj = ZipFile(self.cet_zip_path, "w")
-            zipObj.write(fname_measure)
-            zipObj.write(fname_costs)
-            zipObj.close()
-
-            print(f"Your CET input file is at {self.cet_zip_path}")
-
-        if files == "both" or files == "flexvalue_only":
-
-            user_inputs = pd.DataFrame(
-                [
-                    {
-                        "ID": self.index[ind],
-                        "start_year": self.program_year,
-                        "start_quarter": 1,
-                        "utility": self.program_admin,
-                        "climate_zone": self.climate_zone[ind],
-                        "mwh_savings": self.mwh[ind],
-                        "load_shape": "NONRES_"
-                        + self.deer_load_shape[ind][5:].upper().replace("-", "_")
-                        if self.deer_load_shape[ind] in DEER_NonRes
-                        else self.sector[ind].upper()
-                        + "_"
-                        + self.deer_load_shape[ind][5:].upper().replace("-", "_"),
-                        "therms_savings": self.therms[ind],
-                        "therms_profile": self.gas_savings_profile[ind].split(" ")[0],
-                        "units": self.units[ind] / self.units[ind],
-                        "eul": self.eul[ind],
-                        "ntg": self.ntg[ind],
-                        "discount_rate": discount_rate,
-                        "admin": self.admin_cost[ind],
-                        "measure": self.measure_cost[ind],
-                        "incentive": self.incentive[ind],
-                    }
-                    for ind in range(len(self.mwh))
-                ]
-            )
-
-            user_inputs_filepath = os.path.join(
-                self.flexvalue_path, f"{self.scan_name}_flexvalue_user_inputs.csv"
-            )
-            user_inputs.to_csv(user_inputs_filepath)
-
-            print(f"Your FLEXvalue input file is at {user_inputs_filepath}")
-            return user_inputs
-
     def parse_cet_output(self, cet_output_filepath=None):
         """Parse the CET output that was provided from the calculator
 
@@ -402,7 +278,9 @@ class CET_Scan:
            The output of the CET as a dataframe.
         """
 
-        if not cet_output_filepath:
+        if cet_output_filepath:
+            fname = os.path.basename(cet_output_filepath)
+        else:
             glob_search_str = os.path.join(
                 self.cet_path, self.scan_name + "*for_cet_ui_run*.zip"
             )

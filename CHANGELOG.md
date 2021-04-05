@@ -4,6 +4,8 @@ Changelog
 Development
 -----------
 
+* Renamed columns on output table and separated out totals.
+* Add CET comparison code.
 * Add git workflow for testing.
 * Update in-line documentation.
 * Update default filepaths for input and output.

@@ -19,6 +19,11 @@ Or use the following notebook which allows you to put in your own inputs:
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb
 
+Want to compare our results to the CET tool? This notebook allows you to compare results: 
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb
+
 Avoided Cost Data
 #################
 

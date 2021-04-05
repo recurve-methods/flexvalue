@@ -7,18 +7,13 @@ import pandas as pd
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-programcost_columns = "PrgID|PrgYear|ClaimYearQuarter|AdminCostsOverheadAndGA|AdminCostsOther|MarketingOutreach|DIActivity|DIInstallation|DIHardwareAndMaterials|DIRebateAndInspection|EMV|UserInputIncentive|OnBillFinancing|CostsRecoveredFromOtherSources|PA"
 
-measure_columns = "CEInputID|PrgID|ClaimYearQuarter|Sector|DeliveryType|BldgType|E3ClimateZone|E3GasSavProfile|E3GasSector|E3MeaElecEndUseShape|E3TargetSector|MeasAppType|MeasCode|MeasDescription|MeasImpactType|MeasureID|TechGroup|TechType|UseCategory|UseSubCategory|PreDesc|StdDesc|SourceDesc|Version|NormUnit|NumUnits|UnitkW1stBaseline|UnitkWh1stBaseline|UnitTherm1stBaseline|UnitkW2ndBaseline|UnitkWh2ndBaseline|UnitTherm2ndBaseline|UnitMeaCost1stBaseline|UnitMeaCost2ndBaseline|UnitDirectInstallLab|UnitDirectInstallMat|UnitEndUserRebate|UnitIncentiveToOthers|NTG_ID|NTGRkW|NTGRkWh|NTGRTherm|NTGRCost|EUL_ID|EUL_Yrs|RUL_ID|RUL_Yrs|GSIA_ID|RealizationRatekW|RealizationRatekWh|RealizationRateTherm|InstallationRatekW|InstallationRatekWh|InstallationRateTherm|Residential_Flag|Upstream_Flag|PA|MarketEffectsBenefits|MarketEffectsCosts|RateScheduleElec|RateScheduleGas|CombustionType|MeasInflation|Comments"
-
-DEER_NonRes = [
+DEER_NON_RES = [
     "DEER:HVAC_Chillers",
     "DEER:HVAC_Split-Package_AC",
     "DEER:HVAC_Split-Package_HP",
     "DEER:Indoor_Non-CFL_Ltg",
 ]
-
-discount_rate = 0.0766
 
 
 def generate_cet_input_id(program_admin, program_year, identifier):
@@ -98,10 +93,10 @@ class CET_Scan:
             return f"{program_year}Q1"
 
         def _generate_e3_target_sector(deer_load_shape, sector):
-            return "Non_Res" if deer_load_shape in DEER_NonRes else sector
+            return "Non_Res" if deer_load_shape in DEER_NON_RES else sector
 
         for ind in range(len(self.mwh)):
-            if self.sector[ind] == "Res" and self.deer_load_shape[ind] in DEER_NonRes:
+            if self.sector[ind] == "Res" and self.deer_load_shape[ind] in DEER_NON_RES:
                 print(
                     f"{self.sector[ind]}/{self.deer_load_shape[ind]}"
                     + " Pairing Not Allowed in CET. Switching to Non_Res"
@@ -221,12 +216,13 @@ class CET_Scan:
 
         print(f"Your CET input file is at {self.cet_zip_path}")
 
-        def _get_flexvalue_load_shape_name(deer_load_shape, sector):
+        def _get_flexvalue_load_shape_name(utility, deer_load_shape, sector):
+            utility = utility.upper()
             load_shape_suffix = deer_load_shape[5:].upper().replace("-", "_")
             load_shape_prefix = (
-                "NONRES" if deer_load_shape in DEER_NonRes else sector.upper()
+                "NONRES" if deer_load_shape in DEER_NON_RES else sector.upper()
             )
-            return f"{load_shape_prefix}_{load_shape_suffix}"
+            return f"{utility}_{load_shape_prefix}_{load_shape_suffix}"
 
         user_inputs = pd.DataFrame(
             [
@@ -238,14 +234,14 @@ class CET_Scan:
                     "climate_zone": self.climate_zone[ind],
                     "mwh_savings": self.mwh[ind],
                     "load_shape": _get_flexvalue_load_shape_name(
-                        self.deer_load_shape[ind], self.sector[ind]
+                        self.program_admin, self.deer_load_shape[ind], self.sector[ind]
                     ),
                     "therms_savings": self.therms[ind],
                     "therms_profile": self.gas_savings_profile[ind].split(" ")[0],
                     "units": self.units[ind] / self.units[ind],
                     "eul": self.eul[ind],
                     "ntg": self.ntg[ind],
-                    "discount_rate": discount_rate,
+                    "discount_rate": 0.0766,
                     "admin": self.admin_cost[ind],
                     "measure": self.measure_cost[ind],
                     "incentive": self.incentive[ind],

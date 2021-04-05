@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Update CET comparison tool with new utility-based DEER load shapes.
 
 0.2.1
 -----

@@ -4,6 +4,11 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.4
+-----
+
 * Updated error log on missing load shape.
 
 0.2.3

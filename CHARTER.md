@@ -38,7 +38,8 @@ Mission and Scope of the Project
     vii) approving and implementing policies and processes for contributing (to be published in the project repository) and coordinating with the Series Manager to resolve matters or concerns that may arise as set forth in Section 7 of this Charter;
     viii) discussions, seeking consensus, and where necessary, voting on technical matters relating to the code base that affect multiple projects; and
     ix) coordinating any marketing, events, or communications regarding the Project.
-TSC Voting
+
+# TSC Voting
 
     a) While the Project aims to operate as a consensus-based community, if any TSC decision requires a vote to move the Project forward, the voting members of the TSC will vote using the Approval Voting method.
     b) Quorum for TSC meetings requires at least fifty percent of all voting members of the TSC to be present. The TSC may continue to meet if quorum is not met, but will be prevented from making any decisions at the meeting.

@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Update the cet output parser so it can more easily discover files.
 
 0.2.0
 -----

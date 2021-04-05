@@ -59,7 +59,7 @@ def cli():
 @click.option("-y", "--year", default="2020", show_default=True)
 @click.option(
     "--url-prefix",
-    default="https://storage.googleapis.com/flexvalue-public-resources/db/",
+    default="https://storage.googleapis.com/flexvalue-public-resources/db/v1/",
     show_default=True,
 )
 @click.option("--skip-if-exists/--overwrite-if-exists", default=False)

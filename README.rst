@@ -28,7 +28,7 @@ Avoided Cost Data
 #################
 
 This uses avoided cost data that is stored in a SQLITE table, which can be
-downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/2020.db>`_.
+downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_.
 
 A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file provided by the `CPUC <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
 

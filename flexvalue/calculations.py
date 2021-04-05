@@ -466,10 +466,14 @@ class FlexValueRun:
             being an instantiation of the FlexValueProject using those inputs
         """
 
-        def _get_load_shape_df(load_shape, mwh_savings):
+        def _get_load_shape_df(utility, load_shape, mwh_savings):
             # Check that if electricity savings are supplied, a load shape is available
+            # For DEER load shapes, its currently prefixed by the utility name
+            # TODO (ssuffian): Fix this if db changes where utility is a column
             if load_shape in self.all_load_shapes_df.columns:
                 return self.all_load_shapes_df[[load_shape]]
+            elif f"{utility}_{load_shape}" in self.all_load_shapes_df.columns:
+                return self.all_load_shapes_df[[f"{utility}_{load_shape}"]]
             elif mwh_savings != 0:
                 raise ValueError(
                     f"{load_shape} can not be found in\n"
@@ -509,7 +513,9 @@ class FlexValueRun:
                 measure=user_input["measure"],
                 incentive=user_input["incentive"],
                 load_shape_df=_get_load_shape_df(
-                    user_input["load_shape"].upper(), user_input["mwh_savings"]
+                    user_input["utility"].upper(),
+                    user_input["load_shape"].upper(),
+                    user_input["mwh_savings"],
                 ),
                 database_year=self.database_year,
             )

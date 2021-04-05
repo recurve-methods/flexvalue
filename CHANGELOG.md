@@ -4,7 +4,8 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Update so user-inputs deer load shapes don't require utility prefix. 
+* Point to versioned folder of the 2020 database (v1).
 
 0.2.2
 -----

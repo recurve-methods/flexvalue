@@ -216,13 +216,12 @@ class CET_Scan:
 
         print(f"Your CET input file is at {self.cet_zip_path}")
 
-        def _get_flexvalue_load_shape_name(utility, deer_load_shape, sector):
-            utility = utility.upper()
+        def _get_flexvalue_load_shape_name(deer_load_shape, sector):
             load_shape_suffix = deer_load_shape[5:].upper().replace("-", "_")
             load_shape_prefix = (
                 "NONRES" if deer_load_shape in DEER_NON_RES else sector.upper()
             )
-            return f"{utility}_{load_shape_prefix}_{load_shape_suffix}"
+            return f"{load_shape_prefix}_{load_shape_suffix}"
 
         user_inputs = pd.DataFrame(
             [
@@ -234,7 +233,7 @@ class CET_Scan:
                     "climate_zone": self.climate_zone[ind],
                     "mwh_savings": self.mwh[ind],
                     "load_shape": _get_flexvalue_load_shape_name(
-                        self.program_admin, self.deer_load_shape[ind], self.sector[ind]
+                        self.deer_load_shape[ind], self.sector[ind]
                     ),
                     "therms_savings": self.therms[ind],
                     "therms_profile": self.gas_savings_profile[ind].split(" ")[0],

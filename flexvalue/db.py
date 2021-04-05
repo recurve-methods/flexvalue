@@ -43,7 +43,7 @@ def get_db_connection(database_year="2020"):
 
     Returns
     -------
-    db_connection: sqlalchemy.engine.Engine
+    sqlalchemy.engine.Engine
     """
     full_db_path = os.path.join(database_location(), f"{database_year}.db")
     if not os.path.exists(full_db_path):
@@ -64,7 +64,7 @@ def execute_query(database_year, query):
 
     Returns
     -------
-    result: pd.DataFrame
+    pd.DataFrame
     """
     con = get_db_connection(database_year=database_year)
     return pd.read_sql(query, con=con).drop("local_pkid_", axis=1)
@@ -82,7 +82,7 @@ def get_deer_load_shape(database_year):
 
     Returns
     -------
-    result: pd.DataFrame
+    pd.DataFrame
     """
     con = get_db_connection(database_year=database_year)
     return pd.read_sql_table("deer_load_shapes", con=con).set_index("hour_of_year")
@@ -108,7 +108,7 @@ def get_filtered_acc_elec(database_year, utility, climate_zone, start_year, end_
 
     Returns
     -------
-    result: pd.DataFrame
+    pd.DataFrame
     """
     columns = [
         "year",
@@ -157,7 +157,7 @@ def get_filtered_acc_gas(database_year, start_year, end_year):
 
     Returns
     -------
-    result: pd.DataFrame
+    pd.DataFrame
     """
     columns = [
         "year",
@@ -189,7 +189,7 @@ def get_all_valid_utility_climate_zone_combinations(database_year, utility=None)
 
     Returns
     -------
-    result: pd.DataFrame
+    pd.DataFrame
     """
     where_str = f"WHERE utility = '{utility}'" if utility else ""
     query = f"""
@@ -212,7 +212,7 @@ def get_all_valid_deer_load_shapes(database_year):
 
     Returns
     -------
-    deer load shapes: list
+    list
     """
     query = """
         SELECT *
@@ -220,4 +220,18 @@ def get_all_valid_deer_load_shapes(database_year):
         limit 1
         """
     valid_deer_load_shapes = execute_query(database_year, query)
-    return list(valid_deer_load_shapes.drop("hour_of_year", axis=1).columns)
+    all_columns_w_utilities = list(
+        valid_deer_load_shapes.drop("hour_of_year", axis=1).columns
+    )
+    # TODO (ssuffian): Reshape db so it is a query by utility column
+    return list(
+        set(
+            [
+                c.replace("PGE_", "")
+                .replace("SDGE_", "")
+                .replace("SCG_", "")
+                .replace("SCE_", "")
+                for c in all_columns_w_utilities
+            ]
+        )
+    )

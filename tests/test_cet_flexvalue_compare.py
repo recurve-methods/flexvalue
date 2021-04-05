@@ -42,8 +42,8 @@ def test_generate_cet_input_file(cet_scan):
 
 def test_parse_cet_output(cet_scan, monkeypatch):
     csv_filepath = os.path.join(cet_scan.cet_path, "outputs.csv")
-    run_id = '1234'
-    zip_filename = f'{cet_scan.scan_name}_for_cet_ui_run_{run_id}.zip'
+    run_id = "1234"
+    zip_filename = f"{cet_scan.scan_name}_for_cet_ui_run_{run_id}.zip"
     zip_filepath = os.path.join(cet_scan.cet_path, zip_filename)
     pd.DataFrame([{"abc": "def"}]).to_csv(csv_filepath)
     with zipfile.ZipFile(zip_filepath, "w") as f:

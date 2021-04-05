@@ -385,27 +385,27 @@ class FlexValueProject:
             self.admin, self.incentive, self.discount_rate, self.ntg
         )
 
-        outputs_dict = {
-            "TRC": total_benefits_total / trc_costs,
-            "PAC": total_benefits_total / pac_costs,
-            "TRC (and PAC) Electric Benefits ($)": elec_benefits_total,
-            "TRC (and PAC) Gas Benefits ($)": gas_benefits_total,
-            "TRC (and PAC) Total Benefits ($)": gas_benefits_total
-            + elec_benefits_total,
-            "TRC Costs ($)": trc_costs,
-            "PAC Costs ($)": pac_costs,
-            "First Year Net MWh Savings": first_year_elec_savings_mwh,
-            "Lifecycle Net MWh Savings": lifecycle_elec_savings_mwh,
-            "First Year Net Therms Savings": first_year_gas_savings_therms,
-            "Lifecycle Net Therms Savings": lifecycle_gas_savings_therms,
-            "Lifecycle Electric GHG Savings (Tons)": lifecycle_elec_savings_ghg,
-            "Lifecycle Gas GHG Savings (Tons)": lifecycle_gas_savings_ghg,
-            "Lifecycle Total GHG Savings (Tons)": lifecycle_total_savings_ghg,
-        }
-
-        outputs_df = pd.DataFrame.from_dict(
-            outputs_dict, orient="index", columns=[self.identifier]
+        outputs_df = pd.DataFrame(
+            {
+                "TRC": total_benefits_total / trc_costs,
+                "PAC": total_benefits_total / pac_costs,
+                "TRC (and PAC) Electric Benefits ($)": elec_benefits_total,
+                "TRC (and PAC) Gas Benefits ($)": gas_benefits_total,
+                "TRC (and PAC) Total Benefits ($)": gas_benefits_total
+                + elec_benefits_total,
+                "TRC Costs ($)": trc_costs,
+                "PAC Costs ($)": pac_costs,
+                "Electricity First Year Net Savings (MWh)": first_year_elec_savings_mwh,
+                "Electricity Lifecycle Net Savings (MWh)": lifecycle_elec_savings_mwh,
+                "Gas First Year Net Savings (Therms)": first_year_gas_savings_therms,
+                "Gas Lifecycle Net Savings (Therms)": lifecycle_gas_savings_therms,
+                "Electricity Lifecycle GHG Savings (Tons)": lifecycle_elec_savings_ghg,
+                "Gas Lifecycle GHG Savings (Tons)": lifecycle_gas_savings_ghg,
+                "Total Lifecycle GHG Savings (Tons)": lifecycle_total_savings_ghg,
+            },
+            index=[self.identifier],
         )
+
         outputs_df = outputs_df.round(
             {c: 2 if "($)" in c else 3 for c in outputs_df.columns}
         )
@@ -584,8 +584,8 @@ class FlexValueRun:
             flx_project.get_output_table()
             for flx_project in self.get_flexvalue_projects(user_inputs).values()
         ]
-        outputs_table = pd.concat(all_output_tables, axis=1)
-        outputs_table_totals = outputs_table.sum(axis=1)
+        outputs_table = pd.concat(all_output_tables)
+        outputs_table_totals = outputs_table.sum()
 
         # special recalculation of TRC and PAC
         outputs_table_totals["TRC"] = (
@@ -598,8 +598,8 @@ class FlexValueRun:
         ) / outputs_table_totals["PAC Costs ($)"]
 
         outputs_table = outputs_table.round(3)
-        outputs_table.loc["TRC Costs ($)"] = outputs_table.loc["TRC Costs ($)"].round(2)
-        outputs_table.loc["PAC Costs ($)"] = outputs_table.loc["PAC Costs ($)"].round(2)
+        outputs_table["TRC Costs ($)"] = outputs_table["TRC Costs ($)"].round(2)
+        outputs_table["PAC Costs ($)"] = outputs_table["PAC Costs ($)"].round(2)
 
         outputs_table_totals = outputs_table_totals.round(3)
         outputs_table_totals["TRC Costs ($)"] = outputs_table_totals[
@@ -609,8 +609,7 @@ class FlexValueRun:
             "PAC Costs ($)"
         ].round(2)
 
-        outputs_table["Totals"] = outputs_table_totals
-        return outputs_table.T
+        return outputs_table, outputs_table_totals
 
     def get_electric_benefits_full_outputs(self, user_inputs):
         """Aggregates the electricity benefits into a year-month average daily loadshape
@@ -671,7 +670,14 @@ class FlexValueRun:
         gas_benefits: float
             The sum of all gas benefits across all measure/project/portfolio entries.
         """
-        outputs_table = self.get_all_output_tables(user_inputs=user_inputs)
+        outputs_table, outputs_table_totals = self.get_all_output_tables(
+            user_inputs=user_inputs
+        )
         elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
         gas_benefits = self.get_total_trc_gas_benefits(user_inputs)
-        return outputs_table, elec_benefits, gas_benefits
+
+        # if index wasn't already set with the ID colum, set it for joining to the output
+        if user_inputs.index.name != "ID":
+            user_inputs = user_inputs.set_index("ID")
+        outputs_table = user_inputs.join(outputs_table).reset_index()
+        return outputs_table, outputs_table_totals, elec_benefits, gas_benefits

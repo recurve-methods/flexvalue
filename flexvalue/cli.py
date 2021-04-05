@@ -168,6 +168,7 @@ def get_results(
         )
         (
             outputs_table,
+            outputs_table_totals,
             elec_benefits,
             gas_benefits,
         ) = flexvalue_run.get_flexvalue_results(user_inputs)
@@ -197,12 +198,12 @@ def get_results(
             )
             user_inputs = pd.read_csv(user_inputs_filepath)
             flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape)
-            outputs_table, elec_benefits, gas_benefits = flexvalue_run.get_results(
+            outputs_table, outputs_table_totals, elec_benefits, gas_benefits = flexvalue_run.get_results(
                 user_inputs
             )
             display(user_inputs)
             display(outputs_table)
-            plot_results(outputs_table, elec_benefits, gas_benefits)
+            plot_results(outputs_table_totals, elec_benefits, gas_benefits)
             """
         )
         nbf_nt.add_code_cell(content)

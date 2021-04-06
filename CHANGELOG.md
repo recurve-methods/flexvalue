@@ -4,6 +4,11 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.5
+-----
+
 * Adjust therms_profile_adjustment based on additional empirical testing.
 
 0.2.4

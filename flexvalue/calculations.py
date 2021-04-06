@@ -21,7 +21,7 @@ import pandas as pd
 import numpy as np
 
 from .db import get_filtered_acc_elec, get_filtered_acc_gas, get_deer_load_shape
-from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS
+from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, THERMS_PROFILE_ADJUSTMENT
 
 __all__ = (
     "get_quarterly_discount_df",
@@ -292,13 +292,8 @@ class FlexValueProject:
 
         # TODO: These factors are emperically derived and provide a close match to the CET.
         # Further open-source development would be beneficial.
-        if self.therms_profile.lower() == "annual":
-            therms_profile_adjustment = 0.965
-        elif self.therms_profile.lower() == "summer":
-            therms_profile_adjustment = 0.853
-        elif self.therms_profile.lower() == "winter":
-            therms_profile_adjustment = 1.072
-        else:
+        therms_profile_adjustment = THERMS_PROFILE_ADJUSTMENT.get(self.utility, {}).get(self.therms_profile)
+        if not therms_profile_adjustment:
             raise ValueError(
                 "Must supply a therms_profile that is one of: "
                 "['annual', 'summer', 'winter']"
@@ -499,12 +494,12 @@ class FlexValueRun:
                 identifier=user_input["ID"],
                 start_year=user_input["start_year"],
                 start_quarter=user_input["start_quarter"],
-                utility=user_input["utility"],
+                utility=user_input["utility"].upper(),
                 climate_zone=user_input["climate_zone"],
                 mwh_savings=user_input["mwh_savings"],
                 load_shape=user_input["load_shape"],
                 therms_savings=user_input["therms_savings"],
-                therms_profile=user_input["therms_profile"],
+                therms_profile=user_input["therms_profile"].lower(),
                 units=user_input["units"],
                 eul=user_input["eul"],
                 ntg=user_input["ntg"],

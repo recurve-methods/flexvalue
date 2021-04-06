@@ -4,12 +4,12 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Adjust therms_profile_adjustment based on additional empirical testing.
 
 0.2.4
 -----
 
-* Updated error log on missing load shape.
+* Update error log on missing load shape.
 
 0.2.3
 -----

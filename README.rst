@@ -78,7 +78,7 @@ The `user_inputs` CSV requires the following columns:
     - **start_quarter**: The quarter to start with when using avoided costs data
     - **utility**: Which uility to filter by when loading avoided costs data
     - **climate_zone**: Which climate zone to filter by when loading avoided costs data
-    - **units**: Multiplier of the therms_savings and mwh_savings
+    - **units**: Multiplier of the therms_savings and mwh_savings (this multiplier is not applied to any of the costs)
     - **eul**: Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
     - **ntg**: Net to gross ratio
     - **discount_rate**: The quarterly discount rate to be applied to the net present value calculation

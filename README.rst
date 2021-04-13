@@ -71,6 +71,8 @@ There is one required input that is referred to as the `user_inputs`, and anothe
 user_inputs
 -----------
 
+Recurve has prepared an example `user_inputs file <https://storage.googleapis.com/flexvalue-public-resources/examples/example_user_inputs_metered.csv>`_ that can be downloaded. 
+
 The `user_inputs` CSV requires the following columns:
 
     - **ID**: A unique identifier used to reference this measure, project, or portfolio

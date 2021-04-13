@@ -7,7 +7,7 @@ FLEXvalue™
     :target: https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/?badge=latest
     :alt: Documentation Status
 
-This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. This uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes.
+This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. FLEXvalue uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information.
 
 Use the following colab notebook which allows you to put in your own inputs and get results: 
 
@@ -27,28 +27,28 @@ You can also check out our full tutorial:
 Avoided Cost Data
 #################
 
-This uses avoided cost data that is stored in a SQLITE table, which can be
+The avoided cost data that FLEXvalue draws from is stored in a SQLITE table, which can be
 downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_.
 
-A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file provided by the `CPUC <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
+A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file available through the `CPUC's website <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
 
 deer_load_shapes
 ----------------
 
-The DEER load shapes are normalized 8,760 hourly savings profiles that correspond to different end-use sectors and technologies (residential HVAC or commercial lighting for example). A full list is provided in reference . Annual deemed kWh savings values are typically assigned to a specific DEER load shape. The resulting 8,760 hourly savings values are then multiplied by the hourly electric avoided costs to produce the electric cost effectiveness benefits.
+The DEER load shapes are normalized 8,760 hourly savings profiles that correspond to different end-use sectors and technologies (residential HVAC or commercial lighting for example). A full list is provided in reference . Annual deemed MWh savings values are typically assigned to a specific DEER load shape. The resulting 8,760 hourly savings values are then multiplied by the hourly electric avoided costs to produce the electric cost effectiveness benefits.
 
-Recurve has made a few changes to column names to incorporate residential and commercial naming conventions but otherwise the format of the DEER load shapes does not need to be updated. Additional ETL is needed because the electric avoided costs begin on a day of the week that does not align with the DEER load shapes. Recurve has conducted extensive testing and has found that the DEER load shapes need to be shifted by -2 days in order to provide the best alignment with the CPUC’s existing Cost Effectiveness Tool.
+Recurve has made a few changes to column names to incorporate residential and commercial naming conventions but otherwise the format of the DEER load shapes does not need to be updated. Additional formatting is needed because the electric avoided costs begin on a day of the week that does not align with the DEER load shapes. Recurve has conducted extensive testing and has found that the DEER load shapes need to be shifted by -2 days in order to provide the best alignment with the CPUC’s existing Cost Effectiveness Tool.
 
-There are different versions of the DEER load shape files for each of the four California IOUs. At this point Recurve have not explicitly tested these different versions to gauge any differences. Recurve is currently using  the PG&E version. This database may need to be updated to incorporate each version of the DEER load shapes. It is also not known at this point if a different shift will need to be incorporated upon release of the next electric avoided cost calculator.
+There are different versions of the DEER load shapes for each of the four California IOUs. The specific DEER load shape selected will depend on the combination of user input program administrator and DEER load shape name. It is not known at this point if a different shift will need to be incorporated upon release of the next electric avoided cost calculator.
 
 acc_electricity
 ---------------
 
-The electric avoided cost calculator compiles hourly marginal utility avoided costs for electric savings. Costs are provided for ten different components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas) and Climate Zone combination. The electric avoided cost calculator also contains hourly marginal greenhouse gas emissions data, which are also forecasted to 2050.
+The electric avoided cost calculator compiles hourly marginal utility avoided costs for electric savings. Costs are provided for ten different cost components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas) and Climate Zone combination. The electric avoided cost calculator also contains hourly marginal greenhouse gas emissions data, which are also forecasted to 2050.
 
 The electric avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267)>`_.
 
-The electric avoided cost calculator is a macro-driven Excel file, so several ETL steps were done to combine all calculator results into a single table.
+The electric avoided cost calculator is a macro-driven Excel file, so several data extraction and transformation steps were done to combine all calculator results into a single table.
 
 acc_gas
 -------
@@ -57,9 +57,9 @@ The gas avoided cost calculator compiles monthly marginal utility avoided costs 
 
 The gas avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267)>`_.
 
-The gas avoided cost calculator is a macro-driven Excel file, so several ETL steps were done to combine all calculator results into a single table.
+The gas avoided cost calculator is a macro-driven Excel file, so several data extraction and transformation steps were done to combine all calculator results into a single table.
 
-*Currently the gas avoided costs data uses the same year-month avoided costs (using Utility: PGE, Class: Total Core, End Use: Small Boiler, Emission Control: Uncontrolled) for all analysis. Future work will bring in the other gas avoided cost data so that more accurate costs can be provided.*
+*Currently the gas avoided costs data uses the same year-month avoided costs (using Utility: PGE, Class: Total Core, End Use: Small Boiler, Emission Control: Uncontrolled) for all analysis. Based on testing against the CET, different numerical factors are applied depending on the program administrator. Future work can incorporate the full suite of gas parameters.*
 
 
 Inputs
@@ -79,13 +79,13 @@ The `user_inputs` CSV requires the following columns:
     - **utility**: Which uility to filter by when loading avoided costs data
     - **climate_zone**: Which climate zone to filter by when loading avoided costs data
     - **units**: Multiplier of the therms_savings and mwh_savings (this multiplier is not applied to any of the costs)
-    - **eul**: Effective Useful Life (EUL) means the average time over which an energy efficiency measure results in energy savings, including the effects of equipment failure, removal, and cessation of use.
-    - **ntg**: Net to gross ratio
-    - **discount_rate**: The quarterly discount rate to be applied to the net present value calculation
-    - **admin**: The administrative costs assigned to a given measure, project, or portfolio
-    - **measure**: The measure costs assigned to given measure, project, or portfolio
-    - **inecentive**: The incentive costs assigned to given measure, project, or portfolio
-    - **therms_profile**: Indicates what sort of adjustment to make on the therms savings, can be one of ['annual', 'summer', 'winter']
+    - **eul**: Effective Useful Life (EUL): the expected duration in years that the load impacts persist
+    - **ntg**: Net-to-gross ratio
+    - **discount_rate**: The quarterly discount rate to be applied within the net present value calculation
+    - **admin**: The administrative costs assigned to the given measure, project, or portfolio
+    - **measure**: The measure costs assigned to the given measure, project, or portfolio
+    - **inecentive**: The incentive costs assigned to the given measure, project, or portfolio
+    - **therms_profile**: Indicates the season in which therms savings are achieved, can be one of ['annual', 'summer', 'winter']
     - **therms_savings**: The first year gas gross savings in Therms
     - **mwh_savings**: The first year electricity gross savings in MWh (used to scale the load shape savings data if using custom load shape)
 
@@ -173,6 +173,9 @@ and looks like the following format:
       - 0.3
       - 0.2
 
+Metered Load Shapes
+------
+If the user-defined load shape is normalized (the sum of values across all 8,760 hours is 1) then the user should input the annual MWh savings value in the user_inputs file. If the user-defined load shape is not normalized (the sum of values across all 8,760 hours equals the annual MWh savings) the user should enter 1 in for the corresponding MWh savings in the user_inputs file. 
 
 Installation from Source
 ########################

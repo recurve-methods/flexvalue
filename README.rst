@@ -19,10 +19,7 @@ Want to compare FLEXvalue results to the CET tool? This notebook allows you to d
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb
 
-You can also check out our full tutorial: 
-
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/tutorial.ipynb
+For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial < https://github.com/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
 
 Avoided Cost Data
 #################

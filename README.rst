@@ -19,13 +19,17 @@ Want to compare FLEXvalue results to the CET tool? This notebook allows you to d
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb
 
+
+The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be
+downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_. For users who would like to instead download .csv files or who would like to directly explore these data see: 
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb
+
 For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial <https://github.com/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
 
 Avoided Cost Data
 #################
-
-The avoided cost data that FLEXvalue draws from is stored in a SQLITE table, which can be
-downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_.
 
 A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file available through the `CPUC's website <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
 

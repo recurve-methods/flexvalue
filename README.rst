@@ -9,12 +9,12 @@ FLEXvalue™
 
 This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. FLEXvalue uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information.
 
-Use the following colab notebook which allows you to put in your own inputs and get results: 
+Use the following colab notebook which allows you to run FLEXvalue directly: 
 
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb
 
-Want to compare our results to the CET tool? This notebook allows you to compare results: 
+Want to compare FLEXvalue results to the CET tool? This notebook allows you to directly compare results: 
 
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb

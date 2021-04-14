@@ -26,7 +26,7 @@ downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapi
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
     :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb
 
-For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial <https://github.com/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
+For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial <https://nbviewer.jupyter.org/github/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
 
 Avoided Cost Data
 #################

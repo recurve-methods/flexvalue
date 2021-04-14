@@ -1123,11 +1123,7 @@ def plot_results(outputs_table_totals, elec_benefits, gas_benefits):
         color=colors1[0],
         linewidth=3,
     )
-    legend_labels2.append(
-        re.findall(
-            ".*Name: (.*), L", str(elec_benefits_hoy[ACC_COMPONENTS_ELECTRICITY[0]])
-        )[0]
-    )
+    legend_labels2.append(ACC_COMPONENTS_ELECTRICITY[0])
     x = 1
     while x <= len(ACC_COMPONENTS_ELECTRICITY) - 2:
         ax.plot(
@@ -1135,11 +1131,7 @@ def plot_results(outputs_table_totals, elec_benefits, gas_benefits):
             elec_benefits_hoy[ACC_COMPONENTS_ELECTRICITY[x]],
             color=colors1[x],
         )
-        legend_labels2.append(
-            re.findall(
-                ".*Name: (.*), L", str(elec_benefits_hoy[ACC_COMPONENTS_ELECTRICITY[x]])
-            )[0]
-        )
+        legend_labels2.append(ACC_COMPONENTS_ELECTRICITY[x])
         x += 1
 
     # Set x and y limits based on min and max values

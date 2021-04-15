@@ -341,6 +341,8 @@ class CET_Scan:
             'admin', 'measure', 'incentive', 'load_shape'
         ]]
         cet_outputs_df['Sector'] = self.sector
+        cet_outputs_df['PA'] = self.program_admin
+        cet_outputs_df['Program Year'] = self.program_year
         cet_outputs_df = cet_outputs_df.join(cet_cleaned_results.set_index('CET_ID'))[[
             'Program Year','PA','climate_zone', 'mwh_savings','therms_savings','ntg', 'Sector',
             'admin', 'measure', 'incentive', 'load_shape',

@@ -334,3 +334,33 @@ class CET_Scan:
             .sort_index()
             .round(2)
         )
+
+    def get_cleaned_cet_output_df(self, outputs_table, cet_cleaned_results):
+        cet_outputs_df = outputs_table.set_index('CET_ID')[[
+            'climate_zone', 'mwh_savings','therms_savings','ntg',
+            'admin', 'measure', 'incentive', 'load_shape'
+        ]]
+        cet_outputs_df['Sector'] = self.sector
+        cet_outputs_df = cet_outputs_df.join(cet_cleaned_results.set_index('CET_ID'))[[
+            'Program Year','PA','climate_zone', 'mwh_savings','therms_savings','ntg', 'Sector',
+            'admin', 'measure', 'incentive', 'load_shape',
+            'ElecBen','GasBen','PACCost','TRCCost','PACRatio','TRCRatio'
+        ]]
+        cet_outputs_df.insert(0, 'ACC Version', self.acc_version)
+        return cet_outputs_df.rename(columns={
+            'climate_zone': 'Climate Zone',
+            'mwh_savings': 'MWh Savings',
+            'therms_savings': 'Therms Savings',
+            'ntg': 'NTG',
+            'admin': 'Admin',
+            'measure': 'Measure',
+            'incentive': 'Incentive',
+            'load_shape': 'DEER Load Shape',
+            'ElecBen': "TRC (and PAC) Electric Benefits ($)",
+            'GasBen': "TRC (and PAC) Gas Benefits ($)",
+            'TRCCost': "TRC Costs ($)",
+            "PACCost": "PAC Costs ($)",
+            "TRCRatio": "TRC",
+            "PACRatio": "PAC"
+        }
+        ).reset_index()

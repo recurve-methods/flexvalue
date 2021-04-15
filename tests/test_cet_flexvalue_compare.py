@@ -40,7 +40,7 @@ def test_generate_cet_input_file(cet_scan):
     assert not user_inputs.empty
 
 
-def test_parse_cet_output(cet_scan, monkeypatch):
+def test_parse_cet_output(cet_scan):
     csv_filepath = os.path.join(cet_scan.cet_path, "outputs.csv")
     run_id = "1234"
     zip_filename = f"{cet_scan.scan_name}_for_cet_ui_run_{run_id}.zip"

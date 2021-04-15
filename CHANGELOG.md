@@ -4,11 +4,10 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Add function for directly parsing CET output results.
 
 0.2.6
 -----
-
 
 * Fix plotting error.
 

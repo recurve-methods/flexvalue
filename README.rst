@@ -3,6 +3,8 @@ FLEXvalue™
 
 `Read The Docs Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/>`_
 
+`Read The Docs PDF Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/_/downloads/en/latest/pdf/>`_
+
 `Github Link <https://github.com/recurve-methods/flexvalue>`_
 
 .. image:: https://readthedocs.com/projects/recurve-analytics-inc-flexvalue/badge/?version=latest&token=03dc3e4930d430d47b5d1169ec38ad7df5d2bc70f69689d1e845b56596bcf590

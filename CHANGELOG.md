@@ -4,6 +4,11 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.8
+-----
+
 * Update function for parsing CET output results.
 
 0.2.7

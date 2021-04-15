@@ -4,6 +4,12 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.6
+-----
+
+
 * Fix plotting error.
 
 0.2.5

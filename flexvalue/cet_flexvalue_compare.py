@@ -20,6 +20,13 @@ def generate_cet_input_id(program_admin, program_year, identifier):
     return f"{program_admin}-{program_year}-{identifier}"
 
 
+def _get_flexvalue_load_shape_name(deer_load_shape, sector):
+    flexvalue_sector_map = {"Non_Res": "NONRES", "Res": "RES"}
+    load_shape_suffix = deer_load_shape.upper().replace("DEER:", "").replace("-", "_")
+    load_shape_prefix = flexvalue_sector_map[sector]
+    return f"{load_shape_prefix}_{load_shape_suffix}"
+
+
 class CET_Scan:
     def __init__(
         self,
@@ -92,15 +99,13 @@ class CET_Scan:
         def _generate_claim_year_quarter(program_year):
             return f"{program_year}Q1"
 
-        def _generate_e3_target_sector(deer_load_shape, sector):
-            return "Non_Res" if deer_load_shape in DEER_NON_RES else sector
-
         for ind in range(len(self.mwh)):
             if self.sector[ind] == "Res" and self.deer_load_shape[ind] in DEER_NON_RES:
                 print(
                     f"{self.sector[ind]}/{self.deer_load_shape[ind]}"
                     + " Pairing Not Allowed in CET. Switching to Non_Res"
                 )
+                self.sector[ind] = "Non_Res"
 
         cet_program_costs_df = pd.DataFrame(
             [
@@ -140,9 +145,7 @@ class CET_Scan:
                     "E3GasSavProfile": self.gas_savings_profile[ind],
                     "E3GasSector": self.gas_sector[ind],
                     "E3MeaElecEndUseShape": self.deer_load_shape[ind],
-                    "E3TargetSector": _generate_e3_target_sector(
-                        self.deer_load_shape[ind], self.sector[ind]
-                    ),
+                    "E3TargetSector": self.sector[ind],
                     "MeasAppType": "AR",
                     "MeasCode": "",
                     "MeasDescription": "NMEC",
@@ -215,13 +218,6 @@ class CET_Scan:
             shutil.move(zip_filepath, self.cet_zip_path)
 
         print(f"Your CET input file is at {self.cet_zip_path}")
-
-        def _get_flexvalue_load_shape_name(deer_load_shape, sector):
-            load_shape_suffix = deer_load_shape[5:].upper().replace("-", "_")
-            load_shape_prefix = (
-                "NONRES" if deer_load_shape in DEER_NON_RES else sector.upper()
-            )
-            return f"{load_shape_prefix}_{load_shape_suffix}"
 
         user_inputs = pd.DataFrame(
             [
@@ -336,33 +332,58 @@ class CET_Scan:
         )
 
     def get_cleaned_cet_output_df(self, outputs_table, cet_cleaned_results):
-        cet_outputs_df = outputs_table.set_index('CET_ID')[[
-            'climate_zone', 'mwh_savings','therms_savings','ntg',
-            'admin', 'measure', 'incentive', 'load_shape'
-        ]]
-        cet_outputs_df['Sector'] = self.sector
-        cet_outputs_df['PA'] = self.program_admin
-        cet_outputs_df['Program Year'] = self.program_year
-        cet_outputs_df = cet_outputs_df.join(cet_cleaned_results.set_index('CET_ID'))[[
-            'Program Year','PA','climate_zone', 'mwh_savings','therms_savings','ntg', 'Sector',
-            'admin', 'measure', 'incentive', 'load_shape',
-            'ElecBen','GasBen','PACCost','TRCCost','PACRatio','TRCRatio'
-        ]]
-        cet_outputs_df.insert(0, 'ACC Version', self.acc_version)
-        return cet_outputs_df.rename(columns={
-            'climate_zone': 'Climate Zone',
-            'mwh_savings': 'MWh Savings',
-            'therms_savings': 'Therms Savings',
-            'ntg': 'NTG',
-            'admin': 'Admin',
-            'measure': 'Measure',
-            'incentive': 'Incentive',
-            'load_shape': 'DEER Load Shape',
-            'ElecBen': "TRC (and PAC) Electric Benefits ($)",
-            'GasBen': "TRC (and PAC) Gas Benefits ($)",
-            'TRCCost': "TRC Costs ($)",
-            "PACCost": "PAC Costs ($)",
-            "TRCRatio": "TRC",
-            "PACRatio": "PAC"
-        }
+        cet_outputs_df = outputs_table.set_index("CET_ID")[
+            [
+                "climate_zone",
+                "mwh_savings",
+                "therms_savings",
+                "ntg",
+                "admin",
+                "measure",
+                "incentive",
+                "load_shape",
+            ]
+        ]
+        cet_outputs_df["Sector"] = self.sector
+        cet_outputs_df["PA"] = self.program_admin
+        cet_outputs_df["Program Year"] = self.program_year
+        cet_outputs_df = cet_outputs_df.join(cet_cleaned_results.set_index("CET_ID"))[
+            [
+                "Program Year",
+                "PA",
+                "climate_zone",
+                "mwh_savings",
+                "therms_savings",
+                "ntg",
+                "Sector",
+                "admin",
+                "measure",
+                "incentive",
+                "load_shape",
+                "ElecBen",
+                "GasBen",
+                "PACCost",
+                "TRCCost",
+                "PACRatio",
+                "TRCRatio",
+            ]
+        ]
+        cet_outputs_df.insert(0, "ACC Version", self.acc_version)
+        return cet_outputs_df.rename(
+            columns={
+                "climate_zone": "Climate Zone",
+                "mwh_savings": "MWh Savings",
+                "therms_savings": "Therms Savings",
+                "ntg": "NTG",
+                "admin": "Admin",
+                "measure": "Measure",
+                "incentive": "Incentive",
+                "load_shape": "DEER Load Shape",
+                "ElecBen": "TRC (and PAC) Electric Benefits ($)",
+                "GasBen": "TRC (and PAC) Gas Benefits ($)",
+                "TRCCost": "TRC Costs ($)",
+                "PACCost": "PAC Costs ($)",
+                "TRCRatio": "TRC",
+                "PACRatio": "PAC",
+            }
         ).reset_index()

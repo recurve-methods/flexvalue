@@ -4,7 +4,10 @@ import pytest
 import tempfile
 import zipfile
 
-from flexvalue.cet_flexvalue_compare import CET_Scan
+from flexvalue.cet_flexvalue_compare import (
+    CET_Scan,
+    _get_flexvalue_load_shape_name,
+)
 
 
 @pytest.fixture
@@ -21,7 +24,7 @@ def cet_scan():
         units=[1, 1, 10],
         ntg=[0.95, 0.4, 0.9],
         eul=[7, 1, 1],
-        sector=["NonRes", "Res", "Res"],
+        sector=["Non_Res", "Res", "Res"],
         deer_load_shape=[
             "DEER:HVAC_Chillers",
             "DEER:HVAC_Chillers",
@@ -50,3 +53,15 @@ def test_parse_cet_output(cet_scan):
         f.write(csv_filepath, arcname=f"{run_id}_outputs.csv")
     cet_scan.parse_cet_output()
     cet_scan.parse_cet_output(zip_filepath)
+
+
+def test_flexvalue_load_shape_name():
+    deer_load_shape = "DEER:HVAC_Chillers"
+    sector = "Non_Res"
+    flexvalue_ls_name = _get_flexvalue_load_shape_name(deer_load_shape, sector)
+    assert flexvalue_ls_name == "NONRES_HVAC_CHILLERS"
+
+    deer_load_shape = "DEER:Indoor_Non-CFL_Ltg"
+    sector = "Non_Res"
+    flexvalue_ls_name = _get_flexvalue_load_shape_name(deer_load_shape, sector)
+    assert flexvalue_ls_name == "NONRES_INDOOR_NON_CFL_LTG"

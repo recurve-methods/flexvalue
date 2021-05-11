@@ -21,7 +21,11 @@ import pandas as pd
 import numpy as np
 
 from .db import get_filtered_acc_elec, get_filtered_acc_gas, get_deer_load_shape
-from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, THERMS_PROFILE_ADJUSTMENT
+from .settings import (
+    ACC_COMPONENTS_ELECTRICITY,
+    ACC_COMPONENTS_GAS,
+    THERMS_PROFILE_ADJUSTMENT,
+)
 
 __all__ = (
     "get_quarterly_discount_df",
@@ -292,7 +296,9 @@ class FlexValueProject:
 
         # TODO: These factors are emperically derived and provide a close match to the CET.
         # Further open-source development would be beneficial.
-        therms_profile_adjustment = THERMS_PROFILE_ADJUSTMENT.get(self.utility, {}).get(self.therms_profile)
+        therms_profile_adjustment = THERMS_PROFILE_ADJUSTMENT.get(self.utility, {}).get(
+            self.therms_profile
+        )
         if not therms_profile_adjustment:
             raise ValueError(
                 "Must supply a therms_profile that is one of: "

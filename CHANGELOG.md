@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Update cet_scan_compare to take in 'Non_Res'.
 
 0.2.8
 -----

@@ -137,8 +137,8 @@ class FlexValueProject:
     units: int
         Multiplier of the therms_savings and mhw_savings
     eul: int
-        Effective Useful Life (EUL) means the average time over which an energy 
-        efficiency measure results in energy savings, including the effects of 
+        Effective Useful Life (EUL) means the average time over which an energy
+        efficiency measure results in energy savings, including the effects of
         equipment failure, removal, and cessation of use.
     incentive: float
         The incentive costs assigned to given measure, project, or portfolio

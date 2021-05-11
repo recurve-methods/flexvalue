@@ -31,8 +31,10 @@ def cet_scan():
         incentive=[200000, 66, 800],
     )
 
+
 def test_generate_cet_input_file(cet_scan):
     cet_scan.generate_cet_input_file()
+
 
 def test_parse_cet_output(cet_scan):
     cet_scan.parse_cet_output()

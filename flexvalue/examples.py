@@ -34,7 +34,7 @@ def _generate_example_ids():
 
 def get_example_metered_load_shape():
     """Generates an example metered load shape file for use in evaluating this tool
-    
+
     Returns
     -------
     metered load shape: pd.DataFrame
@@ -60,7 +60,7 @@ def get_example_metered_load_shape():
 
 def get_example_user_inputs_metered():
     """Generates an example user_inputs file that references the example metered load shape
-    
+
     Returns
     -------
     user_inputs: pd.DataFrame
@@ -93,7 +93,7 @@ def get_example_user_inputs_metered():
 
 def get_example_user_inputs_deer(database_year):
     """Generates an example user_inputs file tied to a few deer load shapes
-    
+
     Parameters
     ----------
     database_year: str

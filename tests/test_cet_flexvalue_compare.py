@@ -59,9 +59,9 @@ def test_flexvalue_load_shape_name():
     deer_load_shape = "DEER:HVAC_Chillers"
     sector = "Non_Res"
     flexvalue_ls_name = _get_flexvalue_load_shape_name(deer_load_shape, sector)
-    assert flexvalue_ls_name == 'NONRES_HVAC_CHILLERS'
+    assert flexvalue_ls_name == "NONRES_HVAC_CHILLERS"
 
     deer_load_shape = "DEER:Indoor_Non-CFL_Ltg"
     sector = "Non_Res"
     flexvalue_ls_name = _get_flexvalue_load_shape_name(deer_load_shape, sector)
-    assert flexvalue_ls_name == 'NONRES_INDOOR_NON_CFL_LTG'
+    assert flexvalue_ls_name == "NONRES_INDOOR_NON_CFL_LTG"

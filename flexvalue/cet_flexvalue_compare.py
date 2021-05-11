@@ -12,7 +12,7 @@ DEER_NON_RES = [
     "DEER:HVAC_Chillers",
     "DEER:HVAC_Split-Package_AC",
     "DEER:HVAC_Split-Package_HP",
-    "DEER:Indoor_Non-CFL_Ltg"
+    "DEER:Indoor_Non-CFL_Ltg",
 ]
 
 
@@ -21,8 +21,8 @@ def generate_cet_input_id(program_admin, program_year, identifier):
 
 
 def _get_flexvalue_load_shape_name(deer_load_shape, sector):
-    flexvalue_sector_map = {'Non_Res': 'NONRES', 'Res': 'RES'}
-    load_shape_suffix = deer_load_shape.upper().replace('DEER:','').replace("-", "_")
+    flexvalue_sector_map = {"Non_Res": "NONRES", "Res": "RES"}
+    load_shape_suffix = deer_load_shape.upper().replace("DEER:", "").replace("-", "_")
     load_shape_prefix = flexvalue_sector_map[sector]
     return f"{load_shape_prefix}_{load_shape_suffix}"
 
@@ -67,7 +67,7 @@ class CET_Scan:
         self.units = units
         self.ntg = ntg
         self.eul = eul
-        self.sector = sector 
+        self.sector = sector
         self.deer_load_shape = deer_load_shape
         self.gas_sector = gas_sector
         self.gas_savings_profile = gas_savings_profile
@@ -105,7 +105,7 @@ class CET_Scan:
                     f"{self.sector[ind]}/{self.deer_load_shape[ind]}"
                     + " Pairing Not Allowed in CET. Switching to Non_Res"
                 )
-                self.sector[ind] = 'Non_Res'
+                self.sector[ind] = "Non_Res"
 
         cet_program_costs_df = pd.DataFrame(
             [

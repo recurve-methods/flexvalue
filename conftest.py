@@ -7,6 +7,9 @@ import random
 def test_ids():
     return [f"{i}" for i in range(5)]
 
+def pytest_addoption(parser):
+    parser.addoption("--database-year", action="store", default="")
+
 
 @pytest.fixture
 def metered_load_shape(test_ids):

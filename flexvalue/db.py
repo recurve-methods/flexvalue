@@ -123,7 +123,7 @@ def get_filtered_acc_elec(database_year, utility, climate_zone, start_year, end_
         climate_zone if climate_zone.startswith("CZ") else f"CZ{climate_zone}"
     )
     sql_str = f""" 
-        SELECT {columns_str} 
+        SELECT * 
         FROM acc_electricity
         WHERE utility = '{utility}'
         AND climate_zone = '{climate_zone}'
@@ -166,7 +166,7 @@ def get_filtered_acc_gas(database_year, start_year, end_year):
     ]
     columns_str = ", ".join(columns)
     sql_str = f""" 
-        SELECT {columns_str} 
+        SELECT * 
         FROM acc_gas
         WHERE year >= {start_year}
         AND year <= {end_year}

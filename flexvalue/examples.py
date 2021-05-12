@@ -40,24 +40,6 @@ def get_example_metered_load_shape():
     metered load shape: pd.DataFrame
     """
 
-    test_ids = [f"id_{i}" for i in range(5)]
-
-    random.seed(0)
-    output = []
-    for _id in test_ids:
-        for hour in range(8760):
-            savings = random.random() * 0.1
-            output.append(
-                {"identifier": _id, "hour_of_year": hour, "hourly_mwh_savings": savings}
-            )
-    df = (
-        pd.DataFrame(output)
-        .pivot(index="hour_of_year", columns="identifier", values="hourly_mwh_savings")
-        .reset_index()
-        .set_index("hour_of_year")
-    )
-    df.columns.name = None
-
     url_prefix = "https://storage.googleapis.com/flexvalue-public-resources/examples/"
     url = os.path.join(url_prefix, "example_metered_load_shapes.csv")
     response = requests.get(url)

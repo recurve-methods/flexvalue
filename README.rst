@@ -15,22 +15,16 @@ FLEXvalue™
 
 This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. FLEXvalue uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information. FLEXvalue currently computes Total Resource Cost (TRC) and Program Administrator Cost (PAC) test results. See the `California Standard Practice Manual <https://www.cpuc.ca.gov/uploadedFiles/CPUC_Public_Website/Content/Utilities_and_Industries/Energy_-_Electricity_and_Natural_Gas/CPUC_STANDARD_PRACTICE_MANUAL.pdf>`_ for more information on cost-effectiveness tests. 
 
-Use the following colab notebook which allows you to run FLEXvalue directly: 
+The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be downloaded as a SQLite file here: `(2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_, `(2021.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2021.db>`_`. 
 
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb
+Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_2020_2021_compare.ipynb>_` to see some preliminary results comparing the 2020 and 2021 avoided cost data.
 
-Want to compare FLEXvalue results to the CET tool? This notebook allows you to directly compare results: 
+Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb>_` which allows you to run FLEXvalue directly. 
 
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb
+Want to compare FLEXvalue results to the CET tool? `[This notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb>_` allows you to directly compare results. 
 
 
-The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be
-downloaded as a SQLite file `here (flexvalue_2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_. For users who would like to instead download .csv files or who would like to directly explore these data see: 
-
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-    :target: https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb
+For users who would like to instead download .csv files or who would like to directly explore these data see this `notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb>_`.
 
 For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial <https://nbviewer.jupyter.org/github/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
 

@@ -4,6 +4,7 @@ Changelog
 Development
 -----------
 
+* Fix tests to not rely on a real db. 
 * Update cet_scan_compare to take in 'Non_Res'.
 
 0.2.8

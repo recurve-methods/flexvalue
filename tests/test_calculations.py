@@ -20,21 +20,148 @@
 import numpy as np
 import pandas as pd
 import pytest
+import os
+import random
+import sqlite3
+from tempfile import mkdtemp
 
 from flexvalue.calculations import FlexValueRun
-
-from flexvalue.examples import (
-    get_example_user_inputs_metered,
-    get_example_metered_load_shape,
-)
+from flexvalue.settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS
 
 
-def test_user_inputs_from_example_metered(snapshot):
+@pytest.fixture
+def metered_ids():
+    return [f"id_{i}" for i in range(5)]
 
-    metered_load_shape = get_example_metered_load_shape()
-    flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape)
 
-    user_inputs = get_example_user_inputs_metered(metered_load_shape.columns)
+@pytest.fixture
+def deer_ids():
+    return ["DEER_LS_1", "DEER_LS_2"]
+
+
+@pytest.fixture
+def metered_load_shape(metered_ids):
+
+    random.seed(0)
+    output = []
+    for _id in metered_ids:
+        for hour in range(8760):
+            savings = random.random() * 0.1
+            output.append(
+                {"identifier": _id, "hour_of_year": hour, "hourly_mwh_savings": savings}
+            )
+    df = (
+        pd.DataFrame(output)
+        .pivot(index="hour_of_year", columns="identifier", values="hourly_mwh_savings")
+        .reset_index()
+        .set_index("hour_of_year")
+    )
+    df.columns.name = None
+    return df
+
+
+@pytest.fixture
+def user_inputs(metered_ids, deer_ids):
+    return pd.DataFrame(
+        [
+            {
+                "ID": id_,
+                "load_shape": id_,
+                "start_year": 2021,
+                "start_quarter": 1,
+                "utility": "PGE",
+                "climate_zone": "CZ1",
+                "units": 1,
+                "eul": 5,
+                "ntg": 1.0,
+                "discount_rate": 0.0766,
+                "admin": 100,
+                "measure": 2000,
+                "incentive": 1000,
+                "therms_profile": "winter",
+                "therms_savings": 400,
+                "mwh_savings": 1,
+            }
+            for id_ in metered_ids + deer_ids
+        ]
+    ).set_index("ID")
+
+
+@pytest.fixture
+def database_year(pytestconfig):
+    database_year = pytestconfig.getoption("database_year")
+    if not database_year:
+        database_year = "1111"
+        db_path = mkdtemp()
+        os.environ["DATABASE_LOCATION"] = db_path
+        con = sqlite3.connect(f"{db_path}/{database_year}.db")
+
+        random.seed(1)
+
+        acc_elec_cols = {
+            col: random.random()
+            for col in ACC_COMPONENTS_ELECTRICITY + ["marginal_ghg"]
+        }
+        df_acc_elec = pd.DataFrame(
+            [
+                {
+                    "climate_zone": "CZ1",
+                    "utility": "PGE",
+                    "hour_of_year": hour,
+                    "hour_of_day": hour % 24,
+                    "year": year,
+                    "month": (
+                        pd.Timestamp("2020-01-01") + pd.Timedelta(hour, unit="H")
+                    ).month,
+                    **acc_elec_cols,
+                }
+                for hour in range(0, 8760)
+                for year in range(2020, 2051)
+            ]
+        )
+        df_acc_elec.to_sql("acc_electricity", con=con)
+
+        acc_gas_cols = {col: random.random() for col in ACC_COMPONENTS_GAS}
+        df_acc_gas = pd.DataFrame(
+            [
+                {
+                    "climate_zone": "CZ1",
+                    "utility": "PGE",
+                    "year": year,
+                    "month": month,
+                    **acc_gas_cols,
+                }
+                for month in range(1, 13)
+                for year in range(2020, 2051)
+            ]
+        )
+        df_acc_gas.to_sql("acc_gas", con=con)
+
+        df_deer_load_shapes = pd.DataFrame(
+            [
+                {
+                    "DEER_LS_1": random.random(),
+                    "DEER_LS_2": random.random(),
+                    "hour_of_year": hour,
+                }
+                for hour in range(0, 8760)
+            ]
+        )
+        df_deer_load_shapes.to_sql("deer_load_shapes", con=con)
+    return database_year
+
+
+@pytest.fixture
+def flexvalue_run(metered_load_shape, database_year):
+    return FlexValueRun(
+        metered_load_shape=metered_load_shape, database_year=database_year
+    )
+
+
+def test_user_inputs_from_example_metered(
+    snapshot, database_year, user_inputs, flexvalue_run
+):
+
     (
         df_output_table,
         df_output_table_totals,
@@ -42,11 +169,6 @@ def test_user_inputs_from_example_metered(snapshot):
         gas_benefits,
     ) = flexvalue_run.get_results(user_inputs)
     snapshot.assert_match(df_output_table_totals, "df_output_table_totals")
-
-
-@pytest.fixture
-def flexvalue_run(metered_load_shape):
-    return FlexValueRun(metered_load_shape=metered_load_shape)
 
 
 def test_electric_benefits_full_outputs(

@@ -69,7 +69,7 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
     If you are having trouble downlading this database,
     you can instead use the following command. Currently 2020 is the only year available, but in the future there may be additional years available:
 
-    `curl --output 2020.db https://storage.googleapis.com/flexvalue-public-resources/v1/2020.db`
+    `curl --output 2020.db https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db`
 
     """
     db_filename = f"{year}.db"

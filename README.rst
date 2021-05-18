@@ -17,14 +17,14 @@ This library provides California aggregators, program administrators, utilities,
 
 The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be downloaded as a SQLite file here: `(2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_, `(2021.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2021.db>`_`. 
 
-Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_2020_2021_compare.ipynb>_` to see some preliminary results comparing the 2020 and 2021 avoided cost data.
+Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_2020_2021_compare.ipynb>`_ to see some preliminary results comparing the 2020 and 2021 avoided cost data.
 
-Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb>_` which allows you to run FLEXvalue directly. 
+Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb>`_ which allows you to run FLEXvalue directly. 
 
-Want to compare FLEXvalue results to the CET tool? `[This notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb>_` allows you to directly compare results. 
+Want to compare FLEXvalue results to the CET tool? `[This notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb>`_ allows you to directly compare results. 
 
 
-For users who would like to instead download .csv files or who would like to directly explore these data see this `notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb>_`.
+For users who would like to instead download .csv files or who would like to directly explore these data see this `notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb>`_.
 
 For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial <https://nbviewer.jupyter.org/github/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
 

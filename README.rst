@@ -26,7 +26,7 @@ Want to compare FLEXvalue results to the CET tool? `[This notebook <https://cola
 
 For users who would like to instead download .csv files or who would like to directly explore these data see this `notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb>`_.
 
-For those looking to learn more about how to use this library locally or via the pyton library, the following `tutorial <https://nbviewer.jupyter.org/github/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
+For those looking to learn more about how to use this library locally or via the python library, the following `tutorial <https://nbviewer.jupyter.org/github/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
 
 Avoided Cost Data
 #################
@@ -47,7 +47,7 @@ acc_electricity
 
 The electric avoided cost calculator compiles hourly marginal utility avoided costs for electric savings. Costs are provided for ten different cost components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas) and Climate Zone combination. The electric avoided cost calculator also contains hourly marginal greenhouse gas emissions data, which are also forecasted to 2050.
 
-The electric avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267)>`_.
+The electric avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267>`_.
 
 The electric avoided cost calculator is a macro-driven Excel file, so several data extraction and transformation steps were done to combine all calculator results into a single table.
 
@@ -56,7 +56,7 @@ acc_gas
 
 The gas avoided cost calculator compiles monthly marginal utility avoided costs for gas savings. Costs are provided for four different components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas). Avoided costs are also somewhat different for distinct end use categories.
 
-The gas avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267)>`_.
+The gas avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267>`_.
 
 The gas avoided cost calculator is a macro-driven Excel file, so several data extraction and transformation steps were done to combine all calculator results into a single table.
 
@@ -245,4 +245,4 @@ Other resources
 
 - `MAINTAINERS <https://github.com/recurve-methods/flexvalue/blob/main/MAINTAINERS.md>`_: an ordered list of project maintainers.
 - `CHARTER <https://github.com/recurve-methods/flexvalue/blob/main/CHARTER.md>`_: open source project charter.
-- `CODE_OF_CONDUCT <https://github.com/recurve-methods/flexvalue/blob/main/CODE_OF_CONDUCT.md>`_: Code of ocnduct for contributors
+- `CODE_OF_CONDUCT <https://github.com/recurve-methods/flexvalue/blob/main/CODE_OF_CONDUCT.md>`_: Code of conduct for contributors

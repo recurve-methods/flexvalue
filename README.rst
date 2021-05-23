@@ -87,7 +87,7 @@ The `user_inputs` CSV requires the following columns:
     - **discount_rate**: The quarterly discount rate to be applied within the net present value calculation
     - **admin**: The administrative costs assigned to the given measure, project, or portfolio
     - **measure**: The measure costs assigned to the given measure, project, or portfolio
-    - **inecentive**: The incentive costs assigned to the given measure, project, or portfolio
+    - **incentive**: The incentive costs assigned to the given measure, project, or portfolio
     - **therms_profile**: Indicates the season in which therms savings are achieved, can be one of ['annual', 'summer', 'winter']
     - **therms_savings**: The first year gas gross savings in Therms
     - **mwh_savings**: The first year electricity gross savings in MWh (used to scale the load shape savings data if using custom load shape)

@@ -4,6 +4,11 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+0.2.9
+-----
+
 * Fix tests to not rely on a real db. 
 * Update cet_scan_compare to take in 'Non_Res'.
 

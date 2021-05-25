@@ -21,7 +21,7 @@ Use `this colab notebook <https://colab.research.google.com/github/recurve-metho
 
 Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb>`_ which allows you to run FLEXvalue directly. 
 
-Want to compare FLEXvalue results to the CET tool? `[This notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb>`_ allows you to directly compare results. 
+Want to compare FLEXvalue results to the CET tool? `This notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb>`_ allows you to directly compare results. 
 
 
 For users who would like to instead download .csv files or who would like to directly explore these data see this `notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb>`_.

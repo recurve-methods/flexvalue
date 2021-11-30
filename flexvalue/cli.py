@@ -171,7 +171,7 @@ def get_results(
             outputs_table_totals,
             elec_benefits,
             gas_benefits,
-        ) = flexvalue_run.get_flexvalue_results(user_inputs)
+        ) = flexvalue_run.get_results(user_inputs)
         outputs_table.to_csv(outputs_table_filepath, index=False)
     else:
         Path(ntpath.dirname(report_filepath)).mkdir(parents=True, exist_ok=True)
@@ -191,6 +191,7 @@ def get_results(
             from IPython.display import display
             metered_load_shape_filepath = {metered_load_shape_filepath}
             user_inputs_filepath = {user_inputs_filepath}
+            outputs_table_filepath = {outputs_table_filepath}
             metered_load_shape = (
                 pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
                 if metered_load_shape_filepath
@@ -204,6 +205,7 @@ def get_results(
             display(user_inputs)
             display(outputs_table)
             plot_results(outputs_table_totals, elec_benefits, gas_benefits)
+            outputs_table.to_csv(outputs_table_filepath, index=False)
             """
         )
         nbf_nt.add_code_cell(content)

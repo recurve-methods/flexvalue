@@ -183,6 +183,7 @@ def get_results(
             else metered_load_shape_filepath
         )
         user_inputs_filepath = f'"{user_inputs_filepath}"'
+        outputs_table_filepath = f'"{outputs_table_filepath}"'
         content = dedent(
             f"""
             import pandas as pd

@@ -184,6 +184,7 @@ def get_results(
         )
         user_inputs_filepath = f'"{user_inputs_filepath}"'
         outputs_table_filepath = f'"{outputs_table_filepath}"'
+        year = f'"{year}"'
         content = dedent(
             f"""
             import pandas as pd
@@ -193,13 +194,14 @@ def get_results(
             metered_load_shape_filepath = {metered_load_shape_filepath}
             user_inputs_filepath = {user_inputs_filepath}
             outputs_table_filepath = {outputs_table_filepath}
+            database_year = {year}
             metered_load_shape = (
                 pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
                 if metered_load_shape_filepath
                 else None
             )
             user_inputs = pd.read_csv(user_inputs_filepath)
-            flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape)
+            flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape, database_year=database_year)
             outputs_table, outputs_table_totals, elec_benefits, gas_benefits = flexvalue_run.get_results(
                 user_inputs
             )

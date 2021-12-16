@@ -34,7 +34,7 @@ INSTALL_REQUIRES = [
     "click",
     "pandas",
     "statsmodels",
-    "scipy",
+    "scipy<1.8.0", # pinned due to loss of python 3.7 support
     "seaborn",
     "sqlalchemy",
     "nbformat",

@@ -1,7 +1,7 @@
 FLEXvalue™ 
 **************
 
-*DISCLAIMER*: We are currently in the process of incorporating and testing the 2021 ACC. Please continue to use 2020 until we provide further instruction.
+*DISCLAIMER*: We are currently in the process of incorporating and testing the 2021 ACC. Please continue to use 2020 or adjusted_acc_map (for the 2020 smoothed/scaled kicker adjusted ACC) until we provide further instruction.
 
 `Read The Docs Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/>`_
 
@@ -15,7 +15,7 @@ FLEXvalue™
 
 This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. FLEXvalue uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information. FLEXvalue currently computes Total Resource Cost (TRC) and Program Administrator Cost (PAC) test results. See the `California Standard Practice Manual <https://www.cpuc.ca.gov/uploadedFiles/CPUC_Public_Website/Content/Utilities_and_Industries/Energy_-_Electricity_and_Natural_Gas/CPUC_STANDARD_PRACTICE_MANUAL.pdf>`_ for more information on cost-effectiveness tests. 
 
-The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be downloaded as a SQLite file here: `(2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_, `(2021.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2021.db>`_. 
+The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be downloaded as a SQLite file here: `(2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_, `(adjusted_acc_map.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/adjusted_acc_map.db>`_, `(2021.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2021.db>`_. 
 
 Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_2020_2021_compare.ipynb>`_ to see some preliminary results comparing the 2020 and 2021 avoided cost data.
 
@@ -31,7 +31,7 @@ For those looking to learn more about how to use this library locally or via the
 Avoided Cost Data
 #################
 
-A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file available through the `CPUC's website <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2021-03-05), the most recent update to the avoided cost data is 2020, which corresponds to the public filename of the SQLite file. 
+A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file available through the `CPUC's website <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2022-02-28), the most recent update to the avoided cost data is adjusted_acc_map, which corresponds to the public filename of the SQLite file. 
 
 deer_load_shapes
 ----------------
@@ -45,7 +45,7 @@ There are different versions of the DEER load shapes for each of the four Califo
 acc_electricity
 ---------------
 
-The electric avoided cost calculator compiles hourly marginal utility avoided costs for electric savings. Costs are provided for ten different cost components and are projected forward through 2050. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas) and Climate Zone combination. The electric avoided cost calculator also contains hourly marginal greenhouse gas emissions data, which are also forecasted to 2050.
+The electric avoided cost calculator compiles hourly marginal utility avoided costs for electric savings. Costs are provided for ten different cost components and are projected forward through 2050 for the non-adjusted acc versions and through 2043 for the kicker adjusted one. Avoided costs are distinct for each utility service territory (PG&E, SCE, SDG&E, and SoCalGas) and Climate Zone combination. The electric avoided cost calculator also contains hourly marginal greenhouse gas emissions data, which are also forecasted to 2050.
 
 The electric avoided cost calculator can be downloaded as a .xlsb file from `here <https://www.cpuc.ca.gov/General.aspx?id=5267>`_.
 
@@ -214,11 +214,11 @@ CLI Commands
 
 If you are calling these commands using the repo code and docker, replace `flexvalue` with `./flexvalue.sh`.
 
-Before calculating any results, you will need to download the avoided cost data for a given year. By default, this downloads to a folder `$DATABASE_LOCATION/{year}.db`. If you do not set the environment variable `DATABASE_LOCATION`, it will default to `DATABASE_LOCATION=.`.
+Before calculating any results, you will need to download the avoided cost data for a given version. By default, this downloads to a folder `$DATABASE_LOCATION/{version}.db`. If you do not set the environment variable `DATABASE_LOCATION`, it will default to `DATABASE_LOCATION=.`.
 
 .. code-block:: shell
 
-    flexvalue download-avoided-costs-data-db --year 2020
+    flexvalue download-avoided-costs-data-db --version 2020
 
 To get an example set of FLEXvalue™ results, run the following commands in order.
 

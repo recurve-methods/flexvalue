@@ -154,10 +154,10 @@ class FlexValueProject:
         The administrative costs assigned to a given measure, project, or portfolio
     measure: float
         The measure costs assigned to given measure, project, or portfolio
-    database_year: str
-        The year corresponding to the database that contains the avoided costs data.
-        Requires that year's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+    database_version: str
+        The version corresponding to the database that contains the avoided costs data.
+        Requires that version's database to have already been downloaded
+        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
 
     Returns
     -------
@@ -183,7 +183,7 @@ class FlexValueProject:
         admin,
         measure,
         incentive,
-        database_year="2020",
+        database_version="2020",
     ):
         self.identifier = identifier
         self.start_year = start_year
@@ -202,7 +202,7 @@ class FlexValueProject:
         self.admin = admin
         self.measure = measure
         self.incentive = incentive
-        self.database_year = database_year
+        self.database_version = database_version
 
     def calculate_trc_electricity_benefits(self):
         """Calculate electric TRC benefits
@@ -223,7 +223,7 @@ class FlexValueProject:
 
             end_year_adjustment = 0 if self.start_quarter == 1 else 1
             acc_unbounded = get_filtered_acc_elec(
-                self.database_year,
+                self.database_version,
                 self.utility,
                 self.climate_zone,
                 self.start_year,
@@ -279,7 +279,7 @@ class FlexValueProject:
             end_year_adjustment = 0 if self.start_quarter == 1 else 1
 
             acc_gas_unbounded = get_filtered_acc_gas(
-                self.database_year,
+                self.database_version,
                 self.start_year,
                 self.start_year + self.eul + end_year_adjustment,
             )
@@ -425,21 +425,21 @@ class FlexValueRun:
         This dataframe is joined with the built-in 8760 DEER
         load shapes to provide additional available load shapes when
         later constructing a user_inputs table.
-    database_year: str
-        The year corresponding to the database that contains the avoided costs data.
-        Requires that year's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --year 20XX` command.
+    database_version: str
+        The version corresponding to the database that contains the avoided costs data.
+        Requires that version's database to have already been downloaded
+        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
 
     Returns
     -------
     FlexValueRun
     """
 
-    def __init__(self, metered_load_shape=None, database_year="2020"):
-        self.database_year = database_year
+    def __init__(self, metered_load_shape=None, database_version="2020"):
+        self.database_version = database_version
 
         # Get all load_shape options
-        self.deer_load_shape = get_deer_load_shape(self.database_year)
+        self.deer_load_shape = get_deer_load_shape(self.database_version)
         self.all_load_shapes_df = (
             pd.concat([metered_load_shape, self.deer_load_shape], axis=1)
             if metered_load_shape is not None
@@ -518,7 +518,7 @@ class FlexValueRun:
                     user_input["load_shape"].upper(),
                     user_input["mwh_savings"],
                 ),
-                database_year=self.database_year,
+                database_version=self.database_version,
             )
             for user_input in user_inputs_df.reset_index().to_dict("records")
         }

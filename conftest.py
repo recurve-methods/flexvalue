@@ -8,7 +8,7 @@ def test_ids():
     return [f"{i}" for i in range(5)]
 
 def pytest_addoption(parser):
-    parser.addoption("--database-year", action="store", default="")
+    parser.addoption("--database-version", action="store", default="")
 
 
 @pytest.fixture

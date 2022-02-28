@@ -56,23 +56,23 @@ def cli():
 
 
 @cli.command()
-@click.option("-y", "--year", default="2020", show_default=True)
+@click.option("-v", "--version", default="2020", show_default=True)
 @click.option(
     "--url-prefix",
     default="https://storage.googleapis.com/flexvalue-public-resources/db/v1/",
     show_default=True,
 )
 @click.option("--skip-if-exists/--overwrite-if-exists", default=False)
-def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
-    """Downloads the avoided costs database
+def download_avoided_costs_data_db(url_prefix, version, skip_if_exists):
+    """Downloads the avoided costs database. Options for version are 2020, 2021, and adjusted_acc_map.
 
     If you are having trouble downlading this database,
-    you can instead use the following command. Currently 2020 is the only year available, but in the future there may be additional years available:
+    you can instead use the following command:
 
     `curl --output 2020.db https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db`
 
     """
-    db_filename = f"{year}.db"
+    db_filename = f"{version}.db"
     output_filepath = os.path.join(database_location(), db_filename)
     Path(database_location()).mkdir(parents=True, exist_ok=True)
 
@@ -86,11 +86,11 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
 
 @cli.command()
 @click.option(
-    "-y",
-    "--year",
+    "-v",
+    "--version",
     default="2020",
     show_default=True,
-    help="What year of the avoided costs data to use in the analysis",
+    help="What version of the avoided costs data to use in the analysis",
 )
 @click.option(
     "--output-filepath",
@@ -98,13 +98,13 @@ def download_avoided_costs_data_db(url_prefix, year, skip_if_exists):
     show_default=True,
     help="Filepath to where the example inputs will be stored",
 )
-def generate_example_inputs(output_filepath, year):
+def generate_example_inputs(output_filepath, version):
     """Generates the sample inputs that can be used in the get-results command"""
     Path(output_filepath).mkdir(parents=True, exist_ok=True)
     metered_df = get_example_metered_load_shape()
 
     metered_df.to_csv(os.path.join(output_filepath, "example_metered_load_shape.csv"))
-    get_example_user_inputs_deer(year).to_csv(
+    get_example_user_inputs_deer(version).to_csv(
         os.path.join(output_filepath, "example_user_inputs_deer.csv")
     )
     get_example_user_inputs_metered(metered_df.columns).to_csv(
@@ -141,11 +141,11 @@ def generate_example_inputs(output_filepath, year):
     help="Filepath to where the outputs table CSV will be saved",
 )
 @click.option(
-    "-y",
-    "--year",
+    "-v",
+    "--version",
     default="2020",
     show_default=True,
-    help="What year of the avoided costs data to use in the analysis",
+    help="What version of the avoided costs data to use in the analysis",
 )
 def get_results(
     user_inputs_filepath,
@@ -153,7 +153,7 @@ def get_results(
     include_report,
     outputs_table_filepath,
     report_filepath,
-    year,
+    version,
 ):
     """Calculates results and optionally writes a report"""
     if not include_report:
@@ -164,7 +164,7 @@ def get_results(
         )
         user_inputs = pd.read_csv(user_inputs_filepath)
         flexvalue_run = FlexValueRun(
-            metered_load_shape=metered_load_shape, database_year=year
+            metered_load_shape=metered_load_shape, database_version=version
         )
         (
             outputs_table,
@@ -184,7 +184,7 @@ def get_results(
         )
         user_inputs_filepath = f'"{user_inputs_filepath}"'
         outputs_table_filepath = f'"{outputs_table_filepath}"'
-        year = f'"{year}"'
+        version = f'"{version}"'
         content = dedent(
             f"""
             import pandas as pd
@@ -194,14 +194,14 @@ def get_results(
             metered_load_shape_filepath = {metered_load_shape_filepath}
             user_inputs_filepath = {user_inputs_filepath}
             outputs_table_filepath = {outputs_table_filepath}
-            database_year = {year}
+            database_version = {version}
             metered_load_shape = (
                 pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
                 if metered_load_shape_filepath
                 else None
             )
             user_inputs = pd.read_csv(user_inputs_filepath)
-            flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape, database_year=database_year)
+            flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape, database_version=database_version)
             outputs_table, outputs_table_totals, elec_benefits, gas_benefits = flexvalue_run.get_results(
                 user_inputs
             )
@@ -219,15 +219,15 @@ def get_results(
 @cli.command()
 @click.option("--utility", default=None, show_default=True)
 @click.option(
-    "-y",
-    "--year",
+    "-v",
+    "--version",
     default="2020",
     show_default=True,
-    help="What year of the avoided costs data to use in the analysis",
+    help="What version of the avoided costs data to use in the analysis",
 )
-def valid_utility_climate_zone_combos(utility, year):
+def valid_utility_climate_zone_combos(utility, version):
     """Returns all utility-climate zone combinations"""
-    utility_cz = get_all_valid_utility_climate_zone_combinations(year, utility)
+    utility_cz = get_all_valid_utility_climate_zone_combinations(version, utility)
     click.echo(
         json.dumps(
             utility_cz.groupby("utility")["climate_zone"]
@@ -240,12 +240,12 @@ def valid_utility_climate_zone_combos(utility, year):
 
 @cli.command()
 @click.option(
-    "-y",
-    "--year",
+    "-v",
+    "--version",
     default="2020",
     show_default=True,
-    help="What year of the avoided costs data to use in the analysis",
+    help="What version of the avoided costs data to use in the analysis",
 )
-def valid_deer_load_shapes(year):
+def valid_deer_load_shapes(version):
     """Returns all valid DEER load shapes"""
-    click.echo("\n".join(get_all_valid_deer_load_shapes(year)))
+    click.echo("\n".join(get_all_valid_deer_load_shapes(version)))

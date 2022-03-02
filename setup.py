@@ -31,14 +31,14 @@ from setuptools import find_packages, setup, Command
 
 NAME = "flexvalue"
 INSTALL_REQUIRES = [
-    "click",
-    "pandas",
-    "statsmodels",
-    "scipy<1.8.0", # pinned due to loss of python 3.7 support
-    "seaborn",
-    "sqlalchemy",
-    "nbformat",
-    "nbconvert",
+    "click==8.0.3",
+    "pandas==1.3.4",
+    "statsmodels==0.13.1",
+    "scipy==1.7.2",
+    "seaborn==0.11.2",
+    "sqlalchemy==1.4.27",
+    "nbformat==5.1.3",
+    "nbconvert==6.3.0",
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

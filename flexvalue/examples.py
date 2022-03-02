@@ -79,13 +79,13 @@ def get_example_user_inputs_metered(ids):
     ).set_index("ID")
 
 
-def get_example_user_inputs_deer(database_year):
+def get_example_user_inputs_deer(database_version):
     """Generates an example user_inputs file tied to a few deer load shapes
 
     Parameters
     ----------
-    database_year: str
-        The year of the database to use when selecting DEER load shapes to reference
+    database_version: str
+        The version of the database to use when selecting DEER load shapes to reference
 
     Returns
     -------
@@ -96,7 +96,7 @@ def get_example_user_inputs_deer(database_year):
             {
                 "ID": f"deer_id_{i}",
                 "load_shape": deer,
-                "start_year": database_year,
+                "start_year": database_version,
                 "start_quarter": (i % 4) + 1,
                 "utility": "PGE",
                 "climate_zone": "CZ3A",
@@ -111,6 +111,8 @@ def get_example_user_inputs_deer(database_year):
                 "therms_savings": (i + 1) * 100,
                 "mwh_savings": (i + 1) * 1000,
             }
-            for i, deer in enumerate(get_all_valid_deer_load_shapes(database_year)[:5])
+            for i, deer in enumerate(
+                get_all_valid_deer_load_shapes(database_version)[:5]
+            )
         ]
     ).set_index("ID")

@@ -88,13 +88,13 @@ def user_inputs(metered_ids, deer_ids):
 
 
 @pytest.fixture
-def database_year(pytestconfig):
-    database_year = pytestconfig.getoption("database_year")
-    if not database_year:
-        database_year = "1111"
+def database_version(pytestconfig):
+    database_version = pytestconfig.getoption("database_version")
+    if not database_version:
+        database_version = "1111"
         db_path = mkdtemp()
         os.environ["DATABASE_LOCATION"] = db_path
-        con = sqlite3.connect(f"{db_path}/{database_year}.db")
+        con = sqlite3.connect(f"{db_path}/{database_version}.db")
 
         random.seed(1)
 
@@ -148,18 +148,18 @@ def database_year(pytestconfig):
             ]
         )
         df_deer_load_shapes.to_sql("deer_load_shapes", con=con)
-    return database_year
+    return database_version
 
 
 @pytest.fixture
-def flexvalue_run(metered_load_shape, database_year):
+def flexvalue_run(metered_load_shape, database_version):
     return FlexValueRun(
-        metered_load_shape=metered_load_shape, database_year=database_year
+        metered_load_shape=metered_load_shape, database_version=database_version
     )
 
 
 def test_user_inputs_from_example_metered(
-    snapshot, database_year, user_inputs, flexvalue_run
+    snapshot, database_version, user_inputs, flexvalue_run
 ):
 
     (

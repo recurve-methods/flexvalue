@@ -4,7 +4,9 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Update acc version and variable naming related to it.
+* Update readme related to acc database information.
+* Add additional information and sources to the collab notebook pertaining to load shapes and acc.
 
 0.2.9
 -----

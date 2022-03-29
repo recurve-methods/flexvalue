@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Revert sqlalchemy to older version due to bug with >=1.4.0.
 
 0.3.0
 -----

@@ -697,6 +697,23 @@ class FlexValueRun:
         return outputs_table, outputs_table_totals, elec_benefits, gas_benefits
 
     def get_time_series_results(self, user_inputs):
+        """ Return raw time series electricity and gas benefits data.
+
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------       
+        elec_benefits: pd.DataFrame
+            Returns an hourly time series load shape for each
+            measure/project/portoflio, concatanated into a single dataframe
+        gas_benefits: float
+            Returns a quarterly time series load shape for each
+            measure/project/portoflio, concatanated into a single dataframe
+        """
         elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
         gas_benefits = self.get_all_trc_gas_benefits_df(user_inputs)
         return elec_benefits, gas_benefits

@@ -344,6 +344,7 @@ def get_time_series_results(
     outputs_gas_filepath,
     version,
 ):
+    """ Return raw time series electricity and gas benefits data. """
     metered_load_shape = (
         pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
         if metered_load_shape_filepath

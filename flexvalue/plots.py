@@ -737,16 +737,10 @@ def plot_results(outputs_table_totals, elec_benefits, gas_benefits):
         fontsize=18,
     )
     plt.annotate(
-        "TRC = " + str(trc_record),
-        xy=(350, 405),
-        xycoords="axes points",
-        fontsize=18,
+        "TRC = " + str(trc_record), xy=(350, 405), xycoords="axes points", fontsize=18
     )
     plt.annotate(
-        "PAC = " + str(pac_record),
-        xy=(350, 380),
-        xycoords="axes points",
-        fontsize=18,
+        "PAC = " + str(pac_record), xy=(350, 380), xycoords="axes points", fontsize=18
     )
     plt.annotate(
         "Net Lifecycle Electric Savings = " + str(lifecycle_net_mwh) + " MWh",

@@ -251,8 +251,6 @@ def valid_deer_load_shapes(version):
     click.echo("\n".join(get_all_valid_deer_load_shapes(version)))
 
 
-
-
 @cli.command()
 @click.option("-v", "--version", default="2020", show_default=True)
 @click.option(
@@ -340,26 +338,25 @@ def generate_example_inputs(output_filepath, version):
     help="What version of the avoided costs data to use in the analysis",
 )
 def get_time_series_results(
-    user_inputs_filepath,    
+    user_inputs_filepath,
     metered_load_shape_filepath,
     outputs_electricity_filepath,
     outputs_gas_filepath,
-    version
+    version,
 ):
     metered_load_shape = (
-            pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
-            if metered_load_shape_filepath
-            else None
+        pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
+        if metered_load_shape_filepath
+        else None
     )
     user_inputs = pd.read_csv(user_inputs_filepath)
     flexvalue_run = FlexValueRun(
         metered_load_shape=metered_load_shape, database_version=version
     )
-    
-    (
-        outputs_electricity,
-        outputs_gas
-    ) = flexvalue_run.get_time_series_results(user_inputs)
+
+    (outputs_electricity, outputs_gas) = flexvalue_run.get_time_series_results(
+        user_inputs
+    )
 
     outputs_electricity.to_csv(outputs_electricity_filepath, index=False)
     outputs_gas.to_csv(outputs_gas_filepath, index=False)

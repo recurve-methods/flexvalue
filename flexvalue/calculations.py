@@ -550,11 +550,11 @@ class FlexValueRun:
         )
 
     def get_all_trc_gas_benefits_df(self, user_inputs):
-        return (
-            pd.concat([                
+        return pd.concat(
+            [
                 flx_project.calculate_trc_gas_benefits()
                 for flx_project in self.get_flexvalue_projects(user_inputs).values()
-            ])
+            ]
         )
 
     def get_total_trc_gas_benefits(self, user_inputs):
@@ -575,7 +575,7 @@ class FlexValueRun:
             [
                 flx_project.calculate_trc_gas_benefits()["total"].sum()
                 for flx_project in self.get_flexvalue_projects(user_inputs).values()
-            ],
+            ]
         )
 
     def get_all_output_tables(self, user_inputs):
@@ -660,7 +660,7 @@ class FlexValueRun:
                     }
                 )
                 for flx_project in self.get_flexvalue_projects(user_inputs).values()
-            ],
+            ]
         ).reset_index()
 
     def get_results(self, user_inputs):
@@ -689,7 +689,7 @@ class FlexValueRun:
             user_inputs=user_inputs
         )
         elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
-        gas_benefits = self.get_total_trc_gas_benefits(user_inputs)      
+        gas_benefits = self.get_total_trc_gas_benefits(user_inputs)
         # if index wasn't already set with the ID colum, set it for joining to the output
         if user_inputs.index.name != "ID":
             user_inputs = user_inputs.set_index("ID")
@@ -698,5 +698,5 @@ class FlexValueRun:
 
     def get_time_series_results(self, user_inputs):
         elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
-        gas_benefits = self.get_all_trc_gas_benefits_df(user_inputs)      
-        return elec_benefits, gas_benefits 
+        gas_benefits = self.get_all_trc_gas_benefits_df(user_inputs)
+        return elec_benefits, gas_benefits

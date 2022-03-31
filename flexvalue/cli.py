@@ -249,3 +249,117 @@ def valid_utility_climate_zone_combos(utility, version):
 def valid_deer_load_shapes(version):
     """Returns all valid DEER load shapes"""
     click.echo("\n".join(get_all_valid_deer_load_shapes(version)))
+
+
+
+
+@cli.command()
+@click.option("-v", "--version", default="2020", show_default=True)
+@click.option(
+    "--url-prefix",
+    default="https://storage.googleapis.com/flexvalue-public-resources/db/v1/",
+    show_default=True,
+)
+@click.option("--skip-if-exists/--overwrite-if-exists", default=False)
+def download_avoided_costs_data_db(url_prefix, version, skip_if_exists):
+    """Downloads the avoided costs database. Options for version are 2020, 2021, and adjusted_acc_map.
+
+    If you are having trouble downlading this database,
+    you can instead use the following command:
+
+    `curl --output 2020.db https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db`
+
+    """
+    db_filename = f"{version}.db"
+    output_filepath = os.path.join(database_location(), db_filename)
+    Path(database_location()).mkdir(parents=True, exist_ok=True)
+
+    if skip_if_exists and os.path.exists(output_filepath):
+        logging.warning("This file already exists so it will not be downloaded again.")
+    else:
+        url = os.path.join(url_prefix, db_filename)
+        response = requests.get(url)
+        open(output_filepath, "wb").write(response.content)
+
+
+@cli.command()
+@click.option(
+    "-v",
+    "--version",
+    default="2020",
+    show_default=True,
+    help="What version of the avoided costs data to use in the analysis",
+)
+@click.option(
+    "--output-filepath",
+    default=".",
+    show_default=True,
+    help="Filepath to where the example inputs will be stored",
+)
+def generate_example_inputs(output_filepath, version):
+    """Generates the sample inputs that can be used in the get-results command"""
+    Path(output_filepath).mkdir(parents=True, exist_ok=True)
+    metered_df = get_example_metered_load_shape()
+
+    metered_df.to_csv(os.path.join(output_filepath, "example_metered_load_shape.csv"))
+    get_example_user_inputs_deer(version).to_csv(
+        os.path.join(output_filepath, "example_user_inputs_deer.csv")
+    )
+    get_example_user_inputs_metered(metered_df.columns).to_csv(
+        os.path.join(output_filepath, "example_user_inputs_metered.csv")
+    )
+
+
+@cli.command()
+@click.option(
+    "--user-inputs-filepath",
+    required=True,
+    help="Filepath to the user-inputs CSV file that is used to calculate results",
+)
+@click.option(
+    "--metered-load-shape-filepath",
+    help="Optional filepath to the CSV file containing metered load shapes",
+)
+@click.option(
+    "--outputs-electricity-filepath",
+    default="outputs_time_series_electricity.csv",
+    show_default=True,
+    help="Filepath to where the time series electricity data will be saved",
+)
+@click.option(
+    "--outputs-gas-filepath",
+    default="outputs_time_series_gas.csv",
+    show_default=True,
+    help="Filepath to where the time series gas data will be saved",
+)
+@click.option(
+    "-v",
+    "--version",
+    default="2020",
+    show_default=True,
+    help="What version of the avoided costs data to use in the analysis",
+)
+def get_time_series_results(
+    user_inputs_filepath,    
+    metered_load_shape_filepath,
+    outputs_electricity_filepath,
+    outputs_gas_filepath,
+    version
+):
+    metered_load_shape = (
+            pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
+            if metered_load_shape_filepath
+            else None
+    )
+    user_inputs = pd.read_csv(user_inputs_filepath)
+    flexvalue_run = FlexValueRun(
+        metered_load_shape=metered_load_shape, database_version=version
+    )
+    
+    (
+        outputs_electricity,
+        outputs_gas
+    ) = flexvalue_run.get_time_series_results(user_inputs)
+
+    outputs_electricity.to_csv(outputs_electricity_filepath, index=False)
+    outputs_gas.to_csv(outputs_gas_filepath, index=False)

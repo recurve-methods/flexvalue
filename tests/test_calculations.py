@@ -203,3 +203,9 @@ def test_user_inputs_single_row(
         gas_ben,
     ) = flexvalue_run.get_results(user_inputs[-1:])
     snapshot.assert_match(df_output_table_totals, "df_output_table_totals")
+
+
+def test_time_series_outputs(user_inputs, metered_load_shape, snapshot, flexvalue_run):
+    elec_outputs, gas_outputs = flexvalue_run.get_time_series_results(user_inputs)
+    snapshot.assert_match(elec_outputs, "time_series_elec_outputs")
+    snapshot.assert_match(gas_outputs, "time_series_gas_outputs")

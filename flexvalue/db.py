@@ -161,11 +161,7 @@ def get_filtered_acc_gas(database_version, start_year, end_year):
     -------
     pd.DataFrame
     """
-    columns = [
-        "year",
-        "month",
-        *ACC_COMPONENTS_GAS,
-    ]
+    columns = ["year", "month", *ACC_COMPONENTS_GAS]
     columns_str = ", ".join(columns)
     sql_str = f""" 
         SELECT * 

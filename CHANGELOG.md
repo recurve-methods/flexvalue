@@ -8,15 +8,8 @@ Development
 
 0.4.1
 -----
+* Bump to fix failed deploy
 
-
-* Placeholder
-
-0.4.0
------
-
-
-* Placeholder
 
 0.4.0
 -----

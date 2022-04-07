@@ -6,6 +6,12 @@ Development
 
 * Placeholder
 
+0.4.2
+-----
+
+
+* Placeholder
+
 0.4.1
 -----
 * Bump to fix failed deploy

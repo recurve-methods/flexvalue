@@ -4,13 +4,13 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* get_time_series_results() now returns an interator, to prevent memory errors
 
 0.4.2
 -----
 
 
-* Placeholder
+* Bump to fix failed deploy
 
 0.4.1
 -----

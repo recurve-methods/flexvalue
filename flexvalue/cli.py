@@ -297,9 +297,17 @@ def get_time_series_results(
         metered_load_shape=metered_load_shape, database_version=version
     )
 
-    (outputs_electricity, outputs_gas) = flexvalue_run.get_time_series_results(
+    outputs = flexvalue_run.get_time_series_results(
         user_inputs
     )
+    if os.path.exists(outputs_electricity_filepath):
+        os.remove(outputs_electricity_filepath)
+    if os.path.exists(outputs_gas_filepath):
+        os.remove(outputs_gas_filepath)
+    
+    for row in outputs:
+        
+        (outputs_electricity, outputs_gas) = row 
+        outputs_electricity.to_csv(outputs_electricity_filepath, mode='a', header= not os.path.exists(outputs_electricity_filepath), index=False)
+        outputs_gas.to_csv(outputs_gas_filepath, mode='a', header= not os.path.exists(outputs_gas_filepath), index=False)
 
-    outputs_electricity.to_csv(outputs_electricity_filepath, index=False)
-    outputs_gas.to_csv(outputs_gas_filepath, index=False)

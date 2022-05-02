@@ -206,6 +206,11 @@ def test_user_inputs_single_row(
 
 
 def test_time_series_outputs(user_inputs, metered_load_shape, snapshot, flexvalue_run):
-    elec_outputs, gas_outputs = flexvalue_run.get_time_series_results(user_inputs)
+   
+    outputs = flexvalue_run.get_time_series_results(user_inputs)
+    elec_outputs = pd.concat([e for (e,g) in outputs]).reset_index(drop=True)
+    outputs = flexvalue_run.get_time_series_results(user_inputs)
+    gas_outputs = pd.concat([g for (e,g) in outputs]).reset_index(drop=True)
+    
     snapshot.assert_match(elec_outputs, "time_series_elec_outputs")
     snapshot.assert_match(gas_outputs, "time_series_gas_outputs")

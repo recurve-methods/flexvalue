@@ -697,7 +697,7 @@ class FlexValueRun:
         return outputs_table, outputs_table_totals, elec_benefits, gas_benefits
 
     def get_time_series_results(self, user_inputs):
-        """ Return raw time series electricity and gas benefits data.
+        """ Return raw time series electricity and gas benefits data as an iterator.
 
         Parameters
         ----------
@@ -707,6 +707,8 @@ class FlexValueRun:
 
         Returns
         -------       
+        An iterator in which each item is a tuple with the following elements:
+        
         elec_benefits: pd.DataFrame
             Returns an hourly time series load shape for each
             measure/project/portoflio, concatanated into a single dataframe
@@ -714,6 +716,18 @@ class FlexValueRun:
             Returns a quarterly time series load shape for each
             measure/project/portoflio, concatanated into a single dataframe
         """
-        elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
-        gas_benefits = self.get_all_trc_gas_benefits_df(user_inputs)
-        return elec_benefits, gas_benefits
+        
+        
+        # In order to match the output of the get_results method, we need to 
+        # append all of the load shape column names to the data frame.  
+        load_shape_cols = [i.load_shape_df.columns[0] for i in self.get_flexvalue_projects(user_inputs).values()]
+
+        # Step through all projects in user_inputs and yield the elec and gas benefits 
+        for i in range(len(user_inputs)):            
+            row = user_inputs.iloc[i:i+1]
+            elec_benefits = self.get_all_trc_electricity_benefits_df(row)
+            for col in load_shape_cols:
+                if col not in elec_benefits.columns:
+                    elec_benefits.loc[:,col] = None
+            gas_benefits = self.get_all_trc_gas_benefits_df(row)
+            yield elec_benefits, gas_benefits

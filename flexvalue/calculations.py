@@ -578,28 +578,7 @@ class FlexValueRun:
             ]
         )
 
-    def get_all_output_tables(self, user_inputs):
-        """Returns a table containing the aggregated outputs for each project
-
-        Parameters
-        ----------
-        user_inputs: pd.DataFrame
-            A dataframe containing all of the inputs for each measure/project/portoflio
-            in the FlexValueRun
-
-        Returns
-        -------
-        pd.DataFrame
-            A table with summarized outputs including TRC and PAC, total costs,
-            and GHG impacts summed across all measure/project/portfolio entries.
-            The TRC and PAC values are then recalculated based on the summed benefits
-            and costs.
-        """
-        all_output_tables = [
-            flx_project.get_output_table()
-            for flx_project in self.get_flexvalue_projects(user_inputs).values()
-        ]
-        outputs_table = pd.concat(all_output_tables)
+    def compute_output_totals(self, outputs_table):
         outputs_table_totals = outputs_table.sum()
 
         # special recalculation of TRC and PAC
@@ -623,6 +602,31 @@ class FlexValueRun:
         outputs_table_totals["PAC Costs ($)"] = outputs_table_totals[
             "PAC Costs ($)"
         ].round(2)
+        return outputs_table_totals
+
+    def get_all_output_tables(self, user_inputs):
+        """Returns a table containing the aggregated outputs for each project
+
+        Parameters
+        ----------
+        user_inputs: pd.DataFrame
+            A dataframe containing all of the inputs for each measure/project/portoflio
+            in the FlexValueRun
+
+        Returns
+        -------
+        pd.DataFrame
+            A table with summarized outputs including TRC and PAC, total costs,
+            and GHG impacts summed across all measure/project/portfolio entries.
+            The TRC and PAC values are then recalculated based on the summed benefits
+            and costs.
+        """
+        all_output_tables = [
+            flx_project.get_output_table()
+            for flx_project in self.get_flexvalue_projects(user_inputs).values()
+        ]
+        outputs_table = pd.concat(all_output_tables)
+        outputs_table_totals = self.compute_output_totals(outputs_table)
 
         return outputs_table, outputs_table_totals
 
@@ -685,15 +689,66 @@ class FlexValueRun:
         gas_benefits: float
             The sum of all gas benefits across all measure/project/portfolio entries.
         """
-        outputs_table, outputs_table_totals = self.get_all_output_tables(
-            user_inputs=user_inputs
-        )
-        elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
-        gas_benefits = self.get_total_trc_gas_benefits(user_inputs)
-        # if index wasn't already set with the ID colum, set it for joining to the output
+        
+        # outputs_table, outputs_table_totals = self.get_all_output_tables(
+        #     user_inputs=user_inputs
+        # )
+        # elec_benefits = self.get_all_trc_electricity_benefits_df(user_inputs)
+        # gas_benefits = self.get_total_trc_gas_benefits(user_inputs)
+        # # if index wasn't already set with the ID colum, set it for joining to the output
+        # outputs_table_totals_old2 = self.compute_output_totals(outputs_table)
+
+        # if user_inputs.index.name != "ID":
+        #     user_inputs = user_inputs.set_index("ID")
+        # outputs_table = user_inputs.join(outputs_table).reset_index()
+   
+     
+
+        
+        # outputs_table_old = outputs_table
+        # outputs_table_totals_old = outputs_table_totals
+
+        # elec_benefits_old = elec_benefits
+        # gas_benefits_old = gas_benefits
+
+        outputs_table_list = []
+        outputs_table_totals_list = []
+        elec_benefits_list = []
+        gas_benefits_list = []
+
+        for i in range(len(user_inputs)):
+            row = user_inputs.iloc[i:i+1]
+
+            outputs_table, outputs_table_totals = self.get_all_output_tables(
+                user_inputs=row
+            )
+            elec_benefits = self.get_all_trc_electricity_benefits_df(row)
+            gas_benefits = self.get_total_trc_gas_benefits(row)
+            # if index wasn't already set with the ID colum, set it for joining to the output
+                     
+            outputs_table_list.append(outputs_table)
+            elec_benefits_list.append(elec_benefits)
+            gas_benefits_list.append(gas_benefits)
+        
         if user_inputs.index.name != "ID":
             user_inputs = user_inputs.set_index("ID")
+        outputs_table = pd.concat(outputs_table_list)
+        outputs_table_totals = self.compute_output_totals(outputs_table)
         outputs_table = user_inputs.join(outputs_table).reset_index()
+
+        # outputs_table1 = pd.concat(outputs_table_list)
+        # outputs_table_totals1 = pd.concat(outputs_table_totals_list)
+        # elec_benefits1 = elec_benefits_list
+        # gas_benefits1 = gas_benefits_list
+        # import pdb; pdb.set_trace()
+        # outputs_table_totals -- single series
+        # gas_benefits -- single value
+        #return outputs_table.sort_values('ID'), outputs_table_totals, elec_benefits.sort_values(['hour_of_year', 'year', 'identifier']), gas_benefits
+
+        #outputs_table = pd.concat(outputs_table_list).sort_values('ID')
+        #outputs_table_totals = self.compute_output_totals(outputs_table)
+        elec_benefits = pd.concat(elec_benefits_list).sort_values(['identifier',  'year', 'hour_of_year']).reset_index(drop=True)
+        gas_benefits = np.sum(gas_benefits_list)
         return outputs_table, outputs_table_totals, elec_benefits, gas_benefits
 
     def get_time_series_results(self, user_inputs):

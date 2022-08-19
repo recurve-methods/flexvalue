@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* get_results() refactored to avoid memory errors
 
 0.4.3
 -----

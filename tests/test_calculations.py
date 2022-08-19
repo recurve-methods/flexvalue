@@ -168,6 +168,8 @@ def test_user_inputs_from_example_metered(
         elec_benefits,
         gas_benefits,
     ) = flexvalue_run.get_results(user_inputs)
+    #df_output_table_totals = df_output_table_totals.sort_values('datetime')
+    #import pdb; pdb.set_trace()
     snapshot.assert_match(df_output_table_totals, "df_output_table_totals")
 
 
@@ -180,6 +182,7 @@ def test_electric_benefits_full_outputs(
 
 def test_user_inputs_basic(user_inputs, metered_load_shape, snapshot, flexvalue_run):
     _, df_output_table_totals, _, _ = flexvalue_run.get_results(user_inputs)
+    #import pdb; pdb.set_trace()
     snapshot.assert_match(df_output_table_totals, "df_output_table_totals")
 
 
@@ -190,6 +193,7 @@ def test_user_inputs_full(user_inputs, metered_load_shape, snapshot, flexvalue_r
         elec_ben,
         gas_ben,
     ) = flexvalue_run.get_results(user_inputs)
+    #import pdb; pdb.set_trace()
     snapshot.assert_match(df_output_table_totals, "df_output_table_totals")
 
 
@@ -202,6 +206,7 @@ def test_user_inputs_single_row(
         elec_ben,
         gas_ben,
     ) = flexvalue_run.get_results(user_inputs[-1:])
+    #import pdb; pdb.set_trace()
     snapshot.assert_match(df_output_table_totals, "df_output_table_totals")
 
 

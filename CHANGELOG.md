@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Iterate through projects to fix memory issues
 
 0.4.3
 -----

@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Fix output data type bug 
 
 0.4.4
 -----

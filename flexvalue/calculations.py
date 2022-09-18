@@ -700,6 +700,7 @@ class FlexValueRun:
             outputs_table, outputs_table_totals = self.get_all_output_tables(
                 user_inputs=row
             )
+            #import pdb; pdb.set_trace()
             elec_benefits = self.get_all_trc_electricity_benefits_df(row)
             gas_benefits = self.get_total_trc_gas_benefits(row)
             # if index wasn't already set with the ID colum, set it for joining to the output
@@ -714,6 +715,17 @@ class FlexValueRun:
         outputs_table_totals = self.compute_output_totals(outputs_table)
         outputs_table = user_inputs.join(outputs_table).reset_index()
         
+        # fix types 
+        outputs_table['admin'] = outputs_table['admin'].astype(float)
+        outputs_table['incentive'] = outputs_table['incentive'].astype(float)
+        outputs_table['measure'] = outputs_table['measure'].astype(float)
+        outputs_table['therms_savings'] = outputs_table['therms_savings'].astype(float)
+        outputs_table['units'] = outputs_table['units'].astype(float)
+        outputs_table['eul'] = outputs_table['eul'].astype(int)
+
+
+
+
         elec_benefits = pd.concat(elec_benefits_list).sort_values(['identifier',  'year', 'hour_of_year']).reset_index(drop=True)
         gas_benefits = np.sum(gas_benefits_list) 
         return outputs_table, outputs_table_totals, elec_benefits, gas_benefits

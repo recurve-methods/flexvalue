@@ -40,7 +40,8 @@ INSTALL_REQUIRES = [
     "nbformat==5.1.3",
     "nbconvert==6.3.0",
     "jinja2==3.0.3",
-    "matplotlib<3.6"
+    "matplotlib<3.6",
+    "numpy<1.23.0",
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

@@ -43,4 +43,5 @@ THERMS_PROFILE_ADJUSTMENT = {
     "PGE": {"annual": 0.9427, "summer": 0.8293, "winter": 1.0558},
     "SCE": {"annual": 0.8948, "summer": 0.8282, "winter": 0.9611},
     "SDGE": {"annual": 0.9435, "summer": 0.8394, "winter": 1.0469},
+    "SCG": {"annual": 0.9435, "summer": 0.8394, "winter": 1.0469},
 }

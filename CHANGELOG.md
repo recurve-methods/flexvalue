@@ -4,7 +4,8 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Add SCG to therms constants.
+* Pin numpy version.
 
 0.4.5
 -----

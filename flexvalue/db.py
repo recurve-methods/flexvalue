@@ -35,7 +35,8 @@ __all__ = (
 )
 
 PROJECT_INFO_FIELDS = ['project_id', 'elec_load_shape', 'start_year', 'start_quarter', 'utility', 'region', 'units', 'eul', 'ntg', 'discount_rate', 'admin_cost', 'measure_cost', 'incentive_cost', 'therms_profile', 'therms_savings', 'mwh_savings']
-
+ELEC_AV_COSTS_FIELDS = ['utility', 'region', 'year', 'hour_of_year', 'total', 'marginal_ghg']
+GAS_AV_COSTS_FIELDS = ['utility', 'year', 'month', 'total']
 
 class DBManager:
     def __init__(self, db_config_path:str) -> None:
@@ -97,16 +98,19 @@ class DBManager:
                 context['projects'].append(row)
         return context
 
-    def load_project_info_file(self, project_info_path: str):
+    def _ensure_table_exists(self, table_name, sql_filepath):
         # if the table doesn't exist, create it
-        table_exists = self.engine.has_table('project_info')
+        table_exists = self.engine.has_table(table_name)
         #print(f"table_exists = {table_exists}")
         if not table_exists:
-            sql = self._file_to_string('flexvalue/sql/create_project_info.sql')
+            sql = self._file_to_string(sql_filepath)
             #print(f"in load_project_info, table creation sql = {sql}")
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
                 print(f"sql_results = {sql_results}")
+
+    def load_project_info_file(self, project_info_path: str):
+        self._ensure_table_exists('project_info', 'flexvalue/sql/create_project_info.sql')
         context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
 
         template = self.env.get_template('load_project_info.sql')
@@ -114,6 +118,20 @@ class DBManager:
         #print(f"rendered sql = {sql}")
         ret = self._execute_sql(sql)
         #print(f"Loading project info returned {ret}")
+
+    def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
+        self._ensure_table_exists('', 'flexvalue/sql/create_elec_av_cost.sql')
+        context = self._csv_file_to_context(elec_av_costs_path, ELEC_AV_COSTS_FIELDS, 'av_costs')
+        template = self.env.get_template('load_elec_av_costs.sql')
+        sql = template.render(context)
+        ret = self._execute_sql(sql)
+
+    def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
+        self._ensure_table_exists('', 'flexvalue/sql/create_gas_av_cost.sql')
+        context = self._csv_file_to_context(gas_av_costs_path, GAS_AV_COSTS_FIELDS, 'av_costs')
+        template = self.env.get_template('load_gas_av_costs.sql')
+        sql = template.render(context)
+        ret = self._execute_sql(sql)
 
     def _execute_sql(self, sql):
         result = None

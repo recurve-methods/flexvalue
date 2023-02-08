@@ -41,9 +41,19 @@ def cli():
     "--db-config-file",
     help="Filepath to the json file containing the database configuration information."
 )
+@click.option(
+    "--elec-av-costs-file",
+    help="Filepath to the electric avoided costs."
+)
+@click.option(
+    "--gas-av-costs-file",
+    help="Filepath to the gas avoided costs."
+)
 def get_results(
     project_info,
     db_config_file,
+    elec_av_costs_file,
+    gas_av_costs_file
 ):
-    print(f"in cli.py, project_info={project_info}, db_config_file={db_config_file}")
-    run(db_config_path=db_config_file, project_info=project_info)
+    print(f"in cli.py, project_info={project_info}, db_config_file={db_config_file}, elec_av_costs_file={elec_av_costs_file}, gas_av_costs_file={gas_av_costs_file}")
+    run(db_config_path=db_config_file, project_info=project_info, elec_av_costs=elec_av_costs_file, gas_av_costs=gas_av_costs_file)

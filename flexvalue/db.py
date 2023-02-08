@@ -18,10 +18,14 @@
 
 """
 import os
-import pandas as pd
-from sqlalchemy import create_engine
-
+import json
+import csv
+from jinja2 import Environment, PackageLoader, select_autoescape
+# import pandas as pd
+from sqlalchemy import create_engine, text
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
+
+SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
 
 __all__ = (
     "get_db_connection",
@@ -30,206 +34,92 @@ __all__ = (
     "get_filtered_acc_gas",
 )
 
-
-def get_db_connection(database_version="2020"):
-    """Get the db connection for a given version
-
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
-
-    Returns
-    -------
-    sqlalchemy.engine.Engine
-    """
-    full_db_path = os.path.join(database_location(), f"{database_version}.db")
-    if not os.path.exists(full_db_path):
-        raise ValueError(f"Can not find SQLite file at this path: {full_db_path}")
-    database_url = f"sqlite:///{full_db_path}"
-    return create_engine(database_url)
+PROJECT_INFO_FIELDS = ['project_id', 'elec_load_shape', 'start_year', 'start_quarter', 'utility', 'region', 'units', 'eul', 'ntg', 'discount_rate', 'admin_cost', 'measure_cost', 'incentive_cost', 'therms_profile', 'therms_savings', 'mwh_savings']
 
 
-def execute_query(database_version, query):
-    """Execute arbitrary query on the avoided costs db
+class DBManager:
+    def __init__(self, db_config_path:str) -> None:
+        self.env = Environment(loader=PackageLoader('flexvalue'), autoescape=select_autoescape())
+        self.engine = self._get_db_engine(db_config_path)
 
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
+    def _get_db_connection_string(self, db_config_path: str) -> str:
+        database_settings = self._get_database_config(db_config_path)
+        """ Get the sqlalchemy db connection string for the given settings."""
+        database = database_settings['database']
+        host = database_settings['host']
+        port = database_settings['port']
+        user = database_settings.get('user', None)
+        password = database_settings.get('password', None)
 
-    Returns
-    -------
-    pd.DataFrame
-    """
-    con = get_db_connection(database_version=database_version)
-    return pd.read_sql(query, con=con).drop("local_pkid_", axis=1)
+        if database not in SUPPORTED_DBS:
+            raise ValueError(f"Unknown database type '{database}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}")
 
+        if database == "postgres":
+            db = database_settings.get("db", "postgres")
+            conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
+        elif database == "sqlite":
+            db = database_settings.get('db', 'dbfile.db')
+            conn_str = f"sqlite+pysqlite://{user}:{password}/{db}"
+        return conn_str
 
-def get_deer_load_shape(database_version):
-    """Returns all of the deer load shape 8760 load profiles
+    def _get_db_engine(self, db_config_path: str): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
+        conn_str = self._get_db_connection_string(db_config_path) if db_config_path else self._get_default_db_conn_str()
+        engine = create_engine(conn_str)
+        #print(f"in _get_db_engine, engine = {engine}")
+        return engine
 
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
+    def _get_database_config(self, db_config_path:str) -> dict:
+        db_config = {}
+        with open(db_config_path) as f:
+            config_str = f.read()
+            db_config = json.loads(config_str)
+        return db_config
 
-    Returns
-    -------
-    pd.DataFrame
-    """
-    con = get_db_connection(database_version=database_version)
-    return pd.read_sql_table("deer_load_shapes", con=con).set_index("hour_of_year")
+    def _get_default_db_conn_str(self) -> str:
+        """ If no db config file is provided, default to a local sqlite database."""
+        return "sqlite+pysqlite:///flexvalue.db"
 
+    def _file_to_string(self, filename):
+        ret = None
+        with open(filename) as f:
+            ret = f.read()
+        return ret
 
-def get_filtered_acc_elec(
-    database_version, utility, climate_zone, start_year, end_year
-):
-    """Returns the electricity avoided costs data
+    def _csv_file_to_context(self, filepath, fieldnames, context_key):
+        context = {context_key: []}
+        with open(filepath, newline='') as f:
+            has_header = csv.Sniffer().has_header(f.read(1024))
+            f.seek(0)
+            csv_reader = csv.DictReader(f, fieldnames=fieldnames)
+            if has_header:
+                next(csv_reader, None)
+            for row in csv_reader:
+                context['projects'].append(row)
+        return context
 
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
-    utility: str
-        Which uility to filter by when loading avoided costs data
-    climate_zone: str
-        Which climate zone to filter by when loading avoided costs data
-    start_year: int
-        Which year to start the filter of avoided costs data
-    end_year: int
-        Which year to end the filter of avoided costs data
+    def load_project_info_file(self, project_info_path: str):
+        # if the table doesn't exist, create it
+        table_exists = self.engine.has_table('project_info')
+        #print(f"table_exists = {table_exists}")
+        if not table_exists:
+            sql = self._file_to_string('flexvalue/sql/create_project_info.sql')
+            #print(f"in load_project_info, table creation sql = {sql}")
+            with self.engine.begin() as conn:
+                sql_results = conn.execute(text(sql))
+                print(f"sql_results = {sql_results}")
+        context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
 
-    Returns
-    -------
-    pd.DataFrame
-    """
-    columns = [
-        "year",
-        "month",
-        "hour_of_day",
-        "hour_of_year",
-        *ACC_COMPONENTS_ELECTRICITY,
-        "marginal_ghg",
-    ]
-    columns_str = ", ".join(columns)
-    climate_zone = (
-        climate_zone if climate_zone.startswith("CZ") else f"CZ{climate_zone}"
-    )
-    sql_str = f""" 
-        SELECT * 
-        FROM acc_electricity
-        WHERE utility = '{utility}'
-        AND climate_zone = '{climate_zone}'
-        AND year >= {start_year}
-        AND year <= {end_year}
-    """
-    con = get_db_connection(database_version=database_version)
-    df = pd.read_sql(sql_str, con=con)
-    if df.empty:
-        raise ValueError(
-            "Can not find avoided costs for\n:"
-            f"utility:{utility}\nclimate_zone:{climate_zone}\nstart_year:{start_year}\n"
-            f"end_year:{end_year}"
-        )
-    return df
+        template = self.env.get_template('load_project_info.sql')
+        sql = template.render(context)
+        #print(f"rendered sql = {sql}")
+        ret = self._execute_sql(sql)
+        #print(f"Loading project info returned {ret}")
+
+    def _execute_sql(self, sql):
+        result = None
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+        return result
 
 
-def get_filtered_acc_gas(database_version, start_year, end_year):
-    """Returns gas avoided costs data
 
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
-    start_year: int
-        Which year to start the filter of avoided costs data
-    end_year: int
-        Which year to end the filter of avoided costs data
-
-    Returns
-    -------
-    pd.DataFrame
-    """
-    columns = ["year", "month", *ACC_COMPONENTS_GAS]
-    columns_str = ", ".join(columns)
-    sql_str = f""" 
-        SELECT * 
-        FROM acc_gas
-        WHERE year >= {start_year}
-        AND year <= {end_year}
-    """
-    con = get_db_connection(database_version=database_version)
-    return pd.read_sql(sql_str, con=con)
-
-
-def get_all_valid_utility_climate_zone_combinations(database_version, utility=None):
-    """Returns all utility-climate zone combinations
-
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
-    utility: str
-        (optional) Which uility to filter by when loading avoided costs data
-
-    Returns
-    -------
-    pd.DataFrame
-    """
-    where_str = f"WHERE utility = '{utility}'" if utility else ""
-    query = f"""
-    SELECT * 
-    FROM acc_electricity_utilities_climate_zones
-    {where_str}
-    """
-    return execute_query(database_version, query)
-
-
-def get_all_valid_deer_load_shapes(database_version):
-    """Returns all valid DEER load shapes
-
-    Parameters
-    ----------
-    database_version: str
-        The version corresponding to the database that contains the avoided costs data.
-        Requires that version's database to have already been downloaded
-        using the `flexvalue downloaded-avoided-costs-data-db --version 20XX` command.
-
-    Returns
-    -------
-    list
-    """
-    query = """
-        SELECT *
-        FROM deer_load_shapes
-        limit 1
-        """
-    valid_deer_load_shapes = execute_query(database_version, query)
-    all_columns_w_utilities = list(
-        valid_deer_load_shapes.drop("hour_of_year", axis=1).columns
-    )
-    # TODO (ssuffian): Reshape db so it is a query by utility column
-    return list(
-        set(
-            [
-                c.replace("PGE_", "")
-                .replace("SDGE_", "")
-                .replace("SCG_", "")
-                .replace("SCE_", "")
-                for c in all_columns_w_utilities
-            ]
-        )
-    )

@@ -27,15 +27,14 @@ from .db import DBManager #get_filtered_acc_elec, get_filtered_acc_gas, get_deer
 
 __all__ = (
     "run",
-    "get_quarterly_discount_df",
-    "calculate_trc_costs",
-    "calculate_pac_costs",
-    "FlexValueProject",
-    "FlexValueRun",
 )
 
 
-def run(db_config_path=None, project_info=None):
+def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs=None):
     db_manager = DBManager(db_config_path=db_config_path)
     db_manager.load_project_info_file(project_info_path=project_info)
+    if elec_av_costs:
+        db_manager.load_elec_avoided_costs_file(elec_av_costs_path=elec_av_costs)
+    if gas_av_costs:
+        db_manager.load_gas_avoided_costs_file(gas_av_costs_path=gas_av_costs)
 

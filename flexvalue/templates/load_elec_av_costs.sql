@@ -7,11 +7,11 @@ INSERT INTO elec_av_costs (
     marginal_ghg
 )
 VALUES 
-{% for cost in costs %}
+{% for cost in av_costs %}
 ("{{ cost.utility }}",
 "{{ cost.region }}",
 {{cost.year}},
 {{cost.hour_of_year}},
 {{cost.total}},
 {{cost.marginal_ghg}}
-) {% if not loop.last %},{% endif %};
+) {% if not loop.last %},{% endif %}{% endfor %};

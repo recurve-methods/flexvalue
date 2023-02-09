@@ -20,6 +20,7 @@
 import os
 import json
 import csv
+import math
 from jinja2 import Environment, PackageLoader, select_autoescape
 # import pandas as pd
 from sqlalchemy import create_engine, text
@@ -95,10 +96,10 @@ class DBManager:
             if has_header:
                 next(csv_reader, None)
             for row in csv_reader:
-                context['projects'].append(row)
+                context[context_key].append(row)
         return context
 
-    def _ensure_table_exists(self, table_name, sql_filepath):
+    def _prepare_table(self, table_name: str, sql_filepath:str, truncate=False):
         # if the table doesn't exist, create it
         table_exists = self.engine.has_table(table_name)
         #print(f"table_exists = {table_exists}")
@@ -107,30 +108,50 @@ class DBManager:
             #print(f"in load_project_info, table creation sql = {sql}")
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
-                print(f"sql_results = {sql_results}")
+                print(f'sql_results = {sql_results}')
+        if truncate:
+            # sqlite doesn't support TRUNCATE
+            if self.engine.dialect.name == 'sqlite':
+                self._execute_sql(f'DELETE FROM {table_name};')
+            else:
+                self._execute_sql(f'TRUNCATE TABLE {table_name};')
+
+    def _load_discount_table(self, project_context: str):
+        self._prepare_table('discount', 'flexvalue/sql/create_discount.sql', truncate=True)
+        discount_context = {'discounts': []}
+        for project in project_context['projects']:
+            for quarter in range(4 * int(project['eul'])):
+                discount_rate = float(project['discount_rate'])
+                discount = 1.0 / math.pow((1.0 + (discount_rate / 4.0)), quarter)
+                discount_context['discounts'].append({'project_id': project['project_id'], 'quarter': quarter + 1, 'discount': discount})
+        template = self.env.get_template('load_discount.sql')
+        sql = template.render(discount_context)
+        print(f"discount table load sql = {sql}")
+        ret = self._execute_sql(sql)
 
     def load_project_info_file(self, project_info_path: str):
-        self._ensure_table_exists('project_info', 'flexvalue/sql/create_project_info.sql')
+        self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
         context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
-
         template = self.env.get_template('load_project_info.sql')
         sql = template.render(context)
-        #print(f"rendered sql = {sql}")
         ret = self._execute_sql(sql)
         #print(f"Loading project info returned {ret}")
+        self._load_discount_table(context)
 
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
-        self._ensure_table_exists('', 'flexvalue/sql/create_elec_av_cost.sql')
+        self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')
         context = self._csv_file_to_context(elec_av_costs_path, ELEC_AV_COSTS_FIELDS, 'av_costs')
         template = self.env.get_template('load_elec_av_costs.sql')
         sql = template.render(context)
         ret = self._execute_sql(sql)
 
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
-        self._ensure_table_exists('', 'flexvalue/sql/create_gas_av_cost.sql')
+        self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
+        print(f"in load_gas_avoided_costs, gas_av_costs_path = {gas_av_costs_path}")
         context = self._csv_file_to_context(gas_av_costs_path, GAS_AV_COSTS_FIELDS, 'av_costs')
         template = self.env.get_template('load_gas_av_costs.sql')
         sql = template.render(context)
+        #print(f"first part of sql is {sql[:1024]}")
         ret = self._execute_sql(sql)
 
     def _execute_sql(self, sql):

@@ -1,6 +1,9 @@
 CREATE TABLE project_info (
     project_id VARCHAR,
+    mwh_savings FLOAT,
+    therms_savings FLOAT,
     elec_load_shape VARCHAR,
+    therms_profile VARCHAR,
     start_year INTEGER,
     start_quarter INTEGER,
     utility VARCHAR,
@@ -11,8 +14,5 @@ CREATE TABLE project_info (
     discount_rate FLOAT,
     admin_cost FLOAT,
     measure_cost FLOAT,
-    incentive_cost FLOAT,
-    therms_profile VARCHAR,
-    therms_savings FLOAT,
-    mwh_savings FLOAT
+    incentive_cost FLOAT
 );

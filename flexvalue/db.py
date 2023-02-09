@@ -35,7 +35,7 @@ __all__ = (
     "get_filtered_acc_gas",
 )
 
-PROJECT_INFO_FIELDS = ['project_id', 'elec_load_shape', 'start_year', 'start_quarter', 'utility', 'region', 'units', 'eul', 'ntg', 'discount_rate', 'admin_cost', 'measure_cost', 'incentive_cost', 'therms_profile', 'therms_savings', 'mwh_savings']
+PROJECT_INFO_FIELDS = ['project_id', 'mwh_savings', 'therms_savings', 'elec_load_shape', 'therms_profile', 'start_year', 'start_quarter', 'utility', 'region', 'units', 'eul', 'ntg', 'discount_rate', 'admin_cost', 'measure_cost', 'incentive_cost']
 ELEC_AV_COSTS_FIELDS = ['utility', 'region', 'year', 'hour_of_year', 'total', 'marginal_ghg']
 GAS_AV_COSTS_FIELDS = ['utility', 'year', 'month', 'total']
 

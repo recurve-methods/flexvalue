@@ -45,8 +45,8 @@ class DBManager:
         self.engine = self._get_db_engine(db_config_path)
 
     def _get_db_connection_string(self, db_config_path: str) -> str:
-        database_settings = self._get_database_config(db_config_path)
         """ Get the sqlalchemy db connection string for the given settings."""
+        database_settings = self._get_database_config(db_config_path)
         database = database_settings['database']
         host = database_settings['host']
         port = database_settings['port']
@@ -56,6 +56,8 @@ class DBManager:
         if database not in SUPPORTED_DBS:
             raise ValueError(f"Unknown database type '{database}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}")
 
+        # TODO: get these all working
+        # TODO: add support for BigQuery via https://github.com/googleapis/python-bigquery-sqlalchemy
         if database == "postgres":
             db = database_settings.get("db", "postgres")
             conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
@@ -67,7 +69,6 @@ class DBManager:
     def _get_db_engine(self, db_config_path: str): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
         conn_str = self._get_db_connection_string(db_config_path) if db_config_path else self._get_default_db_conn_str()
         engine = create_engine(conn_str)
-        #print(f"in _get_db_engine, engine = {engine}")
         return engine
 
     def _get_database_config(self, db_config_path:str) -> dict:
@@ -102,19 +103,17 @@ class DBManager:
     def _prepare_table(self, table_name: str, sql_filepath:str, truncate=False):
         # if the table doesn't exist, create it
         table_exists = self.engine.has_table(table_name)
-        #print(f"table_exists = {table_exists}")
         if not table_exists:
             sql = self._file_to_string(sql_filepath)
-            #print(f"in load_project_info, table creation sql = {sql}")
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
                 print(f'sql_results = {sql_results}')
         if truncate:
             # sqlite doesn't support TRUNCATE
             if self.engine.dialect.name == 'sqlite':
-                self._execute_sql(f'DELETE FROM {table_name};')
+                self._exec_delete_sql(f'DELETE FROM {table_name};')
             else:
-                self._execute_sql(f'TRUNCATE TABLE {table_name};')
+                self._exec_delete_sql(f'TRUNCATE TABLE {table_name};')
 
     def _load_discount_table(self, project_context: str):
         self._prepare_table('discount', 'flexvalue/sql/create_discount.sql', truncate=True)
@@ -126,16 +125,14 @@ class DBManager:
                 discount_context['discounts'].append({'project_id': project['project_id'], 'quarter': quarter + 1, 'discount': discount})
         template = self.template_env.get_template('load_discount.sql')
         sql = template.render(discount_context)
-        print(f"discount table load sql = {sql}")
-        ret = self._execute_sql(sql)
+        ret = self._exec_insert_sql(sql)
 
     def load_project_info_file(self, project_info_path: str):
         self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
         context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
         template = self.template_env.get_template('load_project_info.sql')
         sql = template.render(context)
-        ret = self._execute_sql(sql)
-        #print(f"Loading project info returned {ret}")
+        ret = self._exec_insert_sql(sql)
         self._load_discount_table(context)
 
     def load_deer_load_shapes_file(self, elec_load_shapes_path: str):
@@ -181,7 +178,7 @@ class DBManager:
         context = self._csv_file_to_context(elec_av_costs_path, ELEC_AV_COSTS_FIELDS, 'av_costs')
         template = self.template_env.get_template('load_elec_av_costs.sql')
         sql = template.render(context)
-        ret = self._execute_sql(sql)
+        ret = self._exec_insert_sql(sql)
 
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
@@ -189,14 +186,32 @@ class DBManager:
         context = self._csv_file_to_context(gas_av_costs_path, GAS_AV_COSTS_FIELDS, 'av_costs')
         template = self.template_env.get_template('load_gas_av_costs.sql')
         sql = template.render(context)
-        #print(f"first part of sql is {sql[:1024]}")
-        ret = self._execute_sql(sql)
+        ret = self._exec_insert_sql(sql)
 
-    def _execute_sql(self, sql):
-        result = None
+    def _exec_insert_sql(self, sql) -> int:
+        ret = None
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
-        return result
+            ret = result.rowcount
+        return ret
 
+    def _exec_create_sql(self, sql):
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+
+    def _exec_select_sql(self, sql):
+        """ Returns a list of tuples that have been copied from the sqlalchemy result. """
+        # The pro of this approach is encapsulation of sqlalchemy, and minimizing code repetition
+        # The con is that we use twice as much memory by copying the results and then processing them elsewhere.
+        # TODO we might want to get rid of these _exec_foo_sql functions and just deal with the sqlalchemy calls
+        ret = None
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+            ret = [x for x in result]
+        return ret
+
+    def _exec_delete_sql(self, sql):
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
 
 

@@ -41,7 +41,7 @@ GAS_AV_COSTS_FIELDS = ['utility', 'year', 'month', 'total']
 
 class DBManager:
     def __init__(self, db_config_path:str) -> None:
-        self.env = Environment(loader=PackageLoader('flexvalue'), autoescape=select_autoescape())
+        self.template_env = Environment(loader=PackageLoader('flexvalue'), autoescape=select_autoescape())
         self.engine = self._get_db_engine(db_config_path)
 
     def _get_db_connection_string(self, db_config_path: str) -> str:
@@ -124,7 +124,7 @@ class DBManager:
                 discount_rate = float(project['discount_rate'])
                 discount = 1.0 / math.pow((1.0 + (discount_rate / 4.0)), quarter)
                 discount_context['discounts'].append({'project_id': project['project_id'], 'quarter': quarter + 1, 'discount': discount})
-        template = self.env.get_template('load_discount.sql')
+        template = self.template_env.get_template('load_discount.sql')
         sql = template.render(discount_context)
         print(f"discount table load sql = {sql}")
         ret = self._execute_sql(sql)
@@ -132,16 +132,54 @@ class DBManager:
     def load_project_info_file(self, project_info_path: str):
         self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
         context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
-        template = self.env.get_template('load_project_info.sql')
+        template = self.template_env.get_template('load_project_info.sql')
         sql = template.render(context)
         ret = self._execute_sql(sql)
         #print(f"Loading project info returned {ret}")
         self._load_discount_table(context)
 
+    def load_deer_load_shapes_file(self, elec_load_shapes_path: str):
+        """ Load the DEER electric load shapes (csv) file. The first 2 columns
+        are the utility and hour of year. Then there are a variable number of
+        columns, one for each load shape. This function parses that file to
+        construct a SQL INSERT statement with the data, then inserts the data
+        into the elec_load_shape table.
+        """
+        self._prepare_table('elec_load_shape', 'flexvalue/sql/create_elec_load_shape.sql')
+        context = {'load_shapes':[]}
+        with open(elec_load_shapes_path, newline='') as f:
+            # 4096 was determined empirically; I don't recommend reading less
+            # than this, since there can be so many columns
+            has_header = csv.Sniffer().has_header(f.read(4096))
+            if not has_header:
+                raise ValueError(f"The electric load shape file you provided, {elec_load_shapes_path}, \
+                                 doesn't seem to have a header row. Please provide a header row \
+                                 containing the load shape names.")
+            f.seek(0)
+            csv_reader = csv.reader(f)
+            rows = []
+            for row in csv_reader:
+                rows.append(row)
+            # TODO can we clean this up?
+            num_columns = len(rows[0])
+            for col in range(2,num_columns):
+                for row in range(1,len(rows)):
+                    context['load_shapes'].append({
+                        'utility': rows[row][0],
+                        'load_shape_name': rows[0][col],
+                        'hour_of_year': rows[row][1],
+                        'value': rows[row][col]
+                    })
+            template = self.template_env.get_template('load_elec_load_shape.sql')
+            sql = template.render(context)
+            result = self._exec_insert_sql(sql)
+            print(f"loaded {result.rowcount} rows")
+
+
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
         self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')
         context = self._csv_file_to_context(elec_av_costs_path, ELEC_AV_COSTS_FIELDS, 'av_costs')
-        template = self.env.get_template('load_elec_av_costs.sql')
+        template = self.template_env.get_template('load_elec_av_costs.sql')
         sql = template.render(context)
         ret = self._execute_sql(sql)
 
@@ -149,7 +187,7 @@ class DBManager:
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
         print(f"in load_gas_avoided_costs, gas_av_costs_path = {gas_av_costs_path}")
         context = self._csv_file_to_context(gas_av_costs_path, GAS_AV_COSTS_FIELDS, 'av_costs')
-        template = self.env.get_template('load_gas_av_costs.sql')
+        template = self.template_env.get_template('load_gas_av_costs.sql')
         sql = template.render(context)
         #print(f"first part of sql is {sql[:1024]}")
         ret = self._execute_sql(sql)

@@ -38,6 +38,14 @@ __all__ = (
 PROJECT_INFO_FIELDS = ['project_id', 'mwh_savings', 'therms_savings', 'elec_load_shape', 'therms_profile', 'start_year', 'start_quarter', 'utility', 'region', 'units', 'eul', 'ntg', 'discount_rate', 'admin_cost', 'measure_cost', 'incentive_cost']
 ELEC_AV_COSTS_FIELDS = ['utility', 'region', 'year', 'hour_of_year', 'total', 'marginal_ghg']
 GAS_AV_COSTS_FIELDS = ['utility', 'year', 'month', 'total']
+ELEC_AVOIDED_COSTS_FIELDNAMES = ["state", "utility", "region", "datetime", "year", "quarter", "month", "hour_of_day",
+    "hour_of_year", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution",
+    "cap_and_trade", "ghg_adder", "ghg_rebalancing", "methane_leakage", "total", "marginal_ghg",
+    "ghg_adder_rebalancing"
+]
+
+INSERT_ROW_COUNT = 100000
+
 
 class DBManager:
     def __init__(self, db_config_path:str) -> None:
@@ -155,6 +163,7 @@ class DBManager:
             f.seek(0)
             csv_reader = csv.reader(f)
             rows = []
+            # TODO do we need to chunk this?
             for row in csv_reader:
                 rows.append(row)
             # TODO can we clean this up?
@@ -172,13 +181,36 @@ class DBManager:
             result = self._exec_insert_sql(sql)
             print(f"loaded {result.rowcount} rows")
 
-
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
+        """ Loads the electric avoided costs table, Since this table can be over a gibibyte,
+        the load reads in chunks of data and inserts them sequentially. The chunk size is
+        determined by INSERT_ROW_COUNT in this file. """
         self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')
-        context = self._csv_file_to_context(elec_av_costs_path, ELEC_AV_COSTS_FIELDS, 'av_costs')
-        template = self.template_env.get_template('load_elec_av_costs.sql')
-        sql = template.render(context)
-        ret = self._exec_insert_sql(sql)
+        with open(elec_av_costs_path, newline='') as f:
+            # 4096 was determined empirically; I don't recommend reading less
+            # than this, since there can be so many columns
+            has_header = csv.Sniffer().has_header(f.read(4096))
+            f.seek(0)
+            csv_reader = csv.DictReader(f, fieldnames=ELEC_AVOIDED_COSTS_FIELDNAMES)
+            if has_header:
+                next(csv_reader)
+            buffer = []
+            rownum = 0
+            insert_text = self._file_to_string("flexvalue/templates/load_elec_av_costs.sql")
+            print(f"insert_text = {insert_text}")
+            for row in csv_reader:
+                buffer.append(row)
+                rownum += 1
+                if rownum == INSERT_ROW_COUNT:
+                    # print(f"Hit INSERT_ROW_COUNT, inserting")
+                    with self.engine.begin() as conn:
+                        conn.execute(text(insert_text), buffer)
+                    buffer = []
+                    rownum = 0
+            else:
+                # print(f"In finally, inserting {len(buffer)} rows")
+                with self.engine.begin() as conn:
+                    conn.execute(text(insert_text), buffer)
 
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')

@@ -1,13 +1,16 @@
 INSERT INTO gas_av_costs (
-    utility,
-    year,
-    month,
-    total
+state,
+utility,
+region,
+year,
+quarter,
+month,
+market,
+t_d,
+environment,
+btm_methane,
+total,
+upstream_methane,
+marginal_ghg
 )
-VALUES 
-{% for cost in av_costs %}
-("{{ cost.utility }}",
-{{cost.year}},
-{{cost.month}},
-{{cost.total}}
-){% if not loop.last %},{% endif %}{% endfor %};
+VALUES (:state, :utility, :region, :year, :quarter, :month, :market, :t_d, :environment, :btm_methane, :total, :upstream_methane, :marginal_ghg)

@@ -115,7 +115,7 @@ class DBManager:
             sql = self._file_to_string(sql_filepath)
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
-                print(f'sql_results = {sql_results}')
+                # print(f'results from table creation = {sql_results}')
         if truncate:
             # sqlite doesn't support TRUNCATE
             if self.engine.dialect.name == 'sqlite':
@@ -181,23 +181,21 @@ class DBManager:
             result = self._exec_insert_sql(sql)
             print(f"loaded {result.rowcount} rows")
 
-    def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
-        """ Loads the electric avoided costs table, Since this table can be over a gibibyte,
+    def _load_csv_file(self, csv_file_path:str, table_name: str, fieldnames, load_sql_file_path:str):
+        """ Loads the table_name table, Since some of the input data can be over a gibibyte,
         the load reads in chunks of data and inserts them sequentially. The chunk size is
         determined by INSERT_ROW_COUNT in this file. """
-        self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')
-        with open(elec_av_costs_path, newline='') as f:
-            # 4096 was determined empirically; I don't recommend reading less
-            # than this, since there can be so many columns
+        with open(csv_file_path, newline='') as f:
+            # 4096 was determined empirically; I don't recommend reading fewer
+            # bytes than this, since there can be so many columns
             has_header = csv.Sniffer().has_header(f.read(4096))
             f.seek(0)
-            csv_reader = csv.DictReader(f, fieldnames=ELEC_AVOIDED_COSTS_FIELDNAMES)
+            csv_reader = csv.DictReader(f, fieldnames=fieldnames)
             if has_header:
                 next(csv_reader)
             buffer = []
             rownum = 0
-            insert_text = self._file_to_string("flexvalue/templates/load_elec_av_costs.sql")
-            print(f"insert_text = {insert_text}")
+            insert_text = self._file_to_string(load_sql_file_path)
             for row in csv_reader:
                 buffer.append(row)
                 rownum += 1
@@ -208,17 +206,17 @@ class DBManager:
                     buffer = []
                     rownum = 0
             else:
-                # print(f"In finally, inserting {len(buffer)} rows")
+                print(f"In finally, inserting {len(buffer)} rows")
                 with self.engine.begin() as conn:
                     conn.execute(text(insert_text), buffer)
 
+    def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
+        self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')
+        self._load_csv_file(elec_av_costs_path, 'elec_av_costs', ELEC_AVOIDED_COSTS_FIELDS, "flexvalue/templates/load_elec_av_costs.sql")
+
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
-        print(f"in load_gas_avoided_costs, gas_av_costs_path = {gas_av_costs_path}")
-        context = self._csv_file_to_context(gas_av_costs_path, GAS_AV_COSTS_FIELDS, 'av_costs')
-        template = self.template_env.get_template('load_gas_av_costs.sql')
-        sql = template.render(context)
-        ret = self._exec_insert_sql(sql)
+        self._load_csv_file(gas_av_costs_path, 'gas_av_costs', GAS_AV_COSTS_FIELDS, "flexvalue/templates/load_gas_av_costs.sql")
 
     def _exec_insert_sql(self, sql) -> int:
         ret = None

@@ -37,8 +37,8 @@ __all__ = (
 
 PROJECT_INFO_FIELDS = ['project_id', 'mwh_savings', 'therms_savings', 'elec_load_shape', 'therms_profile', 'start_year', 'start_quarter', 'utility', 'region', 'units', 'eul', 'ntg', 'discount_rate', 'admin_cost', 'measure_cost', 'incentive_cost']
 ELEC_AV_COSTS_FIELDS = ['utility', 'region', 'year', 'hour_of_year', 'total', 'marginal_ghg']
-GAS_AV_COSTS_FIELDS = ['utility', 'year', 'month', 'total']
-ELEC_AVOIDED_COSTS_FIELDNAMES = ["state", "utility", "region", "datetime", "year", "quarter", "month", "hour_of_day",
+GAS_AV_COSTS_FIELDS = ["state", "utility", "region", "year", "quarter", "month", "market", "t_d", "environment", "btm_methane", "total", "upstream_methane", "marginal_ghg"]
+ELEC_AVOIDED_COSTS_FIELDS = ["state", "utility", "region", "datetime", "year", "quarter", "month", "hour_of_day",
     "hour_of_year", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution",
     "cap_and_trade", "ghg_adder", "ghg_rebalancing", "methane_leakage", "total", "marginal_ghg",
     "ghg_adder_rebalancing"

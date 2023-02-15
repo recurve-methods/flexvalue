@@ -185,6 +185,7 @@ class DBManager:
         """ Loads the table_name table, Since some of the input data can be over a gibibyte,
         the load reads in chunks of data and inserts them sequentially. The chunk size is
         determined by INSERT_ROW_COUNT in this file. """
+        # TODO when we support postgres there are other approaches to load csv data much more quickly; use them
         with open(csv_file_path, newline='') as f:
             # 4096 was determined empirically; I don't recommend reading fewer
             # bytes than this, since there can be so many columns
@@ -209,6 +210,9 @@ class DBManager:
                 print(f"In finally, inserting {len(buffer)} rows")
                 with self.engine.begin() as conn:
                     conn.execute(text(insert_text), buffer)
+
+    def load_therms_profiles_file(self, therms_profiles_path: str):
+        self._prepare_table('therms_profile', 'flexvalue/sql/create_therms_profile.sql')
 
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
         self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')

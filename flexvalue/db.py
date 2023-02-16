@@ -143,16 +143,9 @@ class DBManager:
         ret = self._exec_insert_sql(sql)
         self._load_discount_table(context)
 
-    def load_elec_load_shapes_file(self, elec_load_shapes_path: str):
-        """ Load the DEER electric load shapes (csv) file. The first 2 columns
-        are the utility and hour of year. Then there are a variable number of
-        columns, one for each load shape. This function parses that file to
-        construct a SQL INSERT statement with the data, then inserts the data
-        into the elec_load_shape table.
-        """
-        self._prepare_table('elec_load_shape', 'flexvalue/sql/create_elec_load_shape.sql')
-        context = {'load_shapes':[]}
-        with open(elec_load_shapes_path, newline='') as f:
+    def _csv_file_to_rows(self, csv_file_path):
+        rows = []
+        with open(csv_file_path, newline='') as f:
             # 4096 was determined empirically; I don't recommend reading less
             # than this, since there can be so many columns
             has_header = csv.Sniffer().has_header(f.read(4096))
@@ -163,57 +156,59 @@ class DBManager:
             f.seek(0)
             csv_reader = csv.reader(f)
             rows = []
-            # TODO do we need to chunk this?
+            # Note that we're reading the whole file into memory - don't use this on big files.
             for row in csv_reader:
                 rows.append(row)
-            # TODO can we clean this up?
-            num_columns = len(rows[0])
-            for col in range(2,num_columns):
-                for row in range(1,len(rows)):
-                    context['load_shapes'].append({
-                        'utility': rows[row][0],
-                        'load_shape_name': rows[0][col],
-                        'hour_of_year': rows[row][1],
-                        'value': rows[row][col]
-                    })
-            template = self.template_env.get_template('load_elec_load_shape.sql')
-            sql = template.render(context)
-            result = self._exec_insert_sql(sql)
-            print(f"loaded {result.rowcount} rows")
+        return rows
+
+    def load_elec_load_shapes_file(self, elec_load_shapes_path: str):
+        """ Load the hourly electric load shapes (csv) file. The first 7 columns
+        are fixed. Then there are a variable number of columns, one for each
+        load shape. This function parses that file to construct a SQL INSERT
+        statement with the data, then inserts the data into the elec_load_shape
+        table.
+        """
+        self._prepare_table('elec_load_shape', 'flexvalue/sql/create_elec_load_shape.sql')
+        rows = self._csv_file_to_rows(elec_load_shapes_path)
+        # TODO can we clean this up?
+        num_columns = len(rows[0])
+        buffer = []
+        for col in range(7, num_columns):
+            for row in range(1, len(rows)):
+                buffer.append({
+                    'state': rows[row][0],
+                    'utility': rows[row][1],
+                    'region': rows[row][2],
+                    'quarter': rows[row][3],
+                    'month': rows[row][4],
+                    'hour_of_day': rows[row][5],
+                    'hour_of_year': rows[row][6],
+                    'load_shape_name': rows[0][col],
+                    'value': rows[row][col]
+                })
+        insert_text = self._file_to_string('flexvalue/templates/load_elec_load_shape.sql')
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), buffer)
 
     def load_therms_profiles_file(self, therms_profiles_path: str):
         self._prepare_table('therms_profile', 'flexvalue/sql/create_therms_profile.sql')
-        with open(therms_profiles_path, newline='') as f:
-            # 4096 was determined empirically; I don't recommend reading less
-            # than this, since there can be so many columns
-            has_header = csv.Sniffer().has_header(f.read(4096))
-            if not has_header:
-                raise ValueError(f"The therms profiles file you provided, {therms_profiles_path}, \
-                                 doesn't seem to have a header row. Please provide a header row \
-                                 containing the profile names.")
-            f.seek(0)
-            csv_reader = csv.reader(f)
-            rows = []
-            # TODO do we need to chunk this?
-            for row in csv_reader:
-                rows.append(row)
-            insert_text = self._file_to_string("flexvalue/templates/load_therms_profiles.sql")
-            # TODO can we clean this up?
-            num_columns = len(rows[0])
-            buffer = []
-            for col in range(5,num_columns):
-                for row in range(1,len(rows)):
-                    buffer.append({
-                        'state': rows[row][0],
-                        'utility': rows[row][1],
-                        'region': rows[row][2],
-                        'quarter': rows[row][3],
-                        'month': rows[row][4],
-                        'profile_name': rows[0][col],
-                        'value': rows[row][col],
-                    })
-            with self.engine.begin() as conn:
-                conn.execute(text(insert_text), buffer)
+        rows = self._csv_file_to_rows(therms_profiles_path)
+        num_columns = len(rows[0])
+        buffer = []
+        for col in range(5, num_columns):
+            for row in range(1, len(rows)):
+                buffer.append({
+                    'state': rows[row][0],
+                    'utility': rows[row][1],
+                    'region': rows[row][2],
+                    'quarter': rows[row][3],
+                    'month': rows[row][4],
+                    'profile_name': rows[0][col],
+                    'value': rows[row][col]
+                })
+        insert_text = self._file_to_string('flexvalue/templates/load_therms_profiles.sql')
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), buffer)
 
     def _load_csv_file(self, csv_file_path:str, table_name: str, fieldnames, load_sql_file_path:str):
         """ Loads the table_name table, Since some of the input data can be over a gibibyte,

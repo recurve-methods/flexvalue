@@ -44,11 +44,14 @@ ELEC_AVOIDED_COSTS_FIELDS = ["state", "utility", "region", "datetime", "year", "
     "ghg_adder_rebalancing"
 ]
 
-INSERT_ROW_COUNT = 100000
+
 # This is the number of bytes to read when determining whether a csv file has
 # a header. 4096 was determined empirically; I don't recommend reading fewer
 # bytes than this, since some files can have many columns.
 HEADER_READ_SIZE = 4096
+
+# The number of rows to read from csv files when chunking
+INSERT_ROW_COUNT = 100000
 
 class DBManager:
     def __init__(self, db_config_path:str) -> None:
@@ -106,7 +109,6 @@ class DBManager:
             sql = self._file_to_string(sql_filepath)
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
-                # print(f'results from table creation = {sql_results}')
         if truncate:
             truncate_prefix = f'DELETE FROM' if self.engine.dialect.name == 'sqlite' else f'TRUNCATE TABLE'
             # sqlite doesn't support TRUNCATE
@@ -123,9 +125,6 @@ class DBManager:
         insert_text = self._file_to_string('flexvalue/templates/load_discount.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), discount_dicts)
-        # template = self.template_env.get_template('load_discount.sql')
-        # sql = template.render(discount_context)
-        # ret = self._exec_insert_sql(sql)
 
     def load_project_info_file(self, project_info_path: str):
         self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
@@ -134,10 +133,6 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
         self._load_discount_table(dicts)
-        # context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
-        # template = self.template_env.get_template('load_project_info.sql')
-        # sql = template.render(context)
-        # ret = self._exec_insert_sql(sql)
 
     def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str):
         dicts = []
@@ -257,13 +252,6 @@ class DBManager:
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
         self._load_csv_file(gas_av_costs_path, 'gas_av_costs', GAS_AV_COSTS_FIELDS, "flexvalue/templates/load_gas_av_costs.sql")
-
-    # def _exec_insert_sql(self, sql) -> int:
-    #     ret = None
-    #     with self.engine.begin() as conn:
-    #         result = conn.execute(text(sql))
-    #         ret = result.rowcount
-    #     return ret
 
     def _exec_delete_sql(self, sql):
         with self.engine.begin() as conn:

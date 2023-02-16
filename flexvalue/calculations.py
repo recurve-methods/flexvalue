@@ -37,7 +37,7 @@ def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs
         db_manager.load_elec_avoided_costs_file(elec_av_costs_path=elec_av_costs)
     if gas_av_costs:
         db_manager.load_gas_avoided_costs_file(gas_av_costs_path=gas_av_costs)
-    if deer_elec_load_shape_file:
+    if elec_load_shape_file:
         db_manager.load_elec_load_shapes_file(elec_load_shape_file)
     if project_info:
         db_manager.load_project_info_file(project_info_path=project_info)

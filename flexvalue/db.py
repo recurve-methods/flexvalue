@@ -45,7 +45,10 @@ ELEC_AVOIDED_COSTS_FIELDS = ["state", "utility", "region", "datetime", "year", "
 ]
 
 INSERT_ROW_COUNT = 100000
-
+# This is the number of bytes to read when determining whether a csv file has
+# a header. 4096 was determined empirically; I don't recommend reading fewer
+# bytes than this, since some files can have many columns.
+HEADER_READ_SIZE = 4096
 
 class DBManager:
     def __init__(self, db_config_path:str) -> None:
@@ -96,18 +99,6 @@ class DBManager:
             ret = f.read()
         return ret
 
-    def _csv_file_to_context(self, filepath, fieldnames, context_key):
-        context = {context_key: []}
-        with open(filepath, newline='') as f:
-            has_header = csv.Sniffer().has_header(f.read(1024))
-            f.seek(0)
-            csv_reader = csv.DictReader(f, fieldnames=fieldnames)
-            if has_header:
-                next(csv_reader, None)
-            for row in csv_reader:
-                context[context_key].append(row)
-        return context
-
     def _prepare_table(self, table_name: str, sql_filepath:str, truncate=False):
         # if the table doesn't exist, create it
         table_exists = self.engine.has_table(table_name)
@@ -117,42 +108,59 @@ class DBManager:
                 sql_results = conn.execute(text(sql))
                 # print(f'results from table creation = {sql_results}')
         if truncate:
+            truncate_prefix = f'DELETE FROM' if self.engine.dialect.name == 'sqlite' else f'TRUNCATE TABLE'
             # sqlite doesn't support TRUNCATE
-            if self.engine.dialect.name == 'sqlite':
-                self._exec_delete_sql(f'DELETE FROM {table_name};')
-            else:
-                self._exec_delete_sql(f'TRUNCATE TABLE {table_name};')
+            self._exec_delete_sql(f"{truncate_prefix} {table_name}")
 
-    def _load_discount_table(self, project_context: str):
+    def _load_discount_table(self, project_dicts):
         self._prepare_table('discount', 'flexvalue/sql/create_discount.sql', truncate=True)
-        discount_context = {'discounts': []}
-        for project in project_context['projects']:
-            for quarter in range(4 * int(project['eul'])):
-                discount_rate = float(project['discount_rate'])
+        discount_dicts = []
+        for project_dict in project_dicts:
+            for quarter in range(4 * int(project_dict['eul'])):
+                discount_rate = float(project_dict['discount_rate'])
                 discount = 1.0 / math.pow((1.0 + (discount_rate / 4.0)), quarter)
-                discount_context['discounts'].append({'project_id': project['project_id'], 'quarter': quarter + 1, 'discount': discount})
-        template = self.template_env.get_template('load_discount.sql')
-        sql = template.render(discount_context)
-        ret = self._exec_insert_sql(sql)
+                discount_dicts.append({'project_id': project_dict['project_id'], 'quarter': quarter + 1, 'discount': discount})
+        insert_text = self._file_to_string('flexvalue/templates/load_discount.sql')
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), discount_dicts)
+        # template = self.template_env.get_template('load_discount.sql')
+        # sql = template.render(discount_context)
+        # ret = self._exec_insert_sql(sql)
 
     def load_project_info_file(self, project_info_path: str):
         self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
-        context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
-        template = self.template_env.get_template('load_project_info.sql')
-        sql = template.render(context)
-        ret = self._exec_insert_sql(sql)
-        self._load_discount_table(context)
+        dicts = self._csv_file_to_dicts(project_info_path, fieldnames=PROJECT_INFO_FIELDS)
+        insert_text = self._file_to_string('flexvalue/templates/load_project_info.sql')
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), dicts)
+        self._load_discount_table(dicts)
+        # context = self._csv_file_to_context(project_info_path, PROJECT_INFO_FIELDS, 'projects')
+        # template = self.template_env.get_template('load_project_info.sql')
+        # sql = template.render(context)
+        # ret = self._exec_insert_sql(sql)
+
+    def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str):
+        dicts = []
+        with open(csv_file_path, newline='') as f:
+            has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
+            f.seek(0)
+            csv_reader = csv.DictReader(f, fieldnames=fieldnames)
+            if has_header:
+                next(csv_reader)
+            for row in csv_reader:
+                dicts.append(row)
+        return dicts
 
     def _csv_file_to_rows(self, csv_file_path):
+        """ Reads a csv file into memory and returns a list of tuples representing
+        the data. If no header row is present, it raises a ValueError."""
         rows = []
         with open(csv_file_path, newline='') as f:
-            # 4096 was determined empirically; I don't recommend reading less
-            # than this, since there can be so many columns
-            has_header = csv.Sniffer().has_header(f.read(4096))
+            has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
             if not has_header:
-                raise ValueError(f"The electric load shape file you provided, {elec_load_shapes_path}, \
+                raise ValueError(f"The file you provided, {csv_file_path}, \
                                  doesn't seem to have a header row. Please provide a header row \
-                                 containing the load shape names.")
+                                 containing the column names.")
             f.seek(0)
             csv_reader = csv.reader(f)
             rows = []
@@ -191,6 +199,10 @@ class DBManager:
             conn.execute(text(insert_text), buffer)
 
     def load_therms_profiles_file(self, therms_profiles_path: str):
+        """ Loads the therms profiles csv file. This file has 5 fixed columns and then
+        a variable number of columns after that, each of which represents a therms
+        profile. This method parses that file to construct a SQL INSERT statement, then
+        inserts the data into the therms_profile table."""
         self._prepare_table('therms_profile', 'flexvalue/sql/create_therms_profile.sql')
         rows = self._csv_file_to_rows(therms_profiles_path)
         num_columns = len(rows[0])
@@ -216,9 +228,7 @@ class DBManager:
         determined by INSERT_ROW_COUNT in this file. """
         # TODO when we support postgres there are other approaches to load csv data much more quickly; use them
         with open(csv_file_path, newline='') as f:
-            # 4096 was determined empirically; I don't recommend reading fewer
-            # bytes than this, since there can be so many columns
-            has_header = csv.Sniffer().has_header(f.read(4096))
+            has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
             f.seek(0)
             csv_reader = csv.DictReader(f, fieldnames=fieldnames)
             if has_header:
@@ -248,27 +258,12 @@ class DBManager:
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
         self._load_csv_file(gas_av_costs_path, 'gas_av_costs', GAS_AV_COSTS_FIELDS, "flexvalue/templates/load_gas_av_costs.sql")
 
-    def _exec_insert_sql(self, sql) -> int:
-        ret = None
-        with self.engine.begin() as conn:
-            result = conn.execute(text(sql))
-            ret = result.rowcount
-        return ret
-
-    def _exec_create_sql(self, sql):
-        with self.engine.begin() as conn:
-            result = conn.execute(text(sql))
-
-    def _exec_select_sql(self, sql):
-        """ Returns a list of tuples that have been copied from the sqlalchemy result. """
-        # The pro of this approach is encapsulation of sqlalchemy, and minimizing code repetition
-        # The con is that we use twice as much memory by copying the results and then processing them elsewhere.
-        # TODO we might want to get rid of these _exec_foo_sql functions and just deal with the sqlalchemy calls
-        ret = None
-        with self.engine.begin() as conn:
-            result = conn.execute(text(sql))
-            ret = [x for x in result]
-        return ret
+    # def _exec_insert_sql(self, sql) -> int:
+    #     ret = None
+    #     with self.engine.begin() as conn:
+    #         result = conn.execute(text(sql))
+    #         ret = result.rowcount
+    #     return ret
 
     def _exec_delete_sql(self, sql):
         with self.engine.begin() as conn:

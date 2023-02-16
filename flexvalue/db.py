@@ -133,6 +133,27 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
         self._load_discount_table(dicts)
+        self._perform_calculation()
+
+    def _get_empty_tables(self):
+        empty_tables = []
+        with self.engine.begin() as conn:
+            for table_name in ['therms_profile', 'project_info', 'elec_av_costs', 'gas_av_costs', 'elec_load_shape']:
+                if not self.engine.has_table(table_name):
+                    empty_tables.append(table_name)
+                    continue
+                sql = f"SELECT COUNT(*) FROM {table_name}"
+                result = conn.execute(text(sql))
+                first = result.first()
+                if first[0] == 0:
+                    empty_tables.append(table_name)
+        return empty_tables
+
+    def _perform_calculation(self):
+        empty_tables = self._get_empty_tables()
+        if empty_tables:
+            # TODO the table names are implementation-dependent, let's see if we can give a better error message here
+            raise ValueError(f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}")
 
     def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str):
         dicts = []

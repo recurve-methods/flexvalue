@@ -164,14 +164,14 @@ class DBManager:
                 rows.append(row)
         return rows
 
-    def load_elec_load_shapes_file(self, elec_load_shapes_path: str):
+    def load_elec_load_shapes_file(self, elec_load_shapes_path: str, truncate=False):
         """ Load the hourly electric load shapes (csv) file. The first 7 columns
         are fixed. Then there are a variable number of columns, one for each
         load shape. This function parses that file to construct a SQL INSERT
         statement with the data, then inserts the data into the elec_load_shape
         table.
         """
-        self._prepare_table('elec_load_shape', 'flexvalue/sql/create_elec_load_shape.sql')
+        self._prepare_table('elec_load_shape', 'flexvalue/sql/create_elec_load_shape.sql', truncate=truncate)
         rows = self._csv_file_to_rows(elec_load_shapes_path)
         # TODO can we clean this up?
         num_columns = len(rows[0])
@@ -256,5 +256,14 @@ class DBManager:
     def _exec_delete_sql(self, sql):
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
+
+    def _exec_select_sql(self, sql):
+        """ Returns a list of tuples that have been copied from the sqlalchemy result. """
+        # This is just here to support testing
+        ret = None
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+            ret = [x for x in result]
+        return ret
 
 

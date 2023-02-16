@@ -65,10 +65,13 @@ def get_results(
     elec_load_shape_file,
     therms_profiles_file
 ):
-    run(db_config_path=db_config_file,
-        project_info=project_info,
-        elec_av_costs=elec_av_costs_file,
-        gas_av_costs=gas_av_costs_file,
-        elec_load_shape_file=elec_load_shape_file,
-        therms_profiles_path=therms_profiles_file
-    )
+    try:
+        run(db_config_path=db_config_file,
+            project_info=project_info,
+            elec_av_costs=elec_av_costs_file,
+            gas_av_costs=gas_av_costs_file,
+            elec_load_shape_file=elec_load_shape_file,
+            therms_profiles_path=therms_profiles_file
+        )
+    except ValueError as e:
+        print(e)

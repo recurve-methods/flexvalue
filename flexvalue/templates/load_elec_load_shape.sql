@@ -1,13 +1,12 @@
 INSERT INTO elec_load_shape (
+    state,
     utility,
-    load_shape_name,
+    region,
+    quarter,
+    month,
+    hour_of_day,
     hour_of_year,
+    load_shape_name,
     value
 )
-VALUES 
-{% for load_shape in load_shapes %}
-("{{ load_shape.utility }}",
-"{{ load_shape.load_shape_name }}",
-{{load_shape.hour_of_year}},
-{{load_shape.value}}
-) {% if not loop.last %},{% endif %}{% endfor %};
+VALUES (:state, :utility, :region, :quarter, :month, :hour_of_day, :hour_of_year, :load_shape_name, :value)

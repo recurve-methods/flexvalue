@@ -30,14 +30,15 @@ __all__ = (
 )
 
 # TODO Do we even want this file?
-def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs=None, deer_elec_load_shape_file=None, therms_profiles_path=None):
+def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs=None,
+    elec_load_shape_file=None, therms_profiles_path=None):
     db_manager = DBManager(db_config_path=db_config_path)
     if elec_av_costs:
         db_manager.load_elec_avoided_costs_file(elec_av_costs_path=elec_av_costs)
     if gas_av_costs:
         db_manager.load_gas_avoided_costs_file(gas_av_costs_path=gas_av_costs)
     if deer_elec_load_shape_file:
-        db_manager.load_deer_load_shapes_file(deer_elec_load_shape_file)
+        db_manager.load_elec_load_shapes_file(elec_load_shape_file)
     if project_info:
         db_manager.load_project_info_file(project_info_path=project_info)
     if therms_profiles_path:

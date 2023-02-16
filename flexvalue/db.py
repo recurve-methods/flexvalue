@@ -143,7 +143,7 @@ class DBManager:
         ret = self._exec_insert_sql(sql)
         self._load_discount_table(context)
 
-    def load_deer_load_shapes_file(self, elec_load_shapes_path: str):
+    def load_elec_load_shapes_file(self, elec_load_shapes_path: str):
         """ Load the DEER electric load shapes (csv) file. The first 2 columns
         are the utility and hour of year. Then there are a variable number of
         columns, one for each load shape. This function parses that file to

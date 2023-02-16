@@ -50,8 +50,8 @@ def cli():
     help="Filepath to the gas avoided costs."
 )
 @click.option(
-    "--deer-elec-load-shape-file",
-    help="Filepath to the DEER electric load shape file."
+    "--elec-load-shape-file",
+    help="Filepath to the hourly electric load shape file."
 )
 @click.option(
     "--therms-profiles-file",
@@ -62,13 +62,13 @@ def get_results(
     db_config_file,
     elec_av_costs_file,
     gas_av_costs_file,
-    deer_elec_load_shape_file,
+    elec_load_shape_file,
     therms_profiles_file
 ):
     run(db_config_path=db_config_file,
         project_info=project_info,
         elec_av_costs=elec_av_costs_file,
         gas_av_costs=gas_av_costs_file,
-        deer_elec_load_shape_file=deer_elec_load_shape_file,
+        elec_load_shape_file=elec_load_shape_file,
         therms_profiles_path=therms_profiles_file
     )

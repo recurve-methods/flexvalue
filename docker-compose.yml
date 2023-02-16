@@ -45,17 +45,6 @@ services:
       - .:/app
       - /app/tests/__pycache__/
 
-
-  mysql:
-    image: mysql/mysql-server:8.0
-    restart: always
-    volumes:
-        - ./docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
-    environment:
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=password
-      - MYSQL_ROOT_PASSWORD=root
-
   postgresql:
     image: postgres:15.1
     restart: always

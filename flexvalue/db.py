@@ -193,12 +193,12 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), buffer)
 
-    def load_therms_profiles_file(self, therms_profiles_path: str):
+    def load_therms_profiles_file(self, therms_profiles_path: str, truncate=False):
         """ Loads the therms profiles csv file. This file has 5 fixed columns and then
         a variable number of columns after that, each of which represents a therms
         profile. This method parses that file to construct a SQL INSERT statement, then
         inserts the data into the therms_profile table."""
-        self._prepare_table('therms_profile', 'flexvalue/sql/create_therms_profile.sql')
+        self._prepare_table('therms_profile', 'flexvalue/sql/create_therms_profile.sql', truncate=truncate)
         rows = self._csv_file_to_rows(therms_profiles_path)
         num_columns = len(rows[0])
         buffer = []
@@ -245,12 +245,12 @@ class DBManager:
                 with self.engine.begin() as conn:
                     conn.execute(text(insert_text), buffer)
 
-    def load_elec_avoided_costs_file(self, elec_av_costs_path: str):
-        self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql')
+    def load_elec_avoided_costs_file(self, elec_av_costs_path: str, truncate=False):
+        self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql', truncate=truncate)
         self._load_csv_file(elec_av_costs_path, 'elec_av_costs', ELEC_AVOIDED_COSTS_FIELDS, "flexvalue/templates/load_elec_av_costs.sql")
 
-    def load_gas_avoided_costs_file(self, gas_av_costs_path: str):
-        self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql')
+    def load_gas_avoided_costs_file(self, gas_av_costs_path: str, truncate=False):
+        self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql', truncate=truncate)
         self._load_csv_file(gas_av_costs_path, 'gas_av_costs', GAS_AV_COSTS_FIELDS, "flexvalue/templates/load_gas_av_costs.sql")
 
     def _exec_delete_sql(self, sql):

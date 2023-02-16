@@ -3,9 +3,4 @@ INSERT INTO discount (
     quarter,
     discount
 )
-VALUES 
-{% for disc in discounts %}
-("{{ disc.project_id }}",
-{{ disc.quarter }},
-{{ disc.discount }}
-){% if not loop.last %},{% endif %}{% endfor %};
+VALUES (:project_id, :quarter, :discount)

@@ -256,13 +256,11 @@ class DBManager:
                 buffer.append(row)
                 rownum += 1
                 if rownum == INSERT_ROW_COUNT:
-                    # print(f"Hit INSERT_ROW_COUNT, inserting")
                     with self.engine.begin() as conn:
                         conn.execute(text(insert_text), buffer)
                     buffer = []
                     rownum = 0
             else:
-                print(f"In finally, inserting {len(buffer)} rows")
                 with self.engine.begin() as conn:
                     conn.execute(text(insert_text), buffer)
 

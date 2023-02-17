@@ -166,6 +166,17 @@ class DBManager:
         if empty_tables:
             # TODO the table names are implementation-dependent, let's see if we can give a better error message here
             raise ValueError(f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}")
+        sql = self._get_calculation_sql()
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+            for x in result:
+                print(x)
+
+    def _get_calculation_sql(self):
+        context = {}
+        template = self.template_env.get_template("calculation.sql")
+        sql = template.render(context)
+        return sql
 
     def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str):
         dicts = []

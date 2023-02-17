@@ -140,7 +140,10 @@ class DBManager:
 
     def load_project_info_file(self, project_info_path: str):
         self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
-        dicts = self._csv_file_to_dicts(project_info_path, fieldnames=PROJECT_INFO_FIELDS, fields_to_upper=['elec_load_shape'])
+        dicts = self._csv_file_to_dicts(
+            project_info_path, fieldnames=PROJECT_INFO_FIELDS,
+            fields_to_upper=['elec_load_shape', 'state', 'region', 'utility']
+        )
         insert_text = self._file_to_string('flexvalue/templates/load_project_info.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
@@ -226,9 +229,9 @@ class DBManager:
         for col in range(7, num_columns):
             for row in range(1, len(rows)):
                 buffer.append({
-                    'state': rows[row][0],
-                    'utility': rows[row][1],
-                    'region': rows[row][2],
+                    'state': rows[row][0].upper(),
+                    'utility': rows[row][1].upper(),
+                    'region': rows[row][2].upper(),
                     'quarter': rows[row][3],
                     'month': rows[row][4],
                     'hour_of_day': rows[row][5],

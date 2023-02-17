@@ -140,7 +140,7 @@ class DBManager:
 
     def load_project_info_file(self, project_info_path: str):
         self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
-        dicts = self._csv_file_to_dicts(project_info_path, fieldnames=PROJECT_INFO_FIELDS)
+        dicts = self._csv_file_to_dicts(project_info_path, fieldnames=PROJECT_INFO_FIELDS, fields_to_upper=['elec_load_shape'])
         insert_text = self._file_to_string('flexvalue/templates/load_project_info.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
@@ -178,7 +178,7 @@ class DBManager:
         sql = template.render(context)
         return sql
 
-    def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str):
+    def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str, fields_to_upper=None):
         dicts = []
         with open(csv_file_path, newline='') as f:
             has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
@@ -187,7 +187,10 @@ class DBManager:
             if has_header:
                 next(csv_reader)
             for row in csv_reader:
-                dicts.append(row)
+                processed = row
+                for field in fields_to_upper:
+                    processed[field] = processed[field].upper()
+                dicts.append(processed)
         return dicts
 
     def _csv_file_to_rows(self, csv_file_path):
@@ -230,7 +233,7 @@ class DBManager:
                     'month': rows[row][4],
                     'hour_of_day': rows[row][5],
                     'hour_of_year': rows[row][6],
-                    'load_shape_name': rows[0][col],
+                    'load_shape_name': rows[0][col].upper(),
                     'value': rows[row][col]
                 })
         insert_text = self._file_to_string('flexvalue/templates/load_elec_load_shape.sql')

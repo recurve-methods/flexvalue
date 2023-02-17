@@ -27,7 +27,7 @@ def dbm():
 
 @pytest.fixture
 def dbm_with_project_loaded(dbm):
-    dbm.load_project_info_file("example_user_inputs_deer.csv")
+    dbm.load_project_info_file("example_user_inputs.csv")
     return dbm
 
 @pytest.fixture
@@ -56,7 +56,7 @@ def dbm_with_gas_avcosts_loaded(dbm):
 # we will always be looking at `result[0][0]`
 def test_project_load(dbm_with_project_loaded):
     result = dbm_with_project_loaded._exec_select_sql("SELECT COUNT(*) FROM project_info;")
-    assert result[0][0] == 5
+    assert result[0][0] == 4
 
 def test_discount(dbm_with_project_loaded):
     result = dbm_with_project_loaded._exec_select_sql("SELECT COUNT(*) FROM discount;")

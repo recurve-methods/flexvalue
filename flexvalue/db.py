@@ -130,10 +130,14 @@ class DBManager:
         self._prepare_table('discount', 'flexvalue/sql/create_discount.sql', truncate=True)
         discount_dicts = []
         for project_dict in project_dicts:
+            year = int(project_dict['start_year'])
             for quarter in range(4 * int(project_dict['eul'])):
                 discount_rate = float(project_dict['discount_rate'])
                 discount = 1.0 / math.pow((1.0 + (discount_rate / 4.0)), quarter)
-                discount_dicts.append({'project_id': project_dict['project_id'], 'quarter': quarter + 1, 'discount': discount})
+                new_q = ((int(project_dict['start_quarter']) + quarter - 1) % 4) + 1
+                if new_q == 1:
+                    year += 1
+                discount_dicts.append({'project_id': project_dict['project_id'], 'year': year, 'quarter': new_q, 'discount': discount})
         insert_text = self._file_to_string('flexvalue/templates/load_discount.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), discount_dicts)

@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS elec_load_shape_index ON elec_load_shape(load_shape_name, region, utility, state);

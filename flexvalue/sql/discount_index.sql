@@ -1,0 +1,1 @@
+CREATE INDEX discount_index ON discount(project_id, quarter, year, discount);

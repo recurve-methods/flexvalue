@@ -114,11 +114,15 @@ class DBManager:
             ret = f.read()
         return ret
 
-    def _prepare_table(self, table_name: str, sql_filepath:str, truncate=False):
+    def _prepare_table(self, table_name: str, sql_filepath:str, index_filepath:str=None, truncate=False):
         # if the table doesn't exist, create it
         table_exists = self.engine.has_table(table_name)
         if not table_exists:
             sql = self._file_to_string(sql_filepath)
+            with self.engine.begin() as conn:
+                sql_results = conn.execute(text(sql))
+        if index_filepath:
+            sql = self._file_to_string(index_filepath)
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
         if truncate:
@@ -127,7 +131,12 @@ class DBManager:
             self._exec_delete_sql(f"{truncate_prefix} {table_name}")
 
     def _load_discount_table(self, project_dicts):
-        self._prepare_table('discount', 'flexvalue/sql/create_discount.sql', truncate=True)
+        self._prepare_table(
+            'discount',
+            'flexvalue/sql/create_discount.sql',
+            index_filepath="flexvalue/sql/discount_index.sql",
+            truncate=True
+        )
         discount_dicts = []
         for project_dict in project_dicts:
             year = int(project_dict['start_year'])
@@ -143,7 +152,12 @@ class DBManager:
             conn.execute(text(insert_text), discount_dicts)
 
     def load_project_info_file(self, project_info_path: str):
-        self._prepare_table('project_info', 'flexvalue/sql/create_project_info.sql', truncate=True)
+        self._prepare_table(
+            'project_info',
+            'flexvalue/sql/create_project_info.sql',
+            index_filepath="flexvalue/sql/project_info_index.sql",
+            truncate=True
+        )
         dicts = self._csv_file_to_dicts(
             project_info_path, fieldnames=PROJECT_INFO_FIELDS,
             fields_to_upper=['elec_load_shape', 'state', 'region', 'utility']
@@ -225,7 +239,12 @@ class DBManager:
         statement with the data, then inserts the data into the elec_load_shape
         table.
         """
-        self._prepare_table('elec_load_shape', 'flexvalue/sql/create_elec_load_shape.sql', truncate=truncate)
+        self._prepare_table(
+            'elec_load_shape',
+            'flexvalue/sql/create_elec_load_shape.sql',
+            index_filepath="flexvalue/sql/elec_load_shape_index.sql",
+            truncate=truncate
+        )
         rows = self._csv_file_to_rows(elec_load_shapes_path)
         # TODO can we clean this up?
         num_columns = len(rows[0])
@@ -298,7 +317,12 @@ class DBManager:
                     conn.execute(text(insert_text), buffer)
 
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str, truncate=False):
-        self._prepare_table('elec_av_costs', 'flexvalue/sql/create_elec_av_cost.sql', truncate=truncate)
+        self._prepare_table(
+            'elec_av_costs',
+            'flexvalue/sql/create_elec_av_cost.sql',
+            index_filepath="flexvalue/sql/elec_av_costs_index.sql",
+            truncate=truncate
+        )
         self._load_csv_file(elec_av_costs_path, 'elec_av_costs', ELEC_AVOIDED_COSTS_FIELDS, "flexvalue/templates/load_elec_av_costs.sql")
 
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str, truncate=False):

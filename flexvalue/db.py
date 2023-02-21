@@ -190,8 +190,9 @@ class DBManager:
         sql = self._get_calculation_sql()
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
-            for x in result:
-                print(x)
+            print(", ".join(result.keys()))
+            for row in result:
+                print(", ".join([str(col) for col in row]))
 
     def _get_calculation_sql(self):
         context = {}

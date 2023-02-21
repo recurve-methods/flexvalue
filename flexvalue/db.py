@@ -114,7 +114,7 @@ class DBManager:
             ret = f.read()
         return ret
 
-    def _prepare_table(self, table_name: str, sql_filepath:str, index_filepath:str=None, truncate=False):
+    def _prepare_table(self, table_name: str, sql_filepath:str, index_filepath:str=None, truncate:bool=False):
         # if the table doesn't exist, create it
         table_exists = self.engine.has_table(table_name)
         if not table_exists:
@@ -131,6 +131,10 @@ class DBManager:
             self._exec_delete_sql(f"{truncate_prefix} {table_name}")
 
     def _load_discount_table(self, project_dicts):
+        """project_dicts is a list of dicts. Each dict represents a different
+        project from the project info file. The keys are the names of the
+        columns in the file/project_info table.
+        """
         self._prepare_table(
             'discount',
             'flexvalue/sql/create_discount.sql',
@@ -201,6 +205,11 @@ class DBManager:
         return sql
 
     def _csv_file_to_dicts(self, csv_file_path: str, fieldnames:str, fields_to_upper=None):
+        """Returns a dictionary representing the data in the csv file pointed
+        to at csv_file_path.
+        fields_to_upper is a list of strings. The strings in this list must
+        be present in the header row of the csv file being read, and are
+        capitalized (with string.upper()) before returning the dict. """
         dicts = []
         with open(csv_file_path, newline='') as f:
             has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
@@ -215,7 +224,7 @@ class DBManager:
                 dicts.append(processed)
         return dicts
 
-    def _csv_file_to_rows(self, csv_file_path):
+    def _csv_file_to_rows(self, csv_file_path:str):
         """ Reads a csv file into memory and returns a list of tuples representing
         the data. If no header row is present, it raises a ValueError."""
         rows = []
@@ -267,7 +276,7 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), buffer)
 
-    def load_therms_profiles_file(self, therms_profiles_path: str, truncate=False):
+    def load_therms_profiles_file(self, therms_profiles_path: str, truncate:bool=False):
         """ Loads the therms profiles csv file. This file has 5 fixed columns and then
         a variable number of columns after that, each of which represents a therms
         profile. This method parses that file to construct a SQL INSERT statement, then
@@ -294,7 +303,9 @@ class DBManager:
     def _load_csv_file(self, csv_file_path:str, table_name: str, fieldnames, load_sql_file_path:str):
         """ Loads the table_name table, Since some of the input data can be over a gibibyte,
         the load reads in chunks of data and inserts them sequentially. The chunk size is
-        determined by INSERT_ROW_COUNT in this file. """
+        determined by INSERT_ROW_COUNT in this file.
+        fieldnames is the list of expected values in the header row of the csv file being read.
+        """
         # TODO when we support postgres there are other approaches to load csv data much more quickly; use them
         with open(csv_file_path, newline='') as f:
             has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
@@ -330,11 +341,11 @@ class DBManager:
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql', truncate=truncate)
         self._load_csv_file(gas_av_costs_path, 'gas_av_costs', GAS_AV_COSTS_FIELDS, "flexvalue/templates/load_gas_av_costs.sql")
 
-    def _exec_delete_sql(self, sql):
+    def _exec_delete_sql(self, sql:str):
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
 
-    def _exec_select_sql(self, sql):
+    def _exec_select_sql(self, sql:str):
         """ Returns a list of tuples that have been copied from the sqlalchemy result. """
         # This is just here to support testing
         ret = None

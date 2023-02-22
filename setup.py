@@ -30,6 +30,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 NAME = "flexvalue"
+# TODO: fix psycopg2-binary; use correct dependency for distributing
 INSTALL_REQUIRES = [
     "click==8.0.3",
     "pandas==1.3.4",
@@ -42,6 +43,7 @@ INSTALL_REQUIRES = [
     "jinja2==3.0.3",
     "matplotlib<3.6",
     "numpy<1.23.0",
+    "psycopg2-binary==2.9.5"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

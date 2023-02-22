@@ -3,8 +3,20 @@
 -- TODO make JOIN ON region dynamic for when the therms profiles have region?
 -- TODO make GROUP BY dynamic (aggregation columns)
 SELECT p.project_id as project_id
+, (p.units * p.ntg * sum(eac.total * els.value) * d.discount) AS elec_benefits
+, (p.units * p.ntg * sum(gac.total * tp.value) * d.discount) as gas_benefits
+, ((p.units * p.ntg * sum(eac.total * els.value) * d.discount) + (p.units * p.ntg * sum(gac.total * tp.value) * d.discount)) as total_benefits
+, p.units * p.mwh_savings * p.ntg * sum(els.value) as first_year_net_mwh_savings
+, p.units * p.mwh_savings * p.ntg * sum(els.value) * p.eul as project_lifecycle_elec_savings
+, p.units * p.therms_savings * ntg * sum(tp.value) as first_year_net_therms_savings
+, p.units * p.therms_savings * ntg * sum(tp.value) * p.eul as project_lifecycle_therms_savings
 , (p.admin_cost + (1 - p.ntg) * p.incentive_cost + p.ntg * p.measure_cost) / 1 + (p.discount_rate / 4) as trc_costs
 , (p.admin_cost + p.incentive_cost) / (1 + (p.discount_rate / 4)) as pac_costs
+, ((p.units * p.ntg * sum(eac.total * els.value) * d.discount) + (p.units * p.ntg * sum(gac.total * tp.value) * d.discount)) / (p.admin_cost + (1 - p.ntg) * p.incentive_cost + p.ntg * p.measure_cost) / 1 + (p.discount_rate / 4) AS trc_ratio
+, ((p.units * p.ntg * sum(eac.total * els.value) * d.discount) + (p.units * p.ntg * sum(gac.total * tp.value) * d.discount)) / (p.admin_cost + p.incentive_cost) / (1 + (p.discount_rate / 4)) AS pac_ratio
+, (p.units * p.ntg * sum(eac.marginal_ghg * els.value)) as elec_avoided_ghg
+, (p.units * p.ntg * sum(gac.marginal_ghg * tp.value)) as gas_avoided_ghg
+, (p.units * p.ntg * sum(eac.marginal_ghg * els.value)) + (p.units * p.ntg * sum(gac.marginal_ghg * tp.value)) as total_avoided_ghg
 FROM project_info p
 JOIN elec_av_costs eac ON p.state = eac.state AND p.utility = eac.utility AND p.region = eac.region
 JOIN elec_load_shape els ON p.elec_load_shape = els.load_shape_name AND p.state = els.state AND p.utility = els.utility

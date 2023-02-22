@@ -1,7 +1,7 @@
 {
-    "host":"127.0.0.1",
+    "host":"postgresql",
     "port":5432,
-    "user":"user",
-    "password":"password",
+    "user":"postgres",
+    "password":"example",
     "database": "postgres"
 }

@@ -18,12 +18,16 @@
 
 """
 import os
+import sys
 import json
 import csv
 import math
+import logging
+
 from jinja2 import Environment, PackageLoader, select_autoescape
 # import pandas as pd
 from sqlalchemy import create_engine, text
+import psycopg2
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 
 SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
@@ -56,6 +60,7 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "ghg_adder_rebalancing"
 ]
 
+logging.basicConfig(stream=sys.stderr, format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 # This is the number of bytes to read when determining whether a csv file has
 # a header. 4096 was determined empirically; I don't recommend reading fewer
@@ -78,7 +83,7 @@ class DBManager:
         port = database_settings['port']
         user = database_settings.get('user', None)
         password = database_settings.get('password', None)
-
+        logging.debug(f'database={database}, host={host}, port={port}, user={user}')
         if database not in SUPPORTED_DBS:
             raise ValueError(f"Unknown database type '{database}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}")
 
@@ -90,6 +95,7 @@ class DBManager:
         elif database == "sqlite":
             db = database_settings.get('db', 'dbfile.db')
             conn_str = f"sqlite+pysqlite://{user}:{password}/{db}"
+        logging.debug(f'returning connection string "{conn_str}"')
         return conn_str
 
     def _get_db_engine(self, db_config_path: str): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:

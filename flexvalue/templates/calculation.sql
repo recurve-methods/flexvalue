@@ -18,11 +18,11 @@ SELECT p.project_id as project_id
 , (p.units * p.ntg * sum(gac.marginal_ghg * tp.value)) as gas_avoided_ghg
 , (p.units * p.ntg * sum(eac.marginal_ghg * els.value)) + (p.units * p.ntg * sum(gac.marginal_ghg * tp.value)) as total_avoided_ghg
 FROM project_info p
-JOIN elec_av_costs eac ON p.state = eac.state AND p.utility = eac.utility AND p.region = eac.region
-JOIN elec_load_shape els ON p.elec_load_shape = els.load_shape_name AND p.state = els.state AND p.utility = els.utility
+JOIN discount d on p.project_id = d.project_id
 JOIN gas_av_costs gac on p.state = gac.state AND p.utility = gac.utility
 JOIN therms_profile tp on p.state = tp.state AND p.utility = tp.utility AND tp.profile_name = p.therms_profile
-JOIN discount d on p.project_id = d.project_id
+JOIN elec_av_costs eac ON p.state = eac.state AND p.utility = eac.utility AND p.region = eac.region
+JOIN elec_load_shape els ON p.elec_load_shape = els.load_shape_name AND p.state = els.state AND p.utility = els.utility
 WHERE ((eac.year = p.start_year and eac.quarter >= p.start_quarter) OR (eac.year between p.start_year + 1 AND p.start_year + p.eul - 1) OR (eac.year = p.start_year + p.eul and eac.quarter < p.start_quarter))
 AND eac.hour_of_year = els.hour_of_year AND eac.state = els.state AND eac.utility = els.utility
 AND els.state = p.state AND els.utility = p.utility

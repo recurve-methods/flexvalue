@@ -1,11 +1,14 @@
+-- TODO make JOIN ON region dynamic for when the eac data has region? Or will it always?
+-- TODO make JOIN ON region dynamic for when the load shape data has region?
+-- TODO make JOIN ON region dynamic for when the therms profiles have region?
+-- TODO make GROUP BY dynamic (aggregation columns)
+
 WITH elec_benefits AS (
     SELECT
     p.project_id
     , (p.units * p.ntg * sum(eac.total * els.value) * d.discount) AS benefits
     FROM project_info p
-    -- TODO make JOIN ON region dynamic for when the eac data has region? Or will it always?
     JOIN elec_av_costs eac ON p.state = eac.state AND p.utility = eac.utility AND p.region = eac.region
-    -- TODO make JOIN ON region dynamic for when the load shape data has region?
     JOIN elec_load_shape els ON p.elec_load_shape = els.load_shape_name AND p.state = els.state AND p.utility = els.utility
     JOIN discount d on p.project_id = d.project_id
     WHERE ((eac.year = p.start_year and eac.quarter >= p.start_quarter) OR (eac.year between p.start_year + 1 AND p.start_year + p.eul - 1) OR (eac.year = p.start_year + p.eul and eac.quarter < p.start_quarter))
@@ -19,14 +22,12 @@ WITH elec_benefits AS (
     , (p.units * p.ntg * sum(gac.total * tp.value) * d.discount) as benefits
     FROM project_info p
     JOIN gas_av_costs gac on p.state = gac.state AND p.utility = gac.utility
-    -- TODO make JOIN ON region dynamic for when the therms profiles have region?
     JOIN therms_profile tp on p.state = tp.state AND p.utility = tp.utility AND tp.profile_name = p.therms_profile
     JOIN discount d on p.project_id = d.project_id
     WHERE ((gac.year = p.start_year and gac.quarter >= p.start_quarter) OR (gac.year between p.start_year +1 AND p.start_year + p.eul - 1) OR (gac.year = p.start_year + p.eul AND gac.quarter < p.start_quarter))
     AND tp.state = p.state AND tp.utility = p.utility
     AND gac.month = tp.month
     AND d.year = gac.year and d.quarter = gac.quarter
-    -- TODO make GROUP BY dynamic (aggregation columns)
     GROUP BY p.project_id
 )
 SELECT p.project_id as project_id
@@ -39,13 +40,9 @@ SELECT p.project_id as project_id
 FROM project_info p
 JOIN elec_benefits eb ON p.project_id = eb.project_id
 JOIN gas_benefits gb on p.project_id = gb.project_id
--- TODO make JOIN ON region dynamic for when the eac data has region? Or will it always?
 JOIN elec_av_costs eac ON p.state = eac.state AND p.utility = eac.utility AND p.region = eac.region
--- TODO make JOIN ON region dynamic for when the load shape data has region?
 JOIN elec_load_shape els ON p.elec_load_shape = els.load_shape_name AND p.state = els.state AND p.utility = els.utility
--- TODO make JOIN ON region dynamic for when the gas avoided costs have region?
 JOIN gas_av_costs gac on p.state = gac.state AND p.utility = gac.utility
--- TODO make JOIN ON region dynamic for when the therms profiles have region?
 JOIN therms_profile tp on p.state = tp.state AND p.utility = tp.utility AND tp.profile_name = p.therms_profile
 JOIN discount d on p.project_id = d.project_id
 WHERE ((eac.year = p.start_year and eac.quarter >= p.start_quarter) OR (eac.year between p.start_year + 1 AND p.start_year + p.eul - 1) OR (eac.year = p.start_year + p.eul and eac.quarter < p.start_quarter))
@@ -56,6 +53,5 @@ AND ((gac.year = p.start_year and gac.quarter >= p.start_quarter) OR (gac.year b
 AND tp.state = p.state AND tp.utility = p.utility
 AND gac.month = tp.month
 AND d.year = gac.year and d.quarter = gac.quarter
--- TODO make GROUP BY dynamic (aggregation columns)
 GROUP BY p.project_id
 ;

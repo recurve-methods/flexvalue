@@ -1,9 +1,9 @@
 CREATE TABLE therms_profile (
-    state VARCHAR,
-    utility VARCHAR,
-    region VARCHAR,
-    quarter VARCHAR,
+    state TEXT,
+    utility TEXT,
+    region TEXT,
+    quarter TEXT,
     month INTEGER,
-    profile_name VARCHAR,
+    profile_name TEXT,
     value FLOAT
 );

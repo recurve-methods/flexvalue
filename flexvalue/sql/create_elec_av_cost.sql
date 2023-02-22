@@ -1,8 +1,8 @@
 CREATE TABLE elec_av_costs (
-    state VARCHAR,
-    utility VARCHAR,
-    region VARCHAR,
-    date_time VARCHAR, -- TODO figure this out for the various dbs
+    state TEXT,
+    utility TEXT,
+    region TEXT,
+    date_time TEXT, -- TODO figure this out for the various dbs
     year INTEGER,
     quarter INTEGER,
     month INTEGER,

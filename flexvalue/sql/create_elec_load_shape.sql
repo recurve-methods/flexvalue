@@ -1,11 +1,11 @@
 CREATE TABLE elec_load_shape (
-    state VARCHAR,
-    utility VARCHAR,
-    region VARCHAR,
-    quarter VARCHAR,
+    state TEXT,
+    utility TEXT,
+    region TEXT,
+    quarter TEXT,
     month INTEGER,
     hour_of_day INTEGER,
     hour_of_year INTEGER,
-    load_shape_name VARCHAR,
+    load_shape_name TEXT,
     value FLOAT
 );

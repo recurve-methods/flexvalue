@@ -121,6 +121,29 @@ class DBManager:
             ret = f.read()
         return ret
 
+    def reset_elec_load_shape(self):
+        logging.debug('Resetting elec load shape')
+        self._reset_table('elec_load_shape')
+
+    def reset_elec_av_costs(self):
+        logging.debug('Resetting elec_av_costs')
+        self._reset_table('elec_av_costs')
+
+    def reset_therms_profiles(self):
+        logging.debug('Resetting therms_profile')
+        self._reset_table('therms_profile')
+
+    def reset_gas_av_costs(self):
+        logging.debug('Resetting gas avoided costs')
+        self._reset_table('gas_av_costs')
+
+    def _reset_table(self, table_name):
+        # sqlite doesn't support TRUNCATE
+        truncate_prefix = f'DELETE FROM' if self.engine.dialect.name == 'sqlite' else f'TRUNCATE TABLE'
+        sql = f"{truncate_prefix} {table_name}"
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+
     def _prepare_table(self, table_name: str, sql_filepath:str, index_filepath:str=None, truncate:bool=False):
         # if the table doesn't exist, create it
         table_exists = self.engine.has_table(table_name)
@@ -133,9 +156,7 @@ class DBManager:
             with self.engine.begin() as conn:
                 sql_results = conn.execute(text(sql))
         if truncate:
-            truncate_prefix = f'DELETE FROM' if self.engine.dialect.name == 'sqlite' else f'TRUNCATE TABLE'
-            # sqlite doesn't support TRUNCATE
-            self._exec_delete_sql(f"{truncate_prefix} {table_name}")
+            self._reset_table(table_name)
 
     def _load_discount_table(self, project_dicts):
         """project_dicts is a list of dicts. Each dict represents a different
@@ -347,10 +368,6 @@ class DBManager:
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str, truncate=False):
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql', truncate=truncate)
         self._load_csv_file(gas_av_costs_path, 'gas_av_costs', GAS_AV_COSTS_FIELDS, "flexvalue/templates/load_gas_av_costs.sql")
-
-    def _exec_delete_sql(self, sql:str):
-        with self.engine.begin() as conn:
-            result = conn.execute(text(sql))
 
     def _exec_select_sql(self, sql:str):
         """ Returns a list of tuples that have been copied from the sqlalchemy result. """

@@ -31,8 +31,17 @@ __all__ = (
 
 # TODO Do we even want this file?
 def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs=None,
-    elec_load_shape_file=None, therms_profiles_path=None):
+    elec_load_shape_file=None, therms_profiles_path=None, reset_elec_load_shape=None,
+    reset_elec_av_costs=None, reset_therms_profiles=None, reset_gas_av_costs=None):
     db_manager = DBManager(db_config_path=db_config_path)
+    if reset_elec_load_shape:
+        db_manager.reset_elec_load_shape()
+    if reset_elec_av_costs:
+        db_manager.reset_elec_av_costs()
+    if reset_therms_profiles:
+        db_manager.reset_therms_profiles()
+    if reset_gas_av_costs:
+        db_manager.reset_gas_av_costs()
     if elec_av_costs:
         db_manager.load_elec_avoided_costs_file(elec_av_costs_path=elec_av_costs)
     if gas_av_costs:

@@ -101,6 +101,7 @@ class DBManager:
     def _get_db_engine(self, db_config_path: str): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
         conn_str = self._get_db_connection_string(db_config_path) if db_config_path else self._get_default_db_conn_str()
         engine = create_engine(conn_str)
+        logging.debug(f"dialect = {engine.dialect.name}")
         return engine
 
     def _get_database_config(self, db_config_path:str) -> dict:
@@ -312,7 +313,6 @@ class DBManager:
         determined by INSERT_ROW_COUNT in this file.
         fieldnames is the list of expected values in the header row of the csv file being read.
         """
-        # TODO when we support postgres there are other approaches to load csv data much more quickly; use them
         with open(csv_file_path, newline='') as f:
             has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
             f.seek(0)
@@ -341,6 +341,7 @@ class DBManager:
             index_filepath="flexvalue/sql/elec_av_costs_index.sql",
             truncate=truncate
         )
+        logging.debug('about to load elec av costs')
         self._load_csv_file(elec_av_costs_path, 'elec_av_costs', ELEC_AVOIDED_COSTS_FIELDS, "flexvalue/templates/load_elec_av_costs.sql")
 
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str, truncate=False):

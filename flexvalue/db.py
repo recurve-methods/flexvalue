@@ -26,8 +26,7 @@ import logging
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 # import pandas as pd
-from sqlalchemy import create_engine, text
-import psycopg2
+from sqlalchemy import create_engine, text, inspect
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 
 SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
@@ -146,7 +145,8 @@ class DBManager:
 
     def _prepare_table(self, table_name: str, sql_filepath:str, index_filepath:str=None, truncate:bool=False):
         # if the table doesn't exist, create it
-        table_exists = self.engine.has_table(table_name)
+        inspection = inspect(self.engine)
+        table_exists = inspection.has_table(table_name)
         if not table_exists:
             sql = self._file_to_string(sql_filepath)
             with self.engine.begin() as conn:
@@ -202,9 +202,10 @@ class DBManager:
 
     def _get_empty_tables(self):
         empty_tables = []
+        inspection = inspect(self.engine)
         with self.engine.begin() as conn:
             for table_name in ['therms_profile', 'project_info', 'elec_av_costs', 'gas_av_costs', 'elec_load_shape']:
-                if not self.engine.has_table(table_name):
+                if not inspection.has_table(table_name):
                     empty_tables.append(table_name)
                     continue
                 sql = f"SELECT COUNT(*) FROM {table_name}"

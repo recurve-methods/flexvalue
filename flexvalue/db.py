@@ -343,17 +343,16 @@ class DBManager:
             buffer = []
             rownum = 0
             insert_text = self._file_to_string(load_sql_file_path)
-            for row in csv_reader:
-                buffer.append(row)
-                rownum += 1
-                if rownum == INSERT_ROW_COUNT:
-                    with self.engine.begin() as conn:
+            with self.engine.begin() as conn:
+                for row in csv_reader:
+                    buffer.append(row)
+                    rownum += 1
+                    if rownum == INSERT_ROW_COUNT:
                         conn.execute(text(insert_text), buffer)
-                    buffer = []
-                    rownum = 0
-            else:
-                with self.engine.begin() as conn:
-                    conn.execute(text(insert_text), buffer)
+                        buffer = []
+                        rownum = 0
+                else:  # this is for/else
+                        conn.execute(text(insert_text), buffer)
 
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str, truncate=False):
         self._prepare_table(

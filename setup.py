@@ -37,7 +37,7 @@ INSTALL_REQUIRES = [
     "statsmodels==0.13.1",
     "scipy==1.7.2",
     "seaborn==0.11.2",
-    "sqlalchemy<1.4.0",
+    "sqlalchemy==2.0.4",
     "nbformat==5.1.3",
     "nbconvert==6.3.0",
     "jinja2==3.0.3",

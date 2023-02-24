@@ -1,7 +1,7 @@
 CREATE TABLE gas_av_costs (
-    state VARCHAR,
-    utility VARCHAR,
-    region VARCHAR,
+    state TEXT,
+    utility TEXT,
+    region TEXT,
     year INTEGER,
     quarter INTEGER,
     month INTEGER,

@@ -27,6 +27,7 @@ import logging
 from jinja2 import Environment, PackageLoader, select_autoescape
 # import pandas as pd
 from sqlalchemy import create_engine, text, inspect
+import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 
 SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
@@ -90,16 +91,20 @@ class DBManager:
         # TODO: add support for BigQuery via https://github.com/googleapis/python-bigquery-sqlalchemy
         if database == "postgres":
             db = database_settings.get("db", "postgres")
-            conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
+            conn_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
         elif database == "sqlite":
             db = database_settings.get('db', 'dbfile.db')
             conn_str = f"sqlite+pysqlite://{user}:{password}/{db}"
         logging.debug(f'returning connection string "{conn_str}"')
-        return conn_str
+        return conn_str, database_settings
 
     def _get_db_engine(self, db_config_path: str): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
-        conn_str = self._get_db_connection_string(db_config_path) if db_config_path else self._get_default_db_conn_str()
-        engine = create_engine(conn_str)
+        # TODO do we really need to return two values from _get_db_connection_string?
+        conn_str, database_settings = self._get_db_connection_string(db_config_path) if db_config_path else self._get_default_db_conn_str()
+        if database_settings['database'] == 'postgres':
+            engine = create_engine(conn_str, use_insertmanyvalues=True)
+        else:
+            engine = create_engine(conn_str)
         logging.debug(f"dialect = {engine.dialect.name}")
         return engine
 

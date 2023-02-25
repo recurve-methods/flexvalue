@@ -117,7 +117,7 @@ class DBManager:
 
     def _get_default_db_conn_str(self) -> str:
         """ If no db config file is provided, default to a local sqlite database."""
-        return "sqlite+pysqlite:///flexvalue.db"
+        return "sqlite+pysqlite:///flexvalue.db", dict()
 
     def _file_to_string(self, filename):
         ret = None

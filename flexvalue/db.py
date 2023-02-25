@@ -175,6 +175,7 @@ class DBManager:
             truncate=True
         )
         discount_dicts = []
+        idx = 1
         for project_dict in project_dicts:
             year = int(project_dict['start_year'])
             for quarter in range(4 * int(project_dict['eul'])):
@@ -183,7 +184,8 @@ class DBManager:
                 new_q = ((int(project_dict['start_quarter']) + quarter - 1) % 4) + 1
                 if new_q == 1:
                     year += 1
-                discount_dicts.append({'project_id': project_dict['project_id'], 'year': year, 'quarter': new_q, 'discount': discount})
+                discount_dicts.append({'pk': idx, 'project_id': project_dict['project_id'], 'year': year, 'quarter': new_q, 'discount': discount})
+                idx += 1
         insert_text = self._file_to_string('flexvalue/templates/load_discount.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), discount_dicts)

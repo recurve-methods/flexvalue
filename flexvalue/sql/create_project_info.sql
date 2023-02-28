@@ -1,5 +1,5 @@
 CREATE TABLE project_info (
-    project_id TEXT,
+    project_id TEXT PRIMARY KEY,
     state TEXT,
     utility TEXT,
     region TEXT,

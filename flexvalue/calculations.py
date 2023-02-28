@@ -17,23 +17,37 @@
    limitations under the License.
 
 """
+from dataclasses import dataclass
+from .config import FLEXValueConfig
 
-from .db import DBManager #get_filtered_acc_elec, get_filtered_acc_gas, get_deer_load_shape
+from .db import (
+    DBManager,
+)  # get_filtered_acc_elec, get_filtered_acc_gas, get_deer_load_shape
+
 # from .settings import (
 #     ACC_COMPONENTS_ELECTRICITY,
 #     ACC_COMPONENTS_GAS,
 #     THERMS_PROFILE_ADJUSTMENT,
 # )
 
-__all__ = (
-    "run",
-)
+__all__ = ("run",)
+
 
 # TODO Do we even want this file?
-def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs=None,
-    elec_load_shape_file=None, therms_profiles_path=None, reset_elec_load_shape=None,
-    reset_elec_av_costs=None, reset_therms_profiles=None, reset_gas_av_costs=None):
-    db_manager = DBManager(db_config_path=db_config_path)
+def run(
+    config_file,
+    project_info=None,
+    elec_av_costs=None,
+    gas_av_costs=None,
+    elec_load_shape_file=None,
+    therms_profiles_path=None,
+    reset_elec_load_shape=None,
+    reset_elec_av_costs=None,
+    reset_therms_profiles=None,
+    reset_gas_av_costs=None,
+):
+    config = FLEXValueConfig.from_file(config_file)
+    db_manager = DBManager(config)
     if reset_elec_load_shape:
         db_manager.reset_elec_load_shape()
     if reset_elec_av_costs:
@@ -42,14 +56,23 @@ def run(db_config_path=None, project_info=None, elec_av_costs=None, gas_av_costs
         db_manager.reset_therms_profiles()
     if reset_gas_av_costs:
         db_manager.reset_gas_av_costs()
-    if elec_av_costs:
-        db_manager.load_elec_avoided_costs_file(elec_av_costs_path=elec_av_costs)
-    if gas_av_costs:
-        db_manager.load_gas_avoided_costs_file(gas_av_costs_path=gas_av_costs)
-    if elec_load_shape_file:
-        db_manager.load_elec_load_shapes_file(elec_load_shape_file)
-    if project_info:
-        db_manager.load_project_info_file(project_info_path=project_info)
-    if therms_profiles_path:
-        db_manager.load_therms_profiles_file(therms_profiles_path=therms_profiles_path)
-
+    if elec_av_costs or config.elec_av_costs:
+        db_manager.load_elec_avoided_costs_file(
+            elec_av_costs if elec_av_costs else config.elec_av_costs
+        )
+    if gas_av_costs or config.gas_av_costs:
+        db_manager.load_gas_avoided_costs_file(
+            gas_av_costs if gas_av_costs else config.gas_av_costs
+        )
+    if elec_load_shape_file or config.elec_load_shape:
+        db_manager.load_elec_load_shapes_file(
+            elec_load_shape_file if elec_load_shape_file else config.elec_load_shape
+        )
+    if therms_profiles_path or config.therms_profiles:
+        db_manager.load_therms_profiles_file(
+            therms_profiles_path if therms_profiles_path else config.therms_profiles
+        )
+    if project_info or config.project_info:
+        db_manager.load_project_info_file(
+            project_info if project_info else config.project_info
+        )

@@ -38,8 +38,8 @@ def cli():
     help="Filepath to the project information file that is used to calculate results"
 )
 @click.option(
-    "--db-config-file",
-    help="Filepath to the json file containing the database configuration information."
+    "--config-file",
+    help="Path to the toml configuration file."
 )
 @click.option(
     "--elec-av-costs-file",
@@ -78,8 +78,8 @@ def cli():
     is_flag=True
 )
 def get_results(
+    config_file,
     project_info,
-    db_config_file,
     elec_av_costs_file,
     gas_av_costs_file,
     elec_load_shape_file,
@@ -89,9 +89,10 @@ def get_results(
     reset_therms_profiles,
     reset_gas_av_costs
 ):
-    print(f"reset_elec_load_shape = {reset_elec_load_shape}, reset_elec_av_costs={reset_elec_av_costs}, reset_therms_profiles={reset_therms_profiles}, reset_gas_av_costs={reset_gas_av_costs}")
+    # print(f"reset_elec_load_shape = {reset_elec_load_shape}, reset_elec_av_costs={reset_elec_av_costs}, reset_therms_profiles={reset_therms_profiles}, reset_gas_av_costs={reset_gas_av_costs}")
+    print(f"config file = {config_file}, project_info = {project_info}")
     try:
-        run(db_config_path=db_config_file,
+        run(config_file,
             project_info=project_info,
             elec_av_costs=elec_av_costs_file,
             gas_av_costs=gas_av_costs_file,

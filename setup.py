@@ -33,6 +33,7 @@ NAME = "flexvalue"
 # TODO: fix psycopg-binary; use correct dependency for distributing
 INSTALL_REQUIRES = [
     "click==8.0.3",
+    "toml==0.10.2",
     "pandas==1.3.4",
     "statsmodels==0.13.1",
     "scipy==1.7.2",

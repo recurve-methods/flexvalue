@@ -29,6 +29,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
+from .config import FLEXValueConfig
 
 SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
 
@@ -71,53 +72,43 @@ HEADER_READ_SIZE = 4096
 INSERT_ROW_COUNT = 100000
 
 class DBManager:
-    def __init__(self, db_config_path:str) -> None:
+    def __init__(self, fv_config:FLEXValueConfig) -> None:
         self.template_env = Environment(loader=PackageLoader('flexvalue'), autoescape=select_autoescape())
-        self.engine = self._get_db_engine(db_config_path)
+        self.engine = self._get_db_engine(fv_config)
 
-    def _get_db_connection_string(self, db_config_path: str) -> str:
+    def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
         """ Get the sqlalchemy db connection string for the given settings."""
-        database_settings = self._get_database_config(db_config_path)
-        database = database_settings['database']
-        host = database_settings['host']
-        port = database_settings['port']
-        user = database_settings.get('user', None)
-        password = database_settings.get('password', None)
-        logging.debug(f'database={database}, host={host}, port={port}, user={user}')
-        if database not in SUPPORTED_DBS:
-            raise ValueError(f"Unknown database type '{database}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}")
-
-        # TODO: get these all working
+        database_type = config.database_type
         # TODO: add support for BigQuery via https://github.com/googleapis/python-bigquery-sqlalchemy
-        if database == "postgres":
-            db = database_settings.get("db", "postgres")
-            conn_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
-        elif database == "sqlite":
-            db = database_settings.get('db', 'dbfile.db')
-            conn_str = f"sqlite+pysqlite://{user}:{password}/{db}"
+        if database_type not in SUPPORTED_DBS:
+            raise ValueError(f"Unknown database type '{database_type}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}")
+        if database_type == 'postgres':
+            user = config.user
+            password = config.password
+            host = config.host
+            port = config.port
+            database = config.database
+            conn_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+        elif database_type == "sqlite":
+            database = config.database
+            conn_str = f"sqlite+pysqlite://{database}"
         logging.debug(f'returning connection string "{conn_str}"')
-        return conn_str, database_settings
+        return conn_str
 
-    def _get_db_engine(self, db_config_path: str): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
-        # TODO do we really need to return two values from _get_db_connection_string?
-        conn_str, database_settings = self._get_db_connection_string(db_config_path) if db_config_path else self._get_default_db_conn_str()
-        if database_settings['database'] == 'postgres':
-            engine = create_engine(conn_str, use_insertmanyvalues=True)
+    def _get_db_engine(self, config: FLEXValueConfig): # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
+        if config.use_specified_db():
+            logging.debug('using specified db')
+            conn_str = self._get_db_connection_string(config)
         else:
-            engine = create_engine(conn_str)
+            logging.debug('using default dp connection')
+            conn_str = self._get_default_db_conn_str()
+        engine = create_engine(conn_str)
         logging.debug(f"dialect = {engine.dialect.name}")
         return engine
 
-    def _get_database_config(self, db_config_path:str) -> dict:
-        db_config = {}
-        with open(db_config_path) as f:
-            config_str = f.read()
-            db_config = json.loads(config_str)
-        return db_config
-
     def _get_default_db_conn_str(self) -> str:
         """ If no db config file is provided, default to a local sqlite database."""
-        return "sqlite+pysqlite:///flexvalue.db", dict()
+        return "sqlite+pysqlite:///flexvalue.db", {'database': 'sqlite'}
 
     def _file_to_string(self, filename):
         ret = None
@@ -205,7 +196,10 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
         self._load_discount_table(dicts)
+        from datetime import datetime
+        logging.debug(f"About to start calculation, it is {datetime.now()}")
         self._perform_calculation()
+        logging.debug(f"after calc, it is {datetime.now()}")
 
     def _get_empty_tables(self):
         empty_tables = []
@@ -223,13 +217,18 @@ class DBManager:
         return empty_tables
 
     def _perform_calculation(self):
+        from datetime import datetime
+        logging.debug(f"before empty tables it is {datetime.now()}")
         empty_tables = self._get_empty_tables()
+        logging.debug(f"after empty tables it is {datetime.now()}")
         if empty_tables:
             # TODO the table names are implementation-dependent, let's see if we can give a better error message here
             raise ValueError(f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}")
         sql = self._get_calculation_sql()
         with self.engine.begin() as conn:
+            logging.debug(f'before calc sql, it is {datetime.now()}')
             result = conn.execute(text(sql))
+            logging.debug(f'after calc sql, it is {datetime.now()}')
             print(", ".join(result.keys()))
             for row in result:
                 print(", ".join([str(col) for col in row]))

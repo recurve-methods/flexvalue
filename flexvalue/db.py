@@ -100,7 +100,7 @@ class DBManager:
             logging.debug('using specified db')
             conn_str = self._get_db_connection_string(config)
         else:
-            logging.debug('using default dp connection')
+            logging.debug('using default db connection')
             conn_str = self._get_default_db_conn_str()
         engine = create_engine(conn_str)
         logging.debug(f"dialect = {engine.dialect.name}")
@@ -108,7 +108,7 @@ class DBManager:
 
     def _get_default_db_conn_str(self) -> str:
         """ If no db config file is provided, default to a local sqlite database."""
-        return "sqlite+pysqlite:///flexvalue.db", {'database': 'sqlite'}
+        return "sqlite+pysqlite:///flexvalue.db"
 
     def _file_to_string(self, filename):
         ret = None

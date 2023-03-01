@@ -1,9 +1,9 @@
 [run]
 project_info = "example_user_inputs.csv"
-elec_load_shape = "ca_hourly_electric_load_shapes.csv"
-elec_av_costs = "full_ca_avoided_costs_2020acc.csv"
-therms_profiles = "ca_monthly_therms_load_profiles.csv"
-gas_av_costs = "full_ca_avoided_costs_2020acc_gas.csv"
+#elec_load_shape = "ca_hourly_electric_load_shapes.csv"
+#elec_av_costs = "full_ca_avoided_costs_2020acc.csv"
+#therms_profiles = "ca_monthly_therms_load_profiles.csv"
+#gas_av_costs = "full_ca_avoided_costs_2020acc_gas.csv"
 
 [database]
 database_type = "postgres"

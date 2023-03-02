@@ -140,14 +140,13 @@ class DBManager:
         # if the table doesn't exist, create it
         inspection = inspect(self.engine)
         table_exists = inspection.has_table(table_name)
-        if not table_exists:
-            sql = self._file_to_string(sql_filepath)
-            with self.engine.begin() as conn:
-                sql_results = conn.execute(text(sql))
-        if index_filepath:
-            sql = self._file_to_string(index_filepath)
-            with self.engine.begin() as conn:
-                sql_results = conn.execute(text(sql))
+        with self.engine.begin() as conn:
+            if not table_exists:
+                sql = self._file_to_string(sql_filepath)
+                _ = conn.execute(text(sql))
+            for index_filepath in index_filepaths:
+                sql = self._file_to_string(index_filepath)
+                _ = conn.execute(text(sql))
         if truncate:
             self._reset_table(table_name)
 

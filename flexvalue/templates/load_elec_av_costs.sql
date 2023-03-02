@@ -6,8 +6,10 @@ INSERT INTO elec_av_costs (
     year,
     quarter,
     month,
+    date_str,
     hour_of_day,
     hour_of_year,
+    hoy_util_st,
     energy,
     losses,
     ancillary_services,
@@ -21,5 +23,5 @@ INSERT INTO elec_av_costs (
     total,
     marginal_ghg,
     ghg_adder_rebalancing
-) VALUES ( :state, :utility, :region, :datetime, :year, :quarter, :month, :hour_of_day, :hour_of_year, :energy, :losses, :ancillary_services, :capacity, :transmission, :distribution, :cap_and_trade, :ghg_adder, :ghg_rebalancing, :methane_leakage, :total, :marginal_ghg, :ghg_adder_rebalancing
+) VALUES ( :state, :utility, :region, :datetime, :year, :quarter, :month, :date_str, :hour_of_day, :hour_of_year, :hoy_util_st, :energy, :losses, :ancillary_services, :capacity, :transmission, :distribution, :cap_and_trade, :ghg_adder, :ghg_rebalancing, :methane_leakage, :total, :marginal_ghg, :ghg_adder_rebalancing
 )

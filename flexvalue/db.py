@@ -17,15 +17,12 @@
    limitations under the License.
 
 """
-import os
 import sys
-import json
 import csv
 import math
 import logging
 
 from jinja2 import Environment, PackageLoader, select_autoescape
-# import pandas as pd
 from sqlalchemy import create_engine, text, inspect
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location

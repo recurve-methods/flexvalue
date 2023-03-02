@@ -9,6 +9,8 @@ CREATE TABLE project_info (
     therms_profile TEXT,
     start_year INTEGER,
     start_quarter INTEGER,
+    start_date TEXT,
+    end_date TEXT,
     units INTEGER,
     eul INTEGER,
     ntg FLOAT,

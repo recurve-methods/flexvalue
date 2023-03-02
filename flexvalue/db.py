@@ -136,8 +136,8 @@ class DBManager:
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
 
-    def _prepare_table(self, table_name: str, sql_filepath:str, index_filepath:str=None, truncate:bool=False):
-        # if the table doesn't exist, create it
+    def _prepare_table(self, table_name: str, sql_filepath:str, index_filepaths=[], truncate:bool=False):
+        # if the table doesn't exist, create it and all related indexes
         inspection = inspect(self.engine)
         table_exists = inspection.has_table(table_name)
         with self.engine.begin() as conn:
@@ -158,7 +158,7 @@ class DBManager:
         self._prepare_table(
             'discount',
             'flexvalue/sql/create_discount.sql',
-            index_filepath="flexvalue/sql/discount_index.sql",
+            index_filepaths=["flexvalue/sql/discount_index.sql"],
             truncate=True
         )
         discount_dicts = []
@@ -181,13 +181,21 @@ class DBManager:
         self._prepare_table(
             'project_info',
             'flexvalue/sql/create_project_info.sql',
-            index_filepath="flexvalue/sql/project_info_index.sql",
+            index_filepaths=["flexvalue/sql/project_info_index.sql", "flexvalue/sql/project_info_dates_index.sql"],
             truncate=True
         )
         dicts = self._csv_file_to_dicts(
             project_info_path, fieldnames=PROJECT_INFO_FIELDS,
             fields_to_upper=['elec_load_shape', 'state', 'region', 'utility']
         )
+        for d in dicts:
+            start_year = int(d['start_year'])
+            eul = int(d['eul'])
+            quarter = d['start_quarter']
+            month = self._quarter_to_month(quarter)
+            d['start_date'] = f"{start_year}-{month}-01"
+            d['end_date'] = f"{start_year + eul}-{month}-01"
+        logging.debug(f'in loading project_info, dicts = {dicts}')
         insert_text = self._file_to_string('flexvalue/templates/load_project_info.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
@@ -196,6 +204,10 @@ class DBManager:
         logging.debug(f"About to start calculation, it is {datetime.now()}")
         self._perform_calculation()
         logging.debug(f"after calc, it is {datetime.now()}")
+
+    def _quarter_to_month(self, qtr):
+            quarter = int(qtr)
+            return "{:02d}".format(((quarter - 1) * 3) + 1)
 
     def _get_empty_tables(self):
         empty_tables = []
@@ -283,7 +295,7 @@ class DBManager:
         self._prepare_table(
             'elec_load_shape',
             'flexvalue/sql/create_elec_load_shape.sql',
-            index_filepath="flexvalue/sql/elec_load_shape_index.sql",
+            index_filepaths=["flexvalue/sql/elec_load_shape_index.sql"],
             truncate=truncate
         )
         rows = self._csv_file_to_rows(elec_load_shapes_path)
@@ -301,7 +313,8 @@ class DBManager:
                     'hour_of_day': rows[row][5],
                     'hour_of_year': rows[row][6],
                     'load_shape_name': rows[0][col].upper(),
-                    'value': rows[row][col]
+                    'value': rows[row][col],
+                    'hoy_util_st': rows[row][6] + rows[row][1].upper() + rows[row][0].upper()
                 })
         insert_text = self._file_to_string('flexvalue/templates/load_elec_load_shape.sql')
         with self.engine.begin() as conn:
@@ -331,11 +344,12 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), buffer)
 
-    def _load_csv_file(self, csv_file_path:str, table_name: str, fieldnames, load_sql_file_path:str):
+    def _load_csv_file(self, csv_file_path:str, table_name: str, fieldnames, load_sql_file_path:str, dict_processor=None):
         """ Loads the table_name table, Since some of the input data can be over a gibibyte,
         the load reads in chunks of data and inserts them sequentially. The chunk size is
         determined by INSERT_ROW_COUNT in this file.
         fieldnames is the list of expected values in the header row of the csv file being read.
+        dict_processor is a function that takes a single dictionary and returns a single dictionary
         """
         with open(csv_file_path, newline='') as f:
             has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
@@ -348,7 +362,7 @@ class DBManager:
             insert_text = self._file_to_string(load_sql_file_path)
             with self.engine.begin() as conn:
                 for row in csv_reader:
-                    buffer.append(row)
+                    buffer.append(dict_processor(row) if dict_processor else row)
                     rownum += 1
                     if rownum == INSERT_ROW_COUNT:
                         conn.execute(text(insert_text), buffer)
@@ -361,11 +375,22 @@ class DBManager:
         self._prepare_table(
             'elec_av_costs',
             'flexvalue/sql/create_elec_av_cost.sql',
-            index_filepath="flexvalue/sql/elec_av_costs_index.sql",
+            index_filepaths=["flexvalue/sql/elec_av_costs_index.sql"],
             truncate=truncate
         )
         logging.debug('about to load elec av costs')
-        self._load_csv_file(elec_av_costs_path, 'elec_av_costs', ELEC_AVOIDED_COSTS_FIELDS, "flexvalue/templates/load_elec_av_costs.sql")
+        self._load_csv_file(
+            elec_av_costs_path,
+            'elec_av_costs',
+            ELEC_AVOIDED_COSTS_FIELDS,
+            "flexvalue/templates/load_elec_av_costs.sql",
+            dict_processor=self._eac_dict_mapper
+        )
+
+    def _eac_dict_mapper(self, dict_to_process):
+        dict_to_process['date_str'] = dict_to_process['datetime'][:10] # just the 'yyyy-mm-dd'
+        dict_to_process['hoy_util_st'] = dict_to_process['hour_of_year'] + dict_to_process['utility'] + dict_to_process['state']
+        return dict_to_process
 
     def load_gas_avoided_costs_file(self, gas_av_costs_path: str, truncate=False):
         self._prepare_table('gas_av_costs', 'flexvalue/sql/create_gas_av_cost.sql', truncate=truncate)

@@ -1,4 +1,5 @@
 CREATE TABLE elec_av_costs (
+    pk SERIAL PRIMARY KEY,
     state TEXT,
     utility TEXT,
     region TEXT,
@@ -6,8 +7,10 @@ CREATE TABLE elec_av_costs (
     year INTEGER,
     quarter INTEGER,
     month INTEGER,
+    date_str TEXT,
     hour_of_day INTEGER,
     hour_of_year INTEGER,
+    hoy_util_st TEXT,
     energy FLOAT,
     losses FLOAT,
     ancillary_services FLOAT,

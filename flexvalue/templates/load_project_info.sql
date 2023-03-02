@@ -9,6 +9,8 @@ INSERT INTO project_info (
     therms_profile,
     start_year,
     start_quarter,
+    start_date,
+    end_date,
     units,
     eul,
     ntg,
@@ -19,6 +21,7 @@ INSERT INTO project_info (
 )
 VALUES (
     :project_id, :state, :utility, :region, :mwh_savings, :therms_savings,
-    :elec_load_shape, :therms_profile, :start_year, :start_quarter, :units,
-    :eul, :ntg, :discount_rate, :admin_cost, :measure_cost, :incentive_cost
+    :elec_load_shape, :therms_profile, :start_year, :start_quarter,
+    :start_date, :end_date, :units, :eul, :ntg, :discount_rate, :admin_cost,
+    :measure_cost, :incentive_cost
 )

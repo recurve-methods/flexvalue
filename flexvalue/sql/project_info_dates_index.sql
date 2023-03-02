@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS project_info_dates_index ON project_info(start_date, end_date);

@@ -1,7 +1,6 @@
 CREATE TABLE discount (
-    pk INTEGER PRIMARY KEY,
+    pk SERIAL PRIMARY KEY,
     project_id TEXT,
-    year INTEGER,
-    quarter INTEGER,
+    date DATE,
     discount FLOAT
 );

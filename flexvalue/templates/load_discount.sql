@@ -1,8 +1,6 @@
 INSERT INTO discount (
-    pk,
     project_id,
-    year,
-    quarter,
+    date,
     discount
 )
-VALUES (:pk, :project_id, :year, :quarter, :discount)
+VALUES (:project_id, :date, :discount)

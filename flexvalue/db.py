@@ -27,6 +27,7 @@ from sqlalchemy import create_engine, text, inspect
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 from .config import FLEXValueConfig
+from datetime import datetime, timedelta
 
 SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
 
@@ -158,21 +159,26 @@ class DBManager:
         self._prepare_table(
             'discount',
             'flexvalue/sql/create_discount.sql',
-            index_filepaths=["flexvalue/sql/discount_index.sql"],
+            #index_filepaths=["flexvalue/sql/discount_index.sql"],
             truncate=True
         )
         discount_dicts = []
         idx = 1
         for project_dict in project_dicts:
-            year = int(project_dict['start_year'])
-            for quarter in range(4 * int(project_dict['eul'])):
-                discount_rate = float(project_dict['discount_rate'])
-                discount = 1.0 / math.pow((1.0 + (discount_rate / 4.0)), quarter)
-                new_q = ((int(project_dict['start_quarter']) + quarter - 1) % 4) + 1
-                if new_q == 1:
-                    year += 1
-                discount_dicts.append({'pk': idx, 'project_id': project_dict['project_id'], 'year': year, 'quarter': new_q, 'discount': discount})
-                idx += 1
+            cur_date = datetime.strptime(project_dict["start_date"], '%Y-%m-%d')
+            end_date = datetime.strptime(project_dict["end_date"], '%Y-%m-%d')
+            discount_rate = float(project_dict["discount_rate"])
+            start_year = int(project_dict["start_year"])
+            start_quarter = int(project_dict["start_quarter"])
+            while cur_date <= end_date:
+                # TODO double-check that this is correct, starting at 1st quarter
+                discount = 1.0 / pow(
+                    (1.0 + discount_rate / 4.0),
+                    ((cur_date.year - start_year) * 4) + (start_quarter - 1)
+                )
+                discount_dicts.append({'project_id': project_dict["project_id"], 'date': cur_date, 'discount':discount})
+                cur_date = cur_date + timedelta(days=1)
+
         insert_text = self._file_to_string('flexvalue/templates/load_discount.sql')
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), discount_dicts)

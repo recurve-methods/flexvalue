@@ -3,14 +3,13 @@ CREATE TABLE elec_av_costs (
     state TEXT,
     utility TEXT,
     region TEXT,
-    date_time TEXT, -- TODO figure this out for the various dbs
+    date_time TIMESTAMP, -- TODO figure this out for the various dbs
     year INTEGER,
     quarter INTEGER,
     month INTEGER,
     date_str TEXT,
     hour_of_day INTEGER,
     hour_of_year INTEGER,
-    hoy_util_st TEXT,
     energy FLOAT,
     losses FLOAT,
     ancillary_services FLOAT,

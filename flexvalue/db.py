@@ -21,13 +21,14 @@ import sys
 import csv
 import math
 import logging
+import calendar
+from datetime import datetime, timedelta
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 from .config import FLEXValueConfig
-from datetime import datetime, timedelta
 
 SUPPORTED_DBS = ('postgres', 'sqlite')  # 'bigquery')
 
@@ -70,8 +71,11 @@ HEADER_READ_SIZE = 4096
 INSERT_ROW_COUNT = 100000
 
 class DBManager:
-    def __init__(self, fv_config:FLEXValueConfig) -> None:
-        self.template_env = Environment(loader=PackageLoader('flexvalue'), autoescape=select_autoescape())
+    def __init__(self, fv_config: FLEXValueConfig) -> None:
+        self.template_env = Environment(
+            loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
+        )
+        self.config = fv_config
         self.engine = self._get_db_engine(fv_config)
 
     def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
@@ -174,9 +178,15 @@ class DBManager:
                 # TODO double-check that this is correct, starting at 1st quarter
                 discount = 1.0 / pow(
                     (1.0 + discount_rate / 4.0),
-                    ((cur_date.year - start_year) * 4) + (start_quarter - 1)
+                    ((cur_date.year - start_year) * 4) + (start_quarter - 1),
                 )
-                discount_dicts.append({'project_id': project_dict["project_id"], 'date': cur_date, 'discount':discount})
+                discount_dicts.append(
+                    {
+                        "project_id": project_dict["project_id"],
+                        "date": cur_date,
+                        "discount": discount,
+                    }
+                )
                 cur_date = cur_date + timedelta(days=1)
 
         insert_text = self._file_to_string('flexvalue/templates/load_discount.sql')
@@ -212,8 +222,8 @@ class DBManager:
         logging.debug(f"after calc, it is {datetime.now()}")
 
     def _quarter_to_month(self, qtr):
-            quarter = int(qtr)
-            return "{:02d}".format(((quarter - 1) * 3) + 1)
+        quarter = int(qtr)
+        return "{:02d}".format(((quarter - 1) * 3) + 1)
 
     def _get_empty_tables(self):
         empty_tables = []
@@ -291,6 +301,17 @@ class DBManager:
                 rows.append(row)
         return rows
 
+    def _pg_connect(self):
+        connection = psycopg.connect(
+            dbname=self.config.database,
+            host=self.config.host,
+            port=self.config.port,
+            user=self.config.user,
+            password=self.config.password
+        )
+        logging.debug(f"connection = {connection}")
+        return connection
+
     def load_elec_load_shapes_file(self, elec_load_shapes_path: str, truncate=False):
         """ Load the hourly electric load shapes (csv) file. The first 7 columns
         are fixed. Then there are a variable number of columns, one for each
@@ -304,30 +325,94 @@ class DBManager:
             index_filepaths=["flexvalue/sql/elec_load_shape_index.sql"],
             truncate=truncate
         )
-        rows = self._csv_file_to_rows(elec_load_shapes_path)
-        # TODO can we clean this up?
-        num_columns = len(rows[0])
-        buffer = []
-        for col in range(7, num_columns):
-            for row in range(1, len(rows)):
-                buffer.append({
-                    'state': rows[row][0].upper(),
-                    'utility': rows[row][1].upper(),
-                    'region': rows[row][2].upper(),
-                    'quarter': rows[row][3],
-                    'month': rows[row][4],
-                    'hour_of_day': rows[row][5],
-                    'hour_of_year': rows[row][6],
-                    'load_shape_name': rows[0][col].upper(),
-                    'value': rows[row][col],
-                    'hoy_util_st': rows[row][6] + rows[row][1].upper() + rows[row][0].upper()
-                })
-        insert_text = self._file_to_string('flexvalue/templates/load_elec_load_shape.sql')
-        with self.engine.begin() as conn:
-            conn.execute(text(insert_text), buffer)
+        if self.engine.dialect.name == "postgresql":
+            self._postgres_load_elec_load_shapes(elec_load_shapes_path)
+        else:
+            rows = self._csv_file_to_rows(elec_load_shapes_path)
+            # TODO can we clean this up?
+            num_columns = len(rows[0])
+            buffer = []
+            for col in range(7, num_columns):
+                for row in range(1, len(rows)):
+                    buffer.append(
+                        {
+                            "state": rows[row][0].upper(),
+                            "utility": rows[row][1].upper(),
+                            "region": rows[row][2].upper(),
+                            "quarter": rows[row][3],
+                            "month": rows[row][4],
+                            "hour_of_day": rows[row][5],
+                            "hour_of_year": rows[row][6],
+                            "load_shape_name": rows[0][col].upper(),
+                            "value": rows[row][col],
+                            "hoy_util_st": rows[row][6]
+                            + rows[row][1].upper()
+                            + rows[row][0].upper(),
+                        }
+                    )
+            insert_text = self._file_to_string(
+                "flexvalue/templates/load_elec_load_shape.sql"
+            )
+            with self.engine.begin() as conn:
+                conn.execute(text(insert_text), buffer)
 
-    def load_therms_profiles_file(self, therms_profiles_path: str, truncate:bool=False):
-        """ Loads the therms profiles csv file. This file has 5 fixed columns and then
+    def _postgres_load_elec_load_shape_path(self, elec_load_shapes_path: str):
+        with self._pg_connect() as conn:
+            with conn.cursor() as cur:
+
+                # if you're concerned about RAM change this to sane number
+                MAX_ROWS = sys.maxsize
+
+                buf = []
+                min_year = min(p["start_year"] for p in projects)
+                max_eul_years = max(p["eul"] for p in projects)
+
+                with open(elec_load_shapes_path) as f:
+                    # this probably escapes fine but a csv reader is a safer bet
+                    columns = f.readline().split(",")
+                    load_shape_names = [
+                        c.strip()
+                        for c in columns
+                        if columns.index(c) > columns.index("hour_of_year")
+                    ]
+
+                    f.seek(0)
+                    reader = csv.DictReader(f)
+                    for eul_year in range(max_eul_years):
+                        for r in reader:
+                            year = min_year + eul_year
+                            hour_of_year = int(r["hour_of_year"])
+                            eac_timestamp = datetime(year, 1, 1) + timedelta(
+                                hours=hour_of_year
+                            )
+
+                            # If the year is a leap year, move forward a day to avoid Feb 29
+                            if calendar.isleap(year) and eac_timestamp >= datetime(
+                                year, 2, 29
+                            ):
+                                eac_timestamp = eac_timestamp + timedelta(hours=24)
+
+                            for load_shape in load_shape_names:
+                                buf.append(
+                                    (
+                                        load_shape,
+                                        eac_timestamp,
+                                        r["utility"],
+                                        float(r[load_shape]),
+                                    )
+                                )
+                        if len(buf) >= MAX_ROWS:
+                            copy_write(cur, buf)
+                            buf = []
+                    else:
+                        copy_write(cur, buf)
+            conn.commit()
+            conn.close()
+
+    def load_therms_profiles_file(
+        self, therms_profiles_path: str, truncate: bool = False
+    ):
+        """Loads the therms profiles csv file. This file has 5 fixed columns and then
         a variable number of columns after that, each of which represents a therms
         profile. This method parses that file to construct a SQL INSERT statement, then
         inserts the data into the therms_profile table."""
@@ -375,7 +460,87 @@ class DBManager:
                         buffer = []
                         rownum = 0
                 else:  # this is for/else
-                        conn.execute(text(insert_text), buffer)
+                    conn.execute(text(insert_text), buffer)
+
+    def _postgres_load_elec_av_costs(self, elec_av_costs_path):
+        def copy_write(cur, rows):
+            with cur.copy(
+                """COPY elec_av_costs (
+                    state,
+                    utility,
+                    region,
+                    date_time,
+                    year,
+                    quarter,
+                    month,
+                    hour_of_day,
+                    hour_of_year,
+                    energy,
+                    losses,
+                    ancillary_services,
+                    capacity,
+                    transmission,
+                    distribution,
+                    cap_and_trade,
+                    ghg_adder,
+                    ghg_rebalancing,
+                    methane_leakage,
+                    total,
+                    marginal_ghg,
+                    ghg_adder_rebalancing)
+                    FROM STDIN"""
+            ) as copy:
+                for row in rows:
+                    copy.write_row(row)
+
+        logging.debug("in pg version of load_elec_av_costs")
+        # if you're concerned about RAM change this to sane number
+        MAX_ROWS = sys.maxsize
+
+        try:
+            conn = self._pg_connect()
+            cur = conn.cursor()
+            buf = []
+            with open(elec_av_costs_path) as f:
+                reader = csv.DictReader(f)
+                for i, r in enumerate(reader):
+                    eac_timestamp = datetime.strptime(
+                        r["datetime"], "%Y-%m-%d %H:%M:%S %Z"
+                    )
+                    buf.append(
+                        [
+                            r["state"],
+                            r["utility"],
+                            r["region"],
+                            eac_timestamp,
+                            r["year"],
+                            r["quarter"],
+                            r["month"],
+                            r["hour_of_day"],
+                            r["hour_of_year"],
+                            r["energy"],
+                            r["losses"],
+                            r["ancillary_services"],
+                            r["capacity"],
+                            r["transmission"],
+                            r["distribution"],
+                            r["cap_and_trade"],
+                            r["ghg_adder"],
+                            r["ghg_rebalancing"],
+                            r["methane_leakage"],
+                            float(r["total"]),
+                            r["marginal_ghg"],
+                            r["ghg_adder_rebalancing"],
+                        ]
+                    )
+                    if len(buf) == MAX_ROWS:
+                        copy_write(cur, buf)
+                        buf = []
+                else:
+                    copy_write(cur, buf)
+            conn.commit()
+        except Exception as e:
+            logging.info(f"exception = {e}")
 
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str, truncate=False):
         self._prepare_table(
@@ -392,6 +557,17 @@ class DBManager:
             "flexvalue/templates/load_elec_av_costs.sql",
             dict_processor=self._eac_dict_mapper
         )
+        logging.debug("about to load elec av costs")
+        if self.engine.dialect.name == "postgresql":
+            self._postgres_load_elec_av_costs(elec_av_costs_path)
+        else:
+            self._load_csv_file(
+                elec_av_costs_path,
+                "elec_av_costs",
+                ELEC_AVOIDED_COSTS_FIELDS,
+                "flexvalue/templates/load_elec_av_costs.sql",
+                dict_processor=self._eac_dict_mapper,
+            )
 
     def _eac_dict_mapper(self, dict_to_process):
         dict_to_process['date_str'] = dict_to_process['datetime'][:10] # just the 'yyyy-mm-dd'

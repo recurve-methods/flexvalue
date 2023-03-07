@@ -414,6 +414,11 @@ class DBManager:
                 for row in rows:
                     copy.write_row(row)
 
+        inspection = inspect(self.engine)
+        table_exists = inspection.has_table('elec_av_costs')
+        if not table_exists:
+            raise ValueError("You must load the electric avoided costs data before you load the electric load shape data")
+
         min_ts, max_ts = self._get_timestamp_range()
         logging.debug(f'min_ts = {min_ts}, max_ts = {max_ts}')
         # try:

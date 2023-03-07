@@ -393,6 +393,89 @@ class DBManager:
         logging.debug(f"connection = {connection}")
         return connection
 
+    def _get_timestamp_range(self):
+        min_ts_query = "SELECT MIN(timestamp) FROM elec_av_costs;"
+        max_ts_query = "SELECT MAX(timestamp) FROM elec_av_costs;"
+        min_ts = None
+        max_ts = None
+        with self.engine.begin() as conn:
+            result = conn.execute(text(min_ts_query))
+            min_ts = result.scalar()
+            result = conn.execute(text(max_ts_query))
+            max_ts = result.scalar()
+        return (min_ts, max_ts)
+
+
+    def _postgres_load_elec_load_shapes(self, elec_load_shapes_path: str):
+        def copy_write(cur, rows):
+            with cur.copy(
+                "COPY elec_load_shape (timestamp, state, utility, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
+            ) as copy:
+                for row in rows:
+                    copy.write_row(row)
+
+        min_ts, max_ts = self._get_timestamp_range()
+        logging.debug(f'min_ts = {min_ts}, max_ts = {max_ts}')
+        # try:
+        conn = self._pg_connect()
+        cur = conn.cursor()
+        # if you're concerned about RAM change this to sane number
+        MAX_ROWS = sys.maxsize
+
+        buf = []
+        min_year = min_ts.year
+        year_span = max_ts.year - min_ts.year
+
+        with open(elec_load_shapes_path) as f:
+            # this probably escapes fine but a csv reader is a safer bet
+            columns = f.readline().split(",")
+            load_shape_names = [
+                c.strip()
+                for c in columns
+                if columns.index(c) > columns.index("hour_of_year")
+            ]
+
+            f.seek(0)
+            reader = csv.DictReader(f)
+            for eul_year in range(year_span):
+                for r in reader:
+                    year = min_year + eul_year
+                    hour_of_year = int(r["hour_of_year"])
+                    eac_timestamp = datetime(year, 1, 1) + timedelta(
+                        hours=hour_of_year
+                    )
+
+                    # If the year is a leap year, move forward a day to avoid Feb 29
+                    if calendar.isleap(year) and eac_timestamp >= datetime(
+                        year, 2, 29
+                    ):
+                        eac_timestamp = eac_timestamp + timedelta(hours=24)
+
+                    for load_shape in load_shape_names:
+                        buf.append(
+                            (
+                                eac_timestamp,
+                                r["state"],
+                                r["utility"],
+                                r["region"],
+                                int(r["quarter"]),
+                                int(r["month"]),
+                                int(r["hour_of_day"]),
+                                int(r["hour_of_year"]),
+                                load_shape,
+                                float(r[load_shape]),
+                            )
+                        )
+                if len(buf) >= MAX_ROWS:
+                    copy_write(cur, buf)
+                    buf = []
+            else:
+                copy_write(cur, buf)
+        conn.commit()
+        conn.close()
+        # except Exception as e:
+        #     logging.error(f"Exception loading the electric load shapes: {e}")
+
     def load_elec_load_shapes_file(self, elec_load_shapes_path: str, truncate=False):
         """Load the hourly electric load shapes (csv) file. The first 7 columns
         are fixed. Then there are a variable number of columns, one for each
@@ -436,59 +519,6 @@ class DBManager:
             )
             with self.engine.begin() as conn:
                 conn.execute(text(insert_text), buffer)
-
-    def _postgres_load_elec_load_shape_path(self, elec_load_shapes_path: str):
-        with self._pg_connect() as conn:
-            with conn.cursor() as cur:
-
-                # if you're concerned about RAM change this to sane number
-                MAX_ROWS = sys.maxsize
-
-                buf = []
-                min_year = min(p["start_year"] for p in projects)
-                max_eul_years = max(p["eul"] for p in projects)
-
-                with open(elec_load_shapes_path) as f:
-                    # this probably escapes fine but a csv reader is a safer bet
-                    columns = f.readline().split(",")
-                    load_shape_names = [
-                        c.strip()
-                        for c in columns
-                        if columns.index(c) > columns.index("hour_of_year")
-                    ]
-
-                    f.seek(0)
-                    reader = csv.DictReader(f)
-                    for eul_year in range(max_eul_years):
-                        for r in reader:
-                            year = min_year + eul_year
-                            hour_of_year = int(r["hour_of_year"])
-                            eac_timestamp = datetime(year, 1, 1) + timedelta(
-                                hours=hour_of_year
-                            )
-
-                            # If the year is a leap year, move forward a day to avoid Feb 29
-                            if calendar.isleap(year) and eac_timestamp >= datetime(
-                                year, 2, 29
-                            ):
-                                eac_timestamp = eac_timestamp + timedelta(hours=24)
-
-                            for load_shape in load_shape_names:
-                                buf.append(
-                                    (
-                                        load_shape,
-                                        eac_timestamp,
-                                        r["utility"],
-                                        float(r[load_shape]),
-                                    )
-                                )
-                        if len(buf) >= MAX_ROWS:
-                            copy_write(cur, buf)
-                            buf = []
-                    else:
-                        copy_write(cur, buf)
-            conn.commit()
-            conn.close()
 
     def load_therms_profiles_file(
         self, therms_profiles_path: str, truncate: bool = False
@@ -565,7 +595,7 @@ class DBManager:
                     state,
                     utility,
                     region,
-                    date_time,
+                    timestamp,
                     year,
                     quarter,
                     month,
@@ -636,7 +666,7 @@ class DBManager:
                     copy_write(cur, buf)
             conn.commit()
         except Exception as e:
-            logging.info(f"exception = {e}")
+            logging.error(f"Error loading the electric avoided costs: {e}")
 
     def load_elec_avoided_costs_file(self, elec_av_costs_path: str, truncate=False):
         self._prepare_table(

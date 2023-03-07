@@ -60,13 +60,14 @@ def run(
         db_manager.load_elec_avoided_costs_file(
             elec_av_costs if elec_av_costs else config.elec_av_costs
         )
-    if gas_av_costs or config.gas_av_costs:
-        db_manager.load_gas_avoided_costs_file(
-            gas_av_costs if gas_av_costs else config.gas_av_costs
-        )
+    # Have to load elec load shape after avoided costs
     if elec_load_shape_file or config.elec_load_shape:
         db_manager.load_elec_load_shapes_file(
             elec_load_shape_file if elec_load_shape_file else config.elec_load_shape
+        )
+    if gas_av_costs or config.gas_av_costs:
+        db_manager.load_gas_avoided_costs_file(
+            gas_av_costs if gas_av_costs else config.gas_av_costs
         )
     if therms_profiles_path or config.therms_profiles:
         db_manager.load_therms_profiles_file(

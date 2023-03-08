@@ -278,6 +278,7 @@ class DBManager:
             month = self._quarter_to_month(quarter)
             d["start_date"] = f"{start_year}-{month}-01"
             d["end_date"] = f"{start_year + eul}-{month}-01"
+            d["util_load_shape"] = d["utility"] + d["elec_load_shape"]
         logging.debug(f"in loading project_info, dicts = {dicts}")
         insert_text = self._file_to_string("flexvalue/templates/load_project_info.sql")
         with self.engine.begin() as conn:
@@ -409,7 +410,7 @@ class DBManager:
     def _postgres_load_elec_load_shapes(self, elec_load_shapes_path: str):
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY elec_load_shape (timestamp, state, utility, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
+                "COPY elec_load_shape (timestamp, state, utility, util_load_shape, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
@@ -430,7 +431,7 @@ class DBManager:
         buf = []
         min_year = min_ts.year
         year_span = max_ts.year - min_ts.year
-
+        logging.debug(f"year_span = {year_span}")
         with open(elec_load_shapes_path) as f:
             # this probably escapes fine but a csv reader is a safer bet
             columns = f.readline().split(",")
@@ -442,8 +443,8 @@ class DBManager:
 
             f.seek(0)
             reader = csv.DictReader(f)
-            for eul_year in range(year_span):
-                for r in reader:
+            for r in reader:
+                for eul_year in range(year_span):
                     year = min_year + eul_year
                     hour_of_year = int(r["hour_of_year"])
                     eac_timestamp = datetime(year, 1, 1) + timedelta(
@@ -462,12 +463,13 @@ class DBManager:
                                 eac_timestamp,
                                 r["state"],
                                 r["utility"],
+                                r["utility"] + load_shape.upper(),
                                 r["region"],
                                 int(r["quarter"]),
                                 int(r["month"]),
                                 int(r["hour_of_day"]),
-                                int(r["hour_of_year"]),
-                                load_shape,
+                                hour_of_year,
+                                load_shape.upper(),
                                 float(r[load_shape]),
                             )
                         )

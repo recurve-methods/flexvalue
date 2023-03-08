@@ -38,13 +38,14 @@ INSTALL_REQUIRES = [
     "statsmodels==0.13.1",
     "scipy==1.7.2",
     "seaborn==0.11.2",
-    "sqlalchemy==2.0.4",
+    "sqlalchemy==1.4.46",
     "nbformat==5.1.3",
     "nbconvert==6.3.0",
     "jinja2==3.0.3",
     "matplotlib<3.6",
     "numpy<1.23.0",
-    "psycopg[binary]==3.1.8"
+    "psycopg[binary]==3.1.8",
+    "sqlalchemy-bigquery==1.6.1"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

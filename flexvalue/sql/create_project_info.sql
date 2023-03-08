@@ -6,6 +6,7 @@ CREATE TABLE project_info (
     mwh_savings FLOAT,
     therms_savings FLOAT,
     elec_load_shape TEXT,
+    util_load_shape TEXT,
     therms_profile TEXT,
     start_year INTEGER,
     start_quarter INTEGER,

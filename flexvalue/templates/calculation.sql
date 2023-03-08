@@ -1,70 +1,32 @@
-WITH elec_cte AS MATERIALIZED (
-    SELECT p.project_id as project_id,
-        (
-            p.units * p.ntg * sum(eac.total * els.value * d.discount)
-        ) AS elec_benefits,
-        p.units * p.mwh_savings * p.ntg * sum(els.value) as first_year_net_mwh_savings,
-        p.units * p.mwh_savings * p.ntg * sum(els.value) * p.eul as project_lifecycle_elec_savings,
-        (
-            p.admin_cost + (1 - p.ntg) * p.incentive_cost + p.ntg * p.measure_cost
-        ) / 1 + (p.discount_rate / 4) as trc_costs,
-        (p.admin_cost + p.incentive_cost) / (1 + (p.discount_rate / 4)) as pac_costs,
-        (
-            p.units * p.ntg * sum(eac.marginal_ghg * els.value)
-        ) as elec_avoided_ghg
-    FROM project_info p
-        JOIN discount d ON p.project_id = d.project_id
-		JOIN elec_load_shape els ON p.elec_load_shape = els.load_shape_name
-        JOIN elec_av_costs eac ON p.region = eac.region
-        AND p.utility = eac.utility
-        AND eac.date_time >= p.start_date
-        AND eac.date_time < p.end_date
-		AND d.year = eac.year
-        AND d.quarter = eac.quarter
-        AND eac.hoy_util_st = els.hoy_util_st
-    GROUP BY p.project_id
-),
-gas_cte as MATERIALIZED (SELECT p.project_id as project_id
-, (p.units * p.ntg * sum(gac.total * tp.value * d.discount)) as gas_benefits
-, p.units * p.therms_savings * ntg * sum(tp.value) as first_year_net_therms_savings
-, p.units * p.therms_savings * ntg * sum(tp.value) * p.eul as project_lifecycle_therms_savings
-, (p.units * p.ntg * sum(gac.marginal_ghg * tp.value)) as gas_avoided_ghg
-FROM project_info p
-JOIN discount d
-  on p.project_id = d.project_id
+--WITH elec_cte as (
+    SELECT project_info.project_id,
+    project_info.units
+    * project_info.ntg
+    * project_info.mwh_savings
+    * SUM(elec_av_costs.total * elec_load_shape.value * discount.discount) AS electric_benefits
+    , project_info.units * project_info.mwh_savings * project_info.ntg * sum(elec_load_shape.value) as first_year_net_mwh_savings
+    , project_info.units * project_info.mwh_savings * project_info.ntg * sum(elec_load_shape.value) * project_info.eul as project_lifecycle_elec_savings
+    , (project_info.admin_cos   t + (1 - project_info.ntg) * project_info.incentive_cost + project_info.ntg * project_info.measure_cost) / 1 + (project_info.discount_rate / 4) as trc_costs
+    , (project_info.admin_cost + project_info.incentive_cost) / (1 + (project_info.discount_rate / 4)) as pac_costs
+    , (project_info.units * project_info.ntg * sum(elec_av_costs.marginal_ghg * elec_load_shape.value)) as elec_avoided_ghg
+    FROM project_info
+--    JOIN elec_load_shape ON project_info.elec_load_shape = elec_load_shape.load_shape_name AND project_info.utility = elec_load_shape.utility
+    JOIN elec_load_shape ON project_info.util_load_shape = elec_load_shape.util_load_shape
+    JOIN elec_av_costs ON elec_load_shape.timestamp = elec_av_costs.timestamp AND project_info.region = elec_av_costs.region AND project_info.utility = elec_av_costs.utility
+    JOIN discount ON elec_av_costs.timestamp::date = discount.date AND discount.project_id = project_info.project_id
+    GROUP BY project_info.project_id
+    ;
+--)
+-- , gas_cte as (
 
-JOIN therms_profile tp
-  on p.state = tp.state
- AND p.utility = tp.utility
- AND tp.profile_name = p.therms_profile
- AND d.quarter = tp.quarter
-
-JOIN gas_av_costs gac
-  on p.state = gac.state
- AND p.utility = gac.utility
- AND d.year = gac.year
- AND d.quarter = gac.quarter
- AND (
-	(gac.year = p.start_year AND gac.quarter >= p.start_quarter)
-	OR (gac.year between p.start_year +1 AND p.start_year + p.eul - 1)
-	OR (gac.year = p.start_year + p.eul AND gac.quarter < p.start_quarter)
-	)
- AND gac.month = tp.month
-
-GROUP BY p.project_id
- )
-
-SELECT p.project_id,
-    c.elec_benefits,
-    c.project_lifecycle_elec_savings,
-    c.trc_costs,
-    c.pac_costs,
-    c.elec_avoided_ghg,
-	gas_benefits,
-	first_year_net_therms_savings,
-	project_lifecycle_therms_savings,
-	gas_avoided_ghg
-FROM project_info p
-    JOIN elec_cte c ON p.project_id = c.project_id
-	JOIN gas_cte g on p.project_id = g.project_id
-;
+-- )
+-- SELECT project_info.project_id
+-- , elec_cte.electric_benefits
+-- , elec_cte.first_year_net_mwh_savings
+-- , elec_cte.project_lifecycle_elec_savings
+-- , elec_cte.trc_costs
+-- , elec_cte.pac_costs
+-- , elec_cte.elec_avoided_ghg
+-- FROM project_info
+-- JOIN elec_cte ON project_info.project_id = elec_cte.project_id
+-- ;

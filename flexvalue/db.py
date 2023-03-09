@@ -230,27 +230,47 @@ class DBManager:
             truncate=True,
         )
         discount_dicts = []
-        idx = 1
         for project_dict in project_dicts:
-            cur_date = datetime.strptime(project_dict["start_date"], "%Y-%m-%d")
+            start_date = datetime.strptime(project_dict["start_date"], "%Y-%m-%d")
             end_date = datetime.strptime(project_dict["end_date"], "%Y-%m-%d")
             discount_rate = float(project_dict["discount_rate"])
             start_year = int(project_dict["start_year"])
             start_quarter = int(project_dict["start_quarter"])
-            while cur_date <= end_date:
+
+            start_timestamp = datetime(
+                start_date.year,
+                start_date.month,
+                start_date.day,
+                0,
+                0,
+                0,
+            )
+            end_timestamp = datetime(
+                end_date.year,
+                end_date.month,
+                end_date.day,
+                23,
+                0,
+                0,
+            )
+
+            cur_timestamp = start_timestamp
+
+            while cur_timestamp <= end_timestamp:
                 # TODO double-check that this is correct, starting at 1st quarter
                 discount = 1.0 / pow(
                     (1.0 + discount_rate / 4.0),
-                    ((cur_date.year - start_year) * 4) + (start_quarter - 1),
+                    ((cur_timestamp.year - start_year) * 4) + (start_quarter - 1),
                 )
                 discount_dicts.append(
                     {
                         "project_id": project_dict["project_id"],
-                        "date": cur_date,
+                        "timestamp": cur_timestamp,
+                        "date": cur_timestamp.date(),
                         "discount": discount,
                     }
                 )
-                cur_date = cur_date + timedelta(days=1)
+                cur_timestamp = cur_timestamp + timedelta(hours=1)
 
         insert_text = self._file_to_string("flexvalue/templates/load_discount.sql")
         with self.engine.begin() as conn:
@@ -279,6 +299,7 @@ class DBManager:
             d["start_date"] = f"{start_year}-{month}-01"
             d["end_date"] = f"{start_year + eul}-{month}-01"
             d["util_load_shape"] = d["utility"] + d["elec_load_shape"]
+
         logging.debug(f"in loading project_info, dicts = {dicts}")
         insert_text = self._file_to_string("flexvalue/templates/load_project_info.sql")
         with self.engine.begin() as conn:
@@ -461,10 +482,9 @@ class DBManager:
                         buf.append(
                             (
                                 eac_timestamp,
-                                r["state"],
-                                r["utility"],
-                                r["utility"] + load_shape.upper(),
-                                r["region"],
+                                r["state"].upper(),
+                                r["utility"].upper(),
+                                r["region"].upper(),
                                 int(r["quarter"]),
                                 int(r["month"]),
                                 int(r["hour_of_day"]),

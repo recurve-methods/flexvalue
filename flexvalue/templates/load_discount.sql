@@ -1,5 +1,6 @@
 INSERT INTO discount (
     project_id,
+    timestamp,
     date,
     discount
 )

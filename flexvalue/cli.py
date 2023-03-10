@@ -21,6 +21,7 @@ import click
 from pathlib import Path
 
 from .calculations import run
+from .config import FLEXValueException
 
 __all__ = (
     "get_results",
@@ -103,5 +104,5 @@ def get_results(
             reset_therms_profiles=reset_therms_profiles,
             reset_gas_av_costs=reset_gas_av_costs
         )
-    except ValueError as e:
+    except FLEXValueException as e:
         print(e)

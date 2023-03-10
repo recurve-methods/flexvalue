@@ -28,9 +28,9 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
-from .config import FLEXValueConfig
+from .config import FLEXValueConfig, FLEXValueException
 
-SUPPORTED_DBS = ("postgres", "sqlite")  # 'bigquery')
+SUPPORTED_DBS = ("postgresql", "sqlite", 'bigquery')
 
 __all__ = (
     "get_db_connection",
@@ -130,10 +130,10 @@ class DBManager:
         database_type = config.database_type
         # TODO: add support for BigQuery via https://github.com/googleapis/python-bigquery-sqlalchemy
         if database_type not in SUPPORTED_DBS:
-            raise ValueError(
+            raise FLEXValueException(
                 f"Unknown database type '{database_type}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}"
             )
-        if database_type == "postgres":
+        if database_type == "postgresql":
             user = config.user
             password = config.password
             host = config.host
@@ -284,7 +284,6 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), dicts)
         self._load_discount_table(dicts)
-        from datetime import datetime
 
         logging.debug(f"About to start calculation, it is {datetime.now()}")
         self._perform_calculation()
@@ -318,12 +317,10 @@ class DBManager:
     def _perform_calculation(self):
         from datetime import datetime
 
-        logging.debug(f"before empty tables it is {datetime.now()}")
         empty_tables = self._get_empty_tables()
-        logging.debug(f"after empty tables it is {datetime.now()}")
         if empty_tables:
             # TODO the table names are implementation-dependent, let's see if we can give a better error message here
-            raise ValueError(
+            raise FLEXValueException(
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )
         sql = self._get_calculation_sql()
@@ -365,12 +362,12 @@ class DBManager:
 
     def _csv_file_to_rows(self, csv_file_path: str):
         """Reads a csv file into memory and returns a list of tuples representing
-        the data. If no header row is present, it raises a ValueError."""
+        the data. If no header row is present, it raises a FLEXValueException."""
         rows = []
         with open(csv_file_path, newline="") as f:
             has_header = csv.Sniffer().has_header(f.read(HEADER_READ_SIZE))
             if not has_header:
-                raise ValueError(
+                raise FLEXValueException(
                     f"The file you provided, {csv_file_path}, \
                                  doesn't seem to have a header row. Please provide a header row \
                                  containing the column names."
@@ -418,7 +415,7 @@ class DBManager:
         inspection = inspect(self.engine)
         table_exists = inspection.has_table('elec_av_costs')
         if not table_exists:
-            raise ValueError("You must load the electric avoided costs data before you load the electric load shape data")
+            raise FLEXValueException("You must load the electric avoided costs data before you load the electric load shape data")
 
         min_ts, max_ts = self._get_timestamp_range()
         logging.debug(f'min_ts = {min_ts}, max_ts = {max_ts}')

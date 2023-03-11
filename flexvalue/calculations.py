@@ -47,7 +47,7 @@ def run(
     reset_gas_av_costs=None,
 ):
     config = FLEXValueConfig.from_file(config_file)
-    db_manager = DBManager(config)
+    db_manager = DBManager.get_db_manager(config)
     if reset_elec_load_shape:
         db_manager.reset_elec_load_shape()
     if reset_elec_av_costs:
@@ -57,23 +57,24 @@ def run(
     if reset_gas_av_costs:
         db_manager.reset_gas_av_costs()
     if elec_av_costs or config.elec_av_costs:
-        db_manager.load_elec_avoided_costs_file(
+        db_manager.process_elec_av_costs(
             elec_av_costs if elec_av_costs else config.elec_av_costs
         )
     # Have to load elec load shape after avoided costs
     if elec_load_shape_file or config.elec_load_shape:
-        db_manager.load_elec_load_shapes_file(
+        db_manager.process_elec_load_shape(
             elec_load_shape_file if elec_load_shape_file else config.elec_load_shape
         )
     if gas_av_costs or config.gas_av_costs:
-        db_manager.load_gas_avoided_costs_file(
+        db_manager.process_gas_av_costs(
             gas_av_costs if gas_av_costs else config.gas_av_costs
         )
     if therms_profiles_path or config.therms_profiles:
-        db_manager.load_therms_profiles_file(
+        db_manager.process_therms_profile(
             therms_profiles_path if therms_profiles_path else config.therms_profiles
         )
     if project_info or config.project_info:
         db_manager.load_project_info_file(
             project_info if project_info else config.project_info
         )
+        db_manager.run()

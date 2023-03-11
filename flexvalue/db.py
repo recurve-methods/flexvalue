@@ -26,11 +26,12 @@ from datetime import datetime, timedelta
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
+from sqlalchemy.engine import Engine
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 from .config import FLEXValueConfig, FLEXValueException
 
-SUPPORTED_DBS = ("postgresql", "sqlite", 'bigquery')
+SUPPORTED_DBS = ("postgresql", "sqlite", "bigquery")
 
 __all__ = (
     "get_db_connection",
@@ -116,8 +117,22 @@ HEADER_READ_SIZE = 4096
 # The number of rows to read from csv files when chunking
 INSERT_ROW_COUNT = 100000
 
-
 class DBManager:
+
+    @staticmethod
+    def get_db_manager(fv_config: FLEXValueConfig):
+        """ Factory for the correct instance of DBManager child class."""
+        if not fv_config.database_type or fv_config.database_type not in SUPPORTED_DBS:
+            raise FLEXValueException(f"You must specify a database_type in your config file.\nThe valid choices are {SUPPORTED_DBS}")
+        if fv_config.database_type == "sqlite":
+            return SqliteManager(fv_config)
+        elif fv_config.database_type == "postgresql":
+            return PostgresqlManager(fv_config)
+        elif fv_config.database_type == "bigquery":
+            return BigQueryManager(fv_config)
+        else:
+            raise FLEXValueException(f"Unsupported database_type. Please choose one of {SUPPORTED_DBS}")
+
     def __init__(self, fv_config: FLEXValueConfig) -> None:
         self.template_env = Environment(
             loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
@@ -127,36 +142,14 @@ class DBManager:
 
     def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
         """Get the sqlalchemy db connection string for the given settings."""
-        database_type = config.database_type
-        # TODO: add support for BigQuery via https://github.com/googleapis/python-bigquery-sqlalchemy
-        if database_type not in SUPPORTED_DBS:
-            raise FLEXValueException(
-                f"Unknown database type '{database_type}' in database config file. Please choose one of {','.join(SUPPORTED_DBS)}"
-            )
-        if database_type == "postgresql":
-            user = config.user
-            password = config.password
-            host = config.host
-            port = config.port
-            database = config.database
-            conn_str = (
-                f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
-            )
-        elif database_type == "sqlite":
-            database = config.database
-            conn_str = f"sqlite+pysqlite://{database}"
-        logging.debug(f'returning connection string "{conn_str}"')
-        return conn_str
+        # Nobody should be calling the method in the base class
+        return ""
 
     def _get_db_engine(
         self, config: FLEXValueConfig
-    ):  # TODO: get this type hint to work -> sqlalchemy.engine.Engine:
-        if config.use_specified_db():
-            logging.debug("using specified db")
-            conn_str = self._get_db_connection_string(config)
-        else:
-            logging.debug("using default db connection")
-            conn_str = self._get_default_db_conn_str()
+    ) -> Engine:
+        conn_str = self._get_db_connection_string(config)
+        logging.debug(f'conn_str ={conn_str}')
         engine = create_engine(conn_str)
         logging.debug(f"dialect = {engine.dialect.name}")
         return engine
@@ -164,6 +157,118 @@ class DBManager:
     def _get_default_db_conn_str(self) -> str:
         """If no db config file is provided, default to a local sqlite database."""
         return "sqlite+pysqlite:///flexvalue.db"
+
+    def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
+        """Load the hourly electric load shapes (csv) file. The first 7 columns
+        are fixed. Then there are a variable number of columns, one for each
+        load shape. This function parses that file to construct a SQL INSERT
+        statement with the data, then inserts the data into the elec_load_shape
+        table.
+        """
+        self._prepare_table(
+            "elec_load_shape",
+            "flexvalue/sql/create_elec_load_shape.sql",
+            # index_filepaths=["flexvalue/sql/elec_load_shape_index.sql"],
+            truncate=truncate,
+        )
+        rows = self._csv_file_to_rows(elec_load_shapes_path)
+        # TODO can we clean this up?
+        num_columns = len(rows[0])
+        buffer = []
+        for col in range(7, num_columns):
+            for row in range(1, len(rows)):
+                buffer.append(
+                    {
+                        "state": rows[row][0].upper(),
+                        "utility": rows[row][1].upper(),
+                        "region": rows[row][2].upper(),
+                        "quarter": rows[row][3],
+                        "month": rows[row][4],
+                        "hour_of_day": rows[row][5],
+                        "hour_of_year": rows[row][6],
+                        "load_shape_name": rows[0][col].upper(),
+                        "value": rows[row][col],
+                        "hoy_util_st": rows[row][6]
+                        + rows[row][1].upper()
+                        + rows[row][0].upper(),
+                    }
+                )
+        insert_text = self._file_to_string(
+            "flexvalue/templates/load_elec_load_shape.sql"
+        )
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), buffer)
+
+    def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
+        self._prepare_table(
+            "elec_av_costs",
+            "flexvalue/sql/create_elec_av_cost.sql",
+            #index_filepaths=["flexvalue/sql/elec_av_costs_index.sql"],
+            truncate=truncate,
+        )
+        logging.debug("about to load elec av costs")
+        self._load_csv_file(
+            elec_av_costs_path,
+            "elec_av_costs",
+            ELEC_AVOIDED_COSTS_FIELDS,
+            "flexvalue/templates/load_elec_av_costs.sql",
+            dict_processor=self._eac_dict_mapper,
+        )
+
+    def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
+        """Loads the therms profiles csv file. This file has 5 fixed columns and then
+        a variable number of columns after that, each of which represents a therms
+        profile. This method parses that file to construct a SQL INSERT statement, then
+        inserts the data into the therms_profile table."""
+        self._prepare_table(
+            "therms_profile",
+            "flexvalue/sql/create_therms_profile.sql",
+            truncate=truncate,
+        )
+        rows = self._csv_file_to_rows(therms_profiles_path)
+        num_columns = len(rows[0])
+        buffer = []
+        for col in range(5, num_columns):
+            for row in range(1, len(rows)):
+                buffer.append(
+                    {
+                        "state": rows[row][0],
+                        "utility": rows[row][1],
+                        "region": rows[row][2],
+                        "quarter": rows[row][3],
+                        "month": rows[row][4],
+                        "profile_name": rows[0][col],
+                        "value": rows[row][col],
+                    }
+                )
+        insert_text = self._file_to_string(
+            "flexvalue/templates/load_therms_profiles.sql"
+        )
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), buffer)
+
+    def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
+        self._prepare_table(
+            "gas_av_costs", "flexvalue/sql/create_gas_av_cost.sql", truncate=truncate
+        )
+        self._load_csv_file(
+            gas_av_costs_path,
+            "gas_av_costs",
+            GAS_AV_COSTS_FIELDS,
+            "flexvalue/templates/load_gas_av_costs.sql",
+        )
+
+    def _eac_dict_mapper(self, dict_to_process):
+        dict_to_process["date_str"] = dict_to_process["datetime"][
+            :10
+        ]  # just the 'yyyy-mm-dd'
+        dict_to_process["hoy_util_st"] = (
+            dict_to_process["hour_of_year"]
+            + dict_to_process["utility"]
+            + dict_to_process["state"]
+        )
+        return dict_to_process
+
 
     def _file_to_string(self, filename):
         ret = None
@@ -188,15 +293,13 @@ class DBManager:
         self._reset_table("gas_av_costs")
 
     def _reset_table(self, table_name):
-        # sqlite doesn't support TRUNCATE
-        truncate_prefix = (
-            f"DELETE FROM"
-            if self.engine.dialect.name == "sqlite"
-            else f"TRUNCATE TABLE"
-        )
+        truncate_prefix = self.get_truncate_prefix()
         sql = f"{truncate_prefix} {table_name}"
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
+
+    def _get_truncate_prefix(self):
+        raise FLEXValueException("You need to implement _get_truncate_prefix for your database manager.")
 
     def _prepare_table(
         self,
@@ -206,10 +309,8 @@ class DBManager:
         truncate: bool = False,
     ):
         # if the table doesn't exist, create it and all related indexes
-        inspection = inspect(self.engine)
-        table_exists = inspection.has_table(table_name)
         with self.engine.begin() as conn:
-            if not table_exists:
+            if not self._table_exists(table_name):
                 sql = self._file_to_string(sql_filepath)
                 _ = conn.execute(text(sql))
             for index_filepath in index_filepaths:
@@ -217,6 +318,11 @@ class DBManager:
                 _ = conn.execute(text(sql))
         if truncate:
             self._reset_table(table_name)
+
+    def _table_exists(self, table_name):
+        inspection = inspect(self.engine)
+        table_exists = inspection.has_table(table_name)
+        return table_exists
 
     def _load_discount_table(self, project_dicts):
         """project_dicts is a list of dicts. Each dict represents a different
@@ -276,7 +382,12 @@ class DBManager:
         with self.engine.begin() as conn:
             conn.execute(text(insert_text), discount_dicts)
 
-    def load_project_info_file(self, project_info_path: str):
+    def run(self):
+        logging.debug(f"About to start calculation, it is {datetime.now()}")
+        self._perform_calculation()
+        logging.debug(f"after calc, it is {datetime.now()}")
+
+    def process_project_info(self, project_info_path: str):
         self._prepare_table(
             "project_info",
             "flexvalue/sql/create_project_info.sql",
@@ -302,13 +413,12 @@ class DBManager:
 
         logging.debug(f"in loading project_info, dicts = {dicts}")
         insert_text = self._file_to_string("flexvalue/templates/load_project_info.sql")
-        with self.engine.begin() as conn:
-            conn.execute(text(insert_text), dicts)
+        self._load_project_info_data(insert_text, dicts)
         self._load_discount_table(dicts)
 
-        logging.debug(f"About to start calculation, it is {datetime.now()}")
-        self._perform_calculation()
-        logging.debug(f"after calc, it is {datetime.now()}")
+    def _load_project_info_data(self, insert_text, project_info_dicts):
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), project_info_dicts)
 
     def _quarter_to_month(self, qtr):
         quarter = int(qtr)
@@ -401,17 +511,6 @@ class DBManager:
                 rows.append(row)
         return rows
 
-    def _pg_connect(self):
-        connection = psycopg.connect(
-            dbname=self.config.database,
-            host=self.config.host,
-            port=self.config.port,
-            user=self.config.user,
-            password=self.config.password
-        )
-        logging.debug(f"connection = {connection}")
-        return connection
-
     def _get_timestamp_range(self):
         min_ts_query = "SELECT MIN(timestamp) FROM elec_av_costs;"
         max_ts_query = "SELECT MAX(timestamp) FROM elec_av_costs;"
@@ -423,160 +522,6 @@ class DBManager:
             result = conn.execute(text(max_ts_query))
             max_ts = result.scalar()
         return (min_ts, max_ts)
-
-
-    def _postgres_load_elec_load_shapes(self, elec_load_shapes_path: str):
-        def copy_write(cur, rows):
-            with cur.copy(
-                "COPY elec_load_shape (timestamp, state, utility, util_load_shape, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
-            ) as copy:
-                for row in rows:
-                    copy.write_row(row)
-
-        inspection = inspect(self.engine)
-        table_exists = inspection.has_table('elec_av_costs')
-        if not table_exists:
-            raise FLEXValueException("You must load the electric avoided costs data before you load the electric load shape data")
-
-        min_ts, max_ts = self._get_timestamp_range()
-        logging.debug(f'min_ts = {min_ts}, max_ts = {max_ts}')
-        # try:
-        conn = self._pg_connect()
-        cur = conn.cursor()
-        # if you're concerned about RAM change this to sane number
-        MAX_ROWS = sys.maxsize
-
-        buf = []
-        min_year = min_ts.year
-        year_span = max_ts.year - min_ts.year
-        logging.debug(f"year_span = {year_span}")
-        with open(elec_load_shapes_path) as f:
-            # this probably escapes fine but a csv reader is a safer bet
-            columns = f.readline().split(",")
-            load_shape_names = [
-                c.strip()
-                for c in columns
-                if columns.index(c) > columns.index("hour_of_year")
-            ]
-
-            f.seek(0)
-            reader = csv.DictReader(f)
-            for r in reader:
-                for eul_year in range(year_span):
-                    year = min_year + eul_year
-                    hour_of_year = int(r["hour_of_year"])
-                    eac_timestamp = datetime(year, 1, 1) + timedelta(
-                        hours=hour_of_year
-                    )
-
-                    # If the year is a leap year, move forward a day to avoid Feb 29
-                    if calendar.isleap(year) and eac_timestamp >= datetime(
-                        year, 2, 29
-                    ):
-                        eac_timestamp = eac_timestamp + timedelta(hours=24)
-
-                    for load_shape in load_shape_names:
-                        buf.append(
-                            (
-                                eac_timestamp,
-                                r["state"].upper(),
-                                r["utility"].upper(),
-                                r["region"].upper(),
-                                int(r["quarter"]),
-                                int(r["month"]),
-                                int(r["hour_of_day"]),
-                                hour_of_year,
-                                load_shape.upper(),
-                                float(r[load_shape]),
-                            )
-                        )
-                if len(buf) >= MAX_ROWS:
-                    copy_write(cur, buf)
-                    buf = []
-            else:
-                copy_write(cur, buf)
-        conn.commit()
-        conn.close()
-        # except Exception as e:
-        #     logging.error(f"Exception loading the electric load shapes: {e}")
-
-    def load_elec_load_shapes_file(self, elec_load_shapes_path: str, truncate=False):
-        """Load the hourly electric load shapes (csv) file. The first 7 columns
-        are fixed. Then there are a variable number of columns, one for each
-        load shape. This function parses that file to construct a SQL INSERT
-        statement with the data, then inserts the data into the elec_load_shape
-        table.
-        """
-        self._prepare_table(
-            "elec_load_shape",
-            "flexvalue/sql/create_elec_load_shape.sql",
-            # index_filepaths=["flexvalue/sql/elec_load_shape_index.sql"],
-            truncate=truncate,
-        )
-        if self.engine.dialect.name == "postgresql":
-            self._postgres_load_elec_load_shapes(elec_load_shapes_path)
-        else:
-            rows = self._csv_file_to_rows(elec_load_shapes_path)
-            # TODO can we clean this up?
-            num_columns = len(rows[0])
-            buffer = []
-            for col in range(7, num_columns):
-                for row in range(1, len(rows)):
-                    buffer.append(
-                        {
-                            "state": rows[row][0].upper(),
-                            "utility": rows[row][1].upper(),
-                            "region": rows[row][2].upper(),
-                            "quarter": rows[row][3],
-                            "month": rows[row][4],
-                            "hour_of_day": rows[row][5],
-                            "hour_of_year": rows[row][6],
-                            "load_shape_name": rows[0][col].upper(),
-                            "value": rows[row][col],
-                            "hoy_util_st": rows[row][6]
-                            + rows[row][1].upper()
-                            + rows[row][0].upper(),
-                        }
-                    )
-            insert_text = self._file_to_string(
-                "flexvalue/templates/load_elec_load_shape.sql"
-            )
-            with self.engine.begin() as conn:
-                conn.execute(text(insert_text), buffer)
-
-    def load_therms_profiles_file(
-        self, therms_profiles_path: str, truncate: bool = False
-    ):
-        """Loads the therms profiles csv file. This file has 5 fixed columns and then
-        a variable number of columns after that, each of which represents a therms
-        profile. This method parses that file to construct a SQL INSERT statement, then
-        inserts the data into the therms_profile table."""
-        self._prepare_table(
-            "therms_profile",
-            "flexvalue/sql/create_therms_profile.sql",
-            truncate=truncate,
-        )
-        rows = self._csv_file_to_rows(therms_profiles_path)
-        num_columns = len(rows[0])
-        buffer = []
-        for col in range(5, num_columns):
-            for row in range(1, len(rows)):
-                buffer.append(
-                    {
-                        "state": rows[row][0],
-                        "utility": rows[row][1],
-                        "region": rows[row][2],
-                        "quarter": rows[row][3],
-                        "month": rows[row][4],
-                        "profile_name": rows[0][col],
-                        "value": rows[row][col],
-                    }
-                )
-        insert_text = self._file_to_string(
-            "flexvalue/templates/load_therms_profiles.sql"
-        )
-        with self.engine.begin() as conn:
-            conn.execute(text(insert_text), buffer)
 
     def _load_csv_file(
         self,
@@ -612,7 +557,43 @@ class DBManager:
                 else:  # this is for/else
                     conn.execute(text(insert_text), buffer)
 
-    def _postgres_load_elec_av_costs(self, elec_av_costs_path):
+
+    def _exec_select_sql(self, sql: str):
+        """Returns a list of tuples that have been copied from the sqlalchemy result."""
+        # This is just here to support testing
+        ret = None
+        with self.engine.begin() as conn:
+            result = conn.execute(text(sql))
+            ret = [x for x in result]
+        return ret
+
+class PostgresqlManager(DBManager):
+    def __init__(self, fv_config: FLEXValueConfig) -> None:
+        super().__init__(fv_config)
+        self.connection = psycopg.connect(
+            dbname=self.config.database,
+            host=self.config.host,
+            port=self.config.port,
+            user=self.config.user,
+            password=self.config.password
+        )
+        logging.debug(f"connection = {self.connection}")
+
+    def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
+            user = config.user
+            password = config.password
+            host = config.host
+            port = config.port
+            database = config.database
+            conn_str = (
+                f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+            )
+            return conn_str
+
+    def _get_truncate_prefix(self):
+        return "TRUNCATE TABLE"
+
+    def process_elec_av_costs(self, elec_av_costs_path):
         def copy_write(cur, rows):
             with cur.copy(
                 """COPY elec_av_costs (
@@ -648,8 +629,7 @@ class DBManager:
         MAX_ROWS = sys.maxsize
 
         try:
-            conn = self._pg_connect()
-            cur = conn.cursor()
+            cur = self.connection.cursor()
             buf = []
             with open(elec_av_costs_path) as f:
                 reader = csv.DictReader(f)
@@ -688,56 +668,145 @@ class DBManager:
                         buf = []
                 else:
                     copy_write(cur, buf)
-            conn.commit()
+            self.connection.commit()
         except Exception as e:
             logging.error(f"Error loading the electric avoided costs: {e}")
 
-    def load_elec_avoided_costs_file(self, elec_av_costs_path: str, truncate=False):
+    def process_elec_load_shape(self, elec_load_shapes_path: str):
+        def copy_write(cur, rows):
+            with cur.copy(
+                "COPY elec_load_shape (timestamp, state, utility, util_load_shape, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
+            ) as copy:
+                for row in rows:
+                    copy.write_row(row)
+
+        inspection = inspect(self.engine)
+        table_exists = inspection.has_table('elec_av_costs')
+        if not table_exists:
+            raise FLEXValueException("You must load the electric avoided costs data before you load the electric load shape data")
+
+        min_ts, max_ts = self._get_timestamp_range()
+        logging.debug(f'min_ts = {min_ts}, max_ts = {max_ts}')
+
         self._prepare_table(
-            "elec_av_costs",
-            "flexvalue/sql/create_elec_av_cost.sql",
-            #index_filepaths=["flexvalue/sql/elec_av_costs_index.sql"],
-            truncate=truncate,
+            "elec_load_shape",
+            "flexvalue/sql/create_elec_load_shape.sql",
+            # index_filepaths=["flexvalue/sql/elec_load_shape_index.sql"]
         )
-        logging.debug("about to load elec av costs")
-        if self.engine.dialect.name == "postgresql":
-            self._postgres_load_elec_av_costs(elec_av_costs_path)
-        else:
-            self._load_csv_file(
-                elec_av_costs_path,
-                "elec_av_costs",
-                ELEC_AVOIDED_COSTS_FIELDS,
-                "flexvalue/templates/load_elec_av_costs.sql",
-                dict_processor=self._eac_dict_mapper,
-            )
+        cur = self.connection.cursor()
+        # if you're concerned about RAM change this to sane number
+        MAX_ROWS = sys.maxsize
 
-    def _eac_dict_mapper(self, dict_to_process):
-        dict_to_process["date_str"] = dict_to_process["datetime"][
-            :10
-        ]  # just the 'yyyy-mm-dd'
-        dict_to_process["hoy_util_st"] = (
-            dict_to_process["hour_of_year"]
-            + dict_to_process["utility"]
-            + dict_to_process["state"]
-        )
-        return dict_to_process
+        buf = []
+        min_year = min_ts.year
+        year_span = max_ts.year - min_ts.year
+        logging.debug(f"year_span = {year_span}")
+        with open(elec_load_shapes_path) as f:
+            # this probably escapes fine but a csv reader is a safer bet
+            columns = f.readline().split(",")
+            load_shape_names = [
+                c.strip()
+                for c in columns
+                if columns.index(c) > columns.index("hour_of_year")
+            ]
 
-    def load_gas_avoided_costs_file(self, gas_av_costs_path: str, truncate=False):
-        self._prepare_table(
-            "gas_av_costs", "flexvalue/sql/create_gas_av_cost.sql", truncate=truncate
-        )
-        self._load_csv_file(
-            gas_av_costs_path,
-            "gas_av_costs",
-            GAS_AV_COSTS_FIELDS,
-            "flexvalue/templates/load_gas_av_costs.sql",
-        )
+            f.seek(0)
+            reader = csv.DictReader(f)
+            for r in reader:
+                for eul_year in range(year_span):
+                    year = min_year + eul_year
+                    hour_of_year = int(r["hour_of_year"])
+                    eac_timestamp = datetime(year, 1, 1) + timedelta(
+                        hours=hour_of_year
+                    )
 
-    def _exec_select_sql(self, sql: str):
-        """Returns a list of tuples that have been copied from the sqlalchemy result."""
-        # This is just here to support testing
-        ret = None
-        with self.engine.begin() as conn:
-            result = conn.execute(text(sql))
-            ret = [x for x in result]
-        return ret
+                    # If the year is a leap year, move forward a day to avoid Feb 29
+                    if calendar.isleap(year) and eac_timestamp >= datetime(
+                        year, 2, 29
+                    ):
+                        eac_timestamp = eac_timestamp + timedelta(hours=24)
+
+                    for load_shape in load_shape_names:
+                        buf.append(
+                            (
+                                eac_timestamp,
+                                r["state"].upper(),
+                                r["utility"].upper(),
+                                r["utility"].upper() + load_shape.upper(),
+                                r["region"].upper(),
+                                int(r["quarter"]),
+                                int(r["month"]),
+                                int(r["hour_of_day"]),
+                                hour_of_year,
+                                load_shape.upper(),
+                                float(r[load_shape]),
+                            )
+                        )
+                if len(buf) >= MAX_ROWS:
+                    copy_write(cur, buf)
+                    buf = []
+            else:
+                copy_write(cur, buf)
+        self.connection.commit()
+        self.connection.close()
+
+    def _load_project_info_data(self, insert_text, project_info_dicts):
+        """ insert_text isn't needed for postgresql """
+        def copy_write(cur, rows):
+            with cur.copy(
+                "COPY project_info (project_id, state, utility, region, mwh_savings, therms_savings, elec_load_shape, util_load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
+            ) as copy:
+                for row in rows:
+                    copy.write_row(row)
+        rows = [
+            (x["project_id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["elec_load_shape"], x["util_load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
+            for x in project_info_dicts
+        ]
+        cursor = self.connection.cursor()
+        copy_write(cursor, rows)
+        self.connection.commit()
+
+
+class SqliteManager(DBManager):
+    def __init__(self, fv_config: FLEXValueConfig):
+        super().__init__(fv_config)
+        self.template_env = Environment(
+            loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
+        )
+        self.config = fv_config
+
+    def _get_truncate_prefix(self):
+        """ sqlite doesn't support TRUNCATE"""
+        return "DELETE FROM"
+
+    def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
+        database = config.database
+        conn_str = f"sqlite+pysqlite://{database}"
+        return conn_str
+
+
+class BigQueryManager(DBManager):
+    def __init__(self, fv_config: FLEXValueConfig):
+        super.__init__(fv_config)
+        self.template_env = Environment(
+            loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
+        )
+        self.config = fv_config
+
+    def _get_truncate_prefix(self):
+        # in BQ, TRUNCATE TABLE deletes row-level security, so using DELETE instead:
+        return "DELETE"
+
+    def _load_discount_table(self, project_dicts):
+        # TODO this
+        return super()._load_discount_table(project_dicts)
+
+    def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
+        project = config.project
+        dataset = config.dataset
+        conn_str = f"bigquery://{project}/{dataset}"
+        return conn_str
+
+    def _table_exists(self, table_name):
+        # TODO this
+        return True

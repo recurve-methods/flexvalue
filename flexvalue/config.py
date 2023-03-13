@@ -19,6 +19,12 @@ class FLEXValueConfig:
     therms_profiles: str
     gas_av_costs: str
     project_info: str
+    elec_av_cost_table: str
+    elec_load_shape_table: str
+    therms_profiles_table: str
+    gas_av_cost_table: str
+    project_info_table: str
+
 
     @staticmethod
     def from_file(config_file):
@@ -33,13 +39,18 @@ class FLEXValueConfig:
             user=db.get('user', None),
             password=db.get('password', None),
             database=db.get('database', None),
-            project = db.get('project', None),
-            dataset = db.get('dataset', None),
+            project=db.get('project', None),
+            dataset=db.get('dataset', None),
+            elec_av_cost_table=db.get("elec_av_cost_table", None),
+            elec_load_shape_table=db.get("elec_load_shape_table", None),
+            therms_profiles_table=db.get("therms_profiles_table", None),
+            gas_av_cost_table=db.get("gas_av_cost_table", None),
+            project_info_table=db.get("project_info_table", None),
             elec_load_shape=run.get('elec_load_shape', None),
             elec_av_costs=run.get('elec_av_costs', None),
             therms_profiles=run.get('therms_profiles', None),
             gas_av_costs=run.get('gas_av_costs', None),
-            project_info=run.get('project_info', None)
+            project_info=run.get('project_info', None),
         )
 
     def use_specified_db(self):

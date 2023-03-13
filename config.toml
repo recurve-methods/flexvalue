@@ -1,14 +1,25 @@
 [run]
-project_info = "example_user_inputs.csv"
+#project_info = "example_user_inputs.csv"
 #elec_load_shape = "ca_hourly_electric_load_shapes.csv"
-#elec_av_costs = "full_ca_avoided_costs_2020acc.csv"
-#therms_profiles = "ca_monthly_therms_load_profiles.csv"
-#gas_av_costs = "full_ca_avoided_costs_2020acc_gas.csv"
+elec_av_costs = "full_ca_avoided_costs_2020acc.csv"
+# therms_profiles = "ca_monthly_therms_load_profiles.csv"
+# gas_av_costs = "full_ca_avoided_costs_2020acc_gas.csv"
 
 [database]
-database_type = "postgres"
-host = "postgresql"
-port = 5432
-user = "postgres"
-password = "example"
-database = "postgres"
+# database_type = "postgresql"
+# host = "postgresql"
+# port = 5432
+# user = "postgres"
+# password = "example"
+# database = "postgres"
+
+# Example for bigquery
+database_type = "bigquery"
+project = "oeem-avdcosts-platform"
+dataset = "flexvalue_refactor_tables"
+#credentials = ""
+elec_av_cost_table = "full_ca_avoided_costs_2020acc"
+elec_load_shape_table = "ca_hourly_electric_load_shapes"
+therms_profiles_table = "ca_monthly_therms_load_profiles"
+gas_av_cost_table = "full_ca_avoided_costs_2020acc_gas"
+project_info_table = "example_user_inputs"

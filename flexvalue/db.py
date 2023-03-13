@@ -30,6 +30,8 @@ from sqlalchemy.engine import Engine
 import psycopg
 from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
 from .config import FLEXValueConfig, FLEXValueException
+from google.cloud import bigquery
+from google.cloud.exceptions import NotFound
 
 SUPPORTED_DBS = ("postgresql", "sqlite", "bigquery")
 
@@ -787,11 +789,28 @@ class SqliteManager(DBManager):
 
 class BigQueryManager(DBManager):
     def __init__(self, fv_config: FLEXValueConfig):
-        super.__init__(fv_config)
+        super().__init__(fv_config)
         self.template_env = Environment(
             loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
         )
         self.config = fv_config
+        self.table_names = [
+            self.config.elec_av_cost_table,
+            self.config.elec_load_shape_table,
+            self.config.therms_profiles_table,
+            self.config.gas_av_cost_table,
+            self.config.project_info_table
+        ]
+        self.client = bigquery.Client(project=self.config.project)
+        # self._test_connection()
+
+    def _test_connection(self):
+        logging.debug('in bigquerymanager._test_connection')
+        query = """select count(*) from flexvalue_refactor_tables.example_user_inputs"""
+        query_job = self.client.query(query)
+        rows = query_job.result()
+        for row in rows:
+            print(f"There are {row.values()[0]} rows in example_user_inputs")
 
     def _get_truncate_prefix(self):
         # in BQ, TRUNCATE TABLE deletes row-level security, so using DELETE instead:
@@ -801,12 +820,57 @@ class BigQueryManager(DBManager):
         # TODO this
         return super()._load_discount_table(project_dicts)
 
-    def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
-        project = config.project
-        dataset = config.dataset
-        conn_str = f"bigquery://{project}/{dataset}"
-        return conn_str
+    def _get_db_engine(self, config: FLEXValueConfig) -> Engine:
+        # Not using sqlalchemy in BigQuery; TODO refactor so this isn't necessary
+        return None
+
+    # def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
+    #     project = config.project
+    #     dataset = config.dataset
+    #     conn_str = f"bigquery://{project}/{dataset}"
+    #     return conn_str
 
     def _table_exists(self, table_name):
-        # TODO this
-        return True
+        # This is basically straight from the google docs:
+        # https://cloud.google.com/bigquery/docs/samples/bigquery-table-exists#bigquery_table_exists-python
+        try:
+            self.client.get_table(table_name)
+            return True
+        except NotFound:
+            return False
+
+    def _get_empty_tables(self):
+        empty_tables = []
+        for table_name in self.table_names:
+            if not self._table_exists(table_name):
+                empty_tables.append(table_name)
+                continue
+            sql = f"SELECT COUNT(*) FROM {table_name}"
+            query_job = self.client.query(sql)  # API request
+            rows = query_job.result()
+            for row in rows: # there will be only one, but we have to iterate
+                logging.debug(f"row has the following keys: {row.keys()}")
+                if row.get("count") == 0:
+                    empty_tables.append(table_name)
+        return empty_tables
+
+    def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
+        logging.debug("In bq.process_elec_av_costs")
+        # We don't need to do anything with this in BQ, just use the table provided
+        pass
+
+    def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
+        # We don't need to do anything with this in BQ, just use the table provided
+        pass
+
+    def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
+        if not self._table_exists(self.config.elec_load_shape_table) or self.config.elec_load_shape_table in self._get_empty_tables():
+            raise FLEXValueException(
+                "You must process the electric avoided cost data before you can process the electric load shape data."
+            )
+
+    def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
+        return super().process_therms_profile(therms_profiles_path, truncate)
+
+    def process_project_info(self, project_info_path: str):
+        return super().process_project_info(project_info_path)

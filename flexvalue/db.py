@@ -295,7 +295,7 @@ class DBManager:
         self._reset_table("gas_av_costs")
 
     def _reset_table(self, table_name):
-        truncate_prefix = self.get_truncate_prefix()
+        truncate_prefix = self._get_truncate_prefix()
         sql = f"{truncate_prefix} {table_name}"
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
@@ -626,6 +626,12 @@ class PostgresqlManager(DBManager):
                 for row in rows:
                     copy.write_row(row)
 
+        self._prepare_table(
+            "elec_av_costs",
+            "flexvalue/sql/create_elec_av_cost.sql",
+            # index_filepaths=["flexvalue/sql/elec_av_costs_index.sql"]
+        )
+
         logging.debug("in pg version of load_elec_av_costs")
         # if you're concerned about RAM change this to sane number
         MAX_ROWS = sys.maxsize
@@ -847,8 +853,8 @@ class BigQueryManager(DBManager):
                 continue
             sql = f"SELECT COUNT(*) FROM {table_name}"
             query_job = self.client.query(sql)  # API request
-            rows = query_job.result()
-            for row in rows: # there will be only one, but we have to iterate
+            result = query_job.result()
+            for row in result: # there will be only one, but we have to iterate
                 logging.debug(f"row has the following keys: {row.keys()}")
                 if row.get("count") == 0:
                     empty_tables.append(table_name)

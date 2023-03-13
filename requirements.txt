@@ -22,3 +22,5 @@ m2r==0.2.1
 
 # package
 twine
+
+google-cloud-bigquery==3.6.0

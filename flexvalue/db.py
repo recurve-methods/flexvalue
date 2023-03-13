@@ -876,7 +876,11 @@ class BigQueryManager(DBManager):
             )
 
     def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
-        return super().process_therms_profile(therms_profiles_path, truncate)
+        logging.debug("In bq version of process therms")
+        template = self.template_env.get_template("bq_populate_therms_profile.sql")
+        sql = template.render()
+        query_job = self.client.query(sql)
+        result = query_job.result()
 
     def process_project_info(self, project_info_path: str):
         return super().process_project_info(project_info_path)

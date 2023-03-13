@@ -74,7 +74,7 @@ def run(
             therms_profiles_path if therms_profiles_path else config.therms_profiles
         )
     if project_info or config.project_info:
-        db_manager.load_project_info_file(
+        db_manager.process_project_info(
             project_info if project_info else config.project_info
         )
         db_manager.run()

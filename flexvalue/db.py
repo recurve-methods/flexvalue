@@ -19,7 +19,6 @@
 """
 import sys
 import csv
-import math
 import logging
 import calendar
 from datetime import datetime, timedelta

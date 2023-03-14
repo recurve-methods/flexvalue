@@ -336,6 +336,13 @@ class DBManager:
             # index_filepaths=["flexvalue/sql/discount_index.sql"],
             truncate=True,
         )
+
+        discount_dicts = self._get_discount_dicts(project_dicts)
+        insert_text = self._file_to_string("flexvalue/templates/load_discount.sql")
+        with self.engine.begin() as conn:
+            conn.execute(text(insert_text), discount_dicts)
+
+    def _get_discount_dicts(self, project_dicts):
         discount_dicts = []
         for project_dict in project_dicts:
             start_date = datetime.strptime(project_dict["start_date"], "%Y-%m-%d")
@@ -372,16 +379,13 @@ class DBManager:
                 discount_dicts.append(
                     {
                         "project_id": project_dict["project_id"],
-                        "timestamp": cur_timestamp,
-                        "date": cur_timestamp.date(),
+                        "timestamp": datetime.strftime(cur_timestamp, "%Y-%m-%d %H:%M:%S UTC"),
+                        "date": datetime.strftime(cur_timestamp.date(), "%Y-%m-%d"),
                         "discount": discount,
                     }
                 )
                 cur_timestamp = cur_timestamp + timedelta(hours=1)
-
-        insert_text = self._file_to_string("flexvalue/templates/load_discount.sql")
-        with self.engine.begin() as conn:
-            conn.execute(text(insert_text), discount_dicts)
+        return discount_dicts
 
     def run(self):
         logging.debug(f"About to start calculation, it is {datetime.now()}")

@@ -31,6 +31,8 @@ from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_l
 from .config import FLEXValueConfig, FLEXValueException
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
+from google import api_core
+
 
 SUPPORTED_DBS = ("postgresql", "sqlite", "bigquery")
 
@@ -826,8 +828,25 @@ class BigQueryManager(DBManager):
         return "DELETE"
 
     def _load_discount_table(self, project_dicts):
-        # TODO this
-        return super()._load_discount_table(project_dicts)
+        """project_dicts is a list of dicts. Each dict represents a different
+        project from the project info file. The keys are the names of the
+        columns in the file/project_info table.
+        """
+        self._prepare_table(
+            "discount",
+            "bq_create_discount.sql",
+            # index_filepaths=["flexvalue/sql/discount_index.sql"],
+            truncate=True,
+        )
+        discount_dicts = self._get_discount_dicts(project_dicts)
+        table = self.client.get_table(f'{self.config.dataset}.discount')
+        job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
+        load_job = self.client.load_table_from_json(discount_dicts, destination=table, job_config=job_config)
+        logging.debug('job created, about to wait for result()')
+        try:
+            _ = load_job.result()
+        except api_core.exceptions.BadRequest:
+            logging.error(f"Loading discount table '{table}' caused the following errors: {load_job.errors}")
 
     def _get_db_engine(self, config: FLEXValueConfig) -> Engine:
         # Not using sqlalchemy in BigQuery; TODO refactor so this isn't necessary
@@ -894,5 +913,33 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
 
+    def _get_project_info_data(self):
+        template = self.template_env.get_template("get_project_info.sql")
+        sql = template.render({
+            'dataset': self.config.dataset,
+            'project_info_table': self.config.project_info_table
+        })
+        logging.debug(f"project_info sql = {sql}")
+        query_job = self.client.query(sql)
+        result = query_job.result()
+        project_info_data = []
+        for row in result:
+            start_year = row.start_year
+            eul = row.eul
+            month = self._quarter_to_month(row.start_quarter)
+            project_info_data.append({
+                "project_id":row.ID,
+                "start_year": start_year,
+                "start_quarter": row.start_quarter,
+                "month": month,
+                "eul": eul,
+                "discount_rate": row.discount_rate,
+                "start_date": f"{start_year}-{month}-01",
+                "end_date": f"{start_year + eul}-{month}-01"
+            })
+        return project_info_data
+
     def process_project_info(self, project_info_path: str):
-        return super().process_project_info(project_info_path)
+        project_info = self._get_project_info_data()
+        logging.debug(f'project_info = {project_info}')
+        self._load_discount_table(project_info)

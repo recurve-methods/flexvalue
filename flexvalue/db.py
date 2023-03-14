@@ -863,6 +863,15 @@ class BigQueryManager(DBManager):
                     empty_tables.append(table_name)
         return empty_tables
 
+    def _prepare_table(self, table_name: str, sql_filepath: str, index_filepaths=[], truncate: bool = False):
+        if not self._table_exists(f"{self.config.dataset}.{table_name}"):
+            template = self.template_env.get_template(sql_filepath)
+            sql = template.render({"dataset": self.config.dataset})
+            logging.debug(f"create sql = \n{sql}")
+            query_job = self.client.query(sql)
+            result = query_job.result()
+
+
     def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
         logging.debug("In bq.process_elec_av_costs")
         # We don't need to do anything with this in BQ, just use the table provided

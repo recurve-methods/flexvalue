@@ -961,7 +961,7 @@ class BigQueryManager(DBManager):
         table = self.client.get_table(f'{self.config.dataset}.therms_profile')
         for row in self._get_original_therm_profiles():
             cur_year = min_year
-            while cur_year < max_year:
+            while cur_year <= max_year:
                 # this list has to match the order in the query used in _get_original_therm_profiles
                 for col, profile in enumerate(["summer", "annual", "winter"], start=5):
                     month = int(row[4])

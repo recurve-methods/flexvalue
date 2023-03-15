@@ -120,6 +120,9 @@ HEADER_READ_SIZE = 4096
 # The number of rows to read from csv files when chunking
 INSERT_ROW_COUNT = 100000
 
+# Number of rows to insert into BigQuery at once
+BIG_QUERY_CHUNK_SIZE = 10000
+
 class DBManager:
 
     @staticmethod
@@ -842,7 +845,6 @@ class BigQueryManager(DBManager):
         table = self.client.get_table(f'{self.config.dataset}.discount')
         job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
         load_job = self.client.load_table_from_json(discount_dicts, destination=table, job_config=job_config)
-        logging.debug('job created, about to wait for result()')
         try:
             _ = load_job.result()
         except api_core.exceptions.BadRequest:
@@ -908,10 +910,59 @@ class BigQueryManager(DBManager):
 
     def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
         logging.debug("In bq version of process therms")
-        template = self.template_env.get_template("bq_populate_therms_profile.sql")
-        sql = template.render()
+        self._prepare_table(
+            "therms_profile",
+            "flexvalue/sql/create_therms_profile.sql",
+            # truncate=truncate,
+        )
+
+        buffer = []
+        first_write = True
+        table = self.client.get_table(f'{self.config.dataset}.therms_profile')
+        for row in self._get_original_therm_profiles():
+            # this list has to match the order in the query used in _get_original_therm_profiles
+            for col, profile in enumerate(["summer", "annual", "winter"], start=5):
+                buffer.append(
+                    {
+                        "state": row[0],
+                        "utility": row[1],
+                        "region": row[2],
+                        "quarter": row[3],
+                        "month": row[4],
+                        "profile_name": profile,
+                        "value": row[col],
+                    }
+                )
+                if len(buffer) > BIG_QUERY_CHUNK_SIZE:
+                    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE" if first_write else "WRITE_APPEND")
+                    load_job = self.client.load_table_from_json(buffer, destination=table, job_config=job_config)
+                    try:
+                        _ = load_job.result()
+                        buffer = []
+                        first_write = False
+                    except api_core.exceptions.BadRequest:
+                        logging.error(f"Loading therms profile table '{table}' caused the following errors: {load_job.errors}")
+                        raise FLEXValueException("Unable to process therms profile data.")
+        else:
+            job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE" if first_write else "WRITE_APPEND")
+            load_job = self.client.load_table_from_json(buffer, destination=table, job_config=job_config)
+            try:
+                _ = load_job.result()
+            except api_core.exceptions.BadRequest:
+                logging.error(f"Loading therms profile table '{table}' caused the following errors: {load_job.errors}")
+                raise FLEXValueException("Unable to process therms profile data.")
+
+    def _get_original_therm_profiles(self):
+        """ Generator to fetch existing therm_profile data from BigQuery. """
+        template = self.template_env.get_template("get_therms_profiles.sql")
+        sql = template.render({
+            'dataset': self.config.dataset,
+            'therms_profiles_table': self.config.therms_profiles_table
+        })
         query_job = self.client.query(sql)
         result = query_job.result()
+        for row in result:
+            yield row.values()
 
     def _get_project_info_data(self):
         template = self.template_env.get_template("get_project_info.sql")

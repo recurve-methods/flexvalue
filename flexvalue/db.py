@@ -899,8 +899,38 @@ class BigQueryManager(DBManager):
         pass
 
     def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
-        # We don't need to do anything with this in BQ, just use the table provided
-        pass
+        """ Add a timestamp column if none exists, and populate it. It
+        will be used to join on in later calculations.
+        """
+        logging.debug("In bq process_gas_av_costs")
+        table_name = f"{self.config.dataset}.{self.config.gas_av_cost_table}"
+        self._ensure_timestamp_column(table_name)
+        sql = f'UPDATE {table_name} gac SET timestamp = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
+        query_job = self.client.query(sql)
+        result = query_job.result()
+
+    def _ensure_timestamp_column(self, table_name):
+        """ Ensure that the table with name `table_name` has a column
+        named `timestamp`, of type `TIMESTAMP`.
+        """
+        table = self.client.get_table(table_name)
+        has_timestamp = False
+        for column in table.schema:
+            if column.name == 'timestamp' and column.field_type == "TIMESTAMP":
+                has_timestamp = True
+                break
+        if not has_timestamp:
+            original_schema = table.schema
+            new_schema = original_schema[:]  # Creates a copy of the schema.
+            new_schema.append(bigquery.SchemaField("timestamp", "TIMESTAMP"))
+
+            table.schema = new_schema
+            table = self.client.update_table(table, ["schema"])  # Make an API request.
+
+            if len(table.schema) == len(original_schema) + 1 == len(new_schema):
+                print("A new column has been added.")
+            else:
+                raise FLEXValueException(f"Unable to add a timestamp column to {table_name}; can't process gas avoided costs.")
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
         if not self._table_exists(self.config.elec_load_shape_table) or self.config.elec_load_shape_table in self._get_empty_tables():

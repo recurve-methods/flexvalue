@@ -735,7 +735,6 @@ class PostgresqlManager(DBManager):
                     eac_timestamp = datetime(year, 1, 1) + timedelta(
                         hours=hour_of_year
                     )
-
                     # If the year is a leap year, move forward a day to avoid Feb 29
                     if calendar.isleap(year) and eac_timestamp >= datetime(
                         year, 2, 29
@@ -809,11 +808,13 @@ class BigQueryManager(DBManager):
         )
         self.config = fv_config
         self.table_names = [
-            self.config.elec_av_cost_table,
-            self.config.elec_load_shape_table,
-            self.config.therms_profiles_table,
-            self.config.gas_av_cost_table,
-            self.config.project_info_table
+            f"{self.config.dataset}.{x}" for x in
+                [self.config.elec_av_cost_table,
+                self.config.elec_load_shape_table,
+                self.config.therms_profiles_table,
+                self.config.gas_av_cost_table,
+                self.config.project_info_table
+            ]
         ]
         self.client = bigquery.Client(project=self.config.project)
         # self._test_connection()
@@ -892,7 +893,6 @@ class BigQueryManager(DBManager):
             query_job = self.client.query(sql)
             result = query_job.result()
 
-
     def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
         logging.debug("In bq.process_elec_av_costs")
         # We don't need to do anything with this in BQ, just use the table provided
@@ -933,18 +933,81 @@ class BigQueryManager(DBManager):
                 raise FLEXValueException(f"Unable to add a timestamp column to {table_name}; can't process gas avoided costs.")
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
-        if not self._table_exists(self.config.elec_load_shape_table) or self.config.elec_load_shape_table in self._get_empty_tables():
+        if not self._table_exists(
+            f"{self.config.dataset}.{self.config.elec_av_cost_table}"
+            ) or f"{self.config.dataset}.{self.config.elec_av_cost_table}" in self._get_empty_tables():
             raise FLEXValueException(
                 "You must process the electric avoided cost data before you can process the electric load shape data."
             )
-        # self._prepare_table(
-        #     "elec_load_shape",
-        #     "flexvalue/sql/create_elec_load_shape.sql",
-        # )
-        # buffer = []
-        # first_write = True
-        # table = self.client.get_table(f'{self.config.dataset}.elec_load_shape')
-        # for row in self._get_original_elec_load_shape():
+        self._prepare_table(
+            "elec_load_shape",
+            "bq_create_elec_load_shape.sql",
+        )
+        min_timestamp, max_timestamp = self._get_elec_av_cost_date_range()
+        min_year = min_timestamp.year
+        max_year = max_timestamp.year
+        year_span = max_year - min_year
+
+        buffer = []
+        first_write = True
+        #TODO if this works, do the same thing in process_therm_profiles
+        table_name = f'{self.config.dataset}.{self.config.elec_load_shape_table}'
+        table = self.client.get_table(table_name)
+        skipped_fields = ["state", "utility", "region", "quarter", "month", "hour_of_day", "hour_of_year"]
+        load_shape_names = [field.name for field in table.schema[len(skipped_fields):]]
+        for row in self._get_original_elec_load_shape():
+            for eul_year in range(year_span):
+                year = min_year + eul_year
+                hour_of_year = int(row[6])
+                eac_timestamp = datetime(year, 1, 1) + timedelta(
+                    hours=hour_of_year
+                )
+                # If the year is a leap year, move forward a day to avoid Feb 29
+                if calendar.isleap(year) and eac_timestamp >= datetime(
+                    year, 2, 29
+                ):
+                    eac_timestamp = eac_timestamp + timedelta(hours=24)
+
+                for load_shape_idx, load_shape in enumerate(load_shape_names, start=len(skipped_fields)):
+                    buffer.append(
+                        {
+                            "timestamp": datetime.strftime(eac_timestamp, "%Y-%m-%d %H:%M:%S"),
+                            "state": row[0].upper(),
+                            "utility": row[1].upper(),
+                            "region": row[2].upper() if row[2] else "",
+                            "quarter": int(row[3]),
+                            "month": int(row[4]),
+                            "hour_of_day": int(row[5]),
+                            "hour_of_year": hour_of_year,
+                            "load_shape_name": load_shape.upper(),
+                            "value": float(row[load_shape_idx]),
+                        }
+                    )
+            if len(buffer) >= BIG_QUERY_CHUNK_SIZE:
+                job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE" if first_write else "WRITE_APPEND")
+                load_job = self.client.load_table_from_json(buffer, destination=table, job_config=job_config)
+                try:
+                    _ = load_job.result()
+                    buffer = []
+                    first_write = False
+                except api_core.exceptions.BadRequest:
+                    logging.error(f"Loading electric load shape table '{table}' caused the following errors: {load_job.errors}")
+                    raise FLEXValueException("Unable to process electric load shape data.")
+        else:
+            job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE" if first_write else "WRITE_APPEND")
+            load_job = self.client.load_table_from_json(buffer, destination=table, job_config=job_config)
+            try:
+                _ = load_job.result()
+            except api_core.exceptions.BadRequest:
+                logging.error(f"Loading electric load shape table '{table}' caused the following errors: {load_job.errors}")
+                raise FLEXValueException("Unable to process electric load shape data.")
+
+    def _get_elec_av_cost_date_range(self):
+        sql = f"SELECT min(datetime), max(datetime) FROM {self.config.dataset}.{self.config.elec_av_cost_table}"
+        query_job = self.client.query(sql)
+        result = query_job.result()
+        row = next(result)
+        return row[0], row[1]
 
     def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
         logging.debug("In bq version of process therms")
@@ -1013,6 +1076,18 @@ class BigQueryManager(DBManager):
         sql = template.render({
             'dataset': self.config.dataset,
             'therms_profiles_table': self.config.therms_profiles_table
+        })
+        query_job = self.client.query(sql)
+        result = query_job.result()
+        for row in result:
+            yield row.values()
+
+    def _get_original_elec_load_shape(self):
+        """ Generator to fetch existing electric load shape data from BigQuery. """
+        template = self.template_env.get_template("get_elec_load_shape.sql")
+        sql = template.render({
+            'dataset': self.config.dataset,
+            'elec_load_shape_table': self.config.elec_load_shape_table
         })
         query_job = self.client.query(sql)
         result = query_job.result()

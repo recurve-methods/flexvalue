@@ -963,73 +963,16 @@ class BigQueryManager(DBManager):
         self._prepare_table(
             "therms_profile",
             "flexvalue/sql/create_therms_profile.sql",
-            # truncate=truncate,
+            truncate=truncate,
         )
-        min_timestamp, max_timestamp = self._get_gas_av_cost_date_range()
-        min_year = min_timestamp.year
-        max_year = max_timestamp.year
-        buffer = []
-        first_write = True
-        table = self.client.get_table(f'{self.config.dataset}.therms_profile')
-        for row in self._get_original_therm_profiles():
-            cur_year = min_year
-            while cur_year <= max_year:
-                # this list has to match the order in the query used in _get_original_therm_profiles
-                for col, profile in enumerate(["summer", "annual", "winter"], start=5):
-                    month = int(row[4])
-                    timestamp = datetime(year=cur_year, month=month, day=1)
-                    timestamp_str = datetime.strftime(timestamp, "%Y-%m-%d %H:%M:%S")
-                    buffer.append(
-                        {
-                            "state": row[0],
-                            "utility": row[1],
-                            "region": row[2],
-                            "quarter": row[3],
-                            "month": month,
-                            "profile_name": profile,
-                            "value": row[col],
-                            "timestamp": timestamp_str
-                        }
-                    )
-                cur_year += 1
-
-            if len(buffer) >= BIG_QUERY_CHUNK_SIZE:
-                job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE" if first_write else "WRITE_APPEND")
-                load_job = self.client.load_table_from_json(buffer, destination=table, job_config=job_config)
-                try:
-                    _ = load_job.result()
-                    buffer = []
-                    first_write = False
-                except api_core.exceptions.BadRequest:
-                    logging.error(f"Loading therms profile table '{table}' caused the following errors: {load_job.errors}")
-                    raise FLEXValueException("Unable to process therms profile data.")
-        else:
-            job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE" if first_write else "WRITE_APPEND")
-            load_job = self.client.load_table_from_json(buffer, destination=table, job_config=job_config)
-            try:
-                _ = load_job.result()
-            except api_core.exceptions.BadRequest:
-                logging.error(f"Loading therms profile table '{table}' caused the following errors: {load_job.errors}")
-                raise FLEXValueException("Unable to process therms profile data.")
-
-    def _get_gas_av_cost_date_range(self):
-        sql = f"SELECT min(timestamp), max(timestamp) FROM {self.config.dataset}.{self.config.gas_av_cost_table}"
-        query_job = self.client.query(sql)
-        result = query_job.result()
-        row = next(result)
-        return row[0], row[1]
-
-    def _get_original_therm_profiles(self):
-        """ Generator to fetch existing therm_profile data from BigQuery. """
-        template = self.template_env.get_template("get_therms_profiles.sql")
+        template = self.template_env.get_template("bq_populate_therms_profile.sql")
         sql = template.render({
-            'dataset': self.config.dataset,
-            'therms_profiles_table': self.config.therms_profiles_table
+            "project": self.config.project,
+            "dataset": self.config.dataset,
+            "therms_profiles_table": self.config.therms_profiles_table
         })
         query_job = self.client.query(sql)
         result = query_job.result()
-        for row in result:
-            yield row.values()
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

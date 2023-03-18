@@ -892,6 +892,11 @@ class BigQueryManager(DBManager):
             logging.debug(f"create sql = \n{sql}")
             query_job = self.client.query(sql)
             result = query_job.result()
+        else:
+            if truncate:
+                sql = f"DELETE FROM {self.config.dataset}.{table_name} WHERE TRUE;"
+                query_job = self.client.query(sql)
+                result = query_job.result()
 
     def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
         logging.debug("In bq.process_elec_av_costs")

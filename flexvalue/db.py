@@ -914,7 +914,7 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
         for row in result:
-            print(row.values())
+            print(",".join([f"{x}" for x in row.values()]))
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

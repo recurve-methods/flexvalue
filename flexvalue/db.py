@@ -330,68 +330,6 @@ class DBManager:
         table_exists = inspection.has_table(table_name)
         return table_exists
 
-    def _load_discount_table(self, project_dicts):
-        """project_dicts is a list of dicts. Each dict represents a different
-        project from the project info file. The keys are the names of the
-        columns in the file/project_info table.
-        """
-        self._prepare_table(
-            "discount",
-            "flexvalue/sql/create_discount.sql",
-            # index_filepaths=["flexvalue/sql/discount_index.sql"],
-            truncate=True,
-        )
-
-        discount_dicts = self._get_discount_dicts(project_dicts)
-        insert_text = self._file_to_string("flexvalue/templates/load_discount.sql")
-        with self.engine.begin() as conn:
-            conn.execute(text(insert_text), discount_dicts)
-
-    def _get_discount_dicts(self, project_dicts):
-        discount_dicts = []
-        for project_dict in project_dicts:
-            start_date = datetime.strptime(project_dict["start_date"], "%Y-%m-%d")
-            end_date = datetime.strptime(project_dict["end_date"], "%Y-%m-%d")
-            discount_rate = float(project_dict["discount_rate"])
-            start_year = int(project_dict["start_year"])
-            start_quarter = int(project_dict["start_quarter"])
-
-            start_timestamp = datetime(
-                start_date.year,
-                start_date.month,
-                start_date.day,
-                0,
-                0,
-                0,
-            )
-            end_timestamp = datetime(
-                end_date.year,
-                end_date.month,
-                end_date.day,
-                23,
-                0,
-                0,
-            )
-
-            cur_timestamp = start_timestamp
-
-            while cur_timestamp <= end_timestamp:
-                # TODO double-check that this is correct, starting at 1st quarter
-                discount = 1.0 / pow(
-                    (1.0 + discount_rate / 4.0),
-                    ((cur_timestamp.year - start_year) * 4) + (start_quarter - 1),
-                )
-                discount_dicts.append(
-                    {
-                        "project_id": project_dict["project_id"],
-                        "timestamp": datetime.strftime(cur_timestamp, "%Y-%m-%d %H:%M:%S UTC"),
-                        "date": datetime.strftime(cur_timestamp.date(), "%Y-%m-%d"),
-                        "discount": discount,
-                    }
-                )
-                cur_timestamp = cur_timestamp + timedelta(hours=1)
-        return discount_dicts
-
     def run(self):
         logging.debug(f"About to start calculation, it is {datetime.now()}")
         self._perform_calculation()
@@ -424,7 +362,6 @@ class DBManager:
         logging.debug(f"in loading project_info, dicts = {dicts}")
         insert_text = self._file_to_string("flexvalue/templates/load_project_info.sql")
         self._load_project_info_data(insert_text, dicts)
-        self._load_discount_table(dicts)
 
     def _load_project_info_data(self, insert_text, project_info_dicts):
         with self.engine.begin() as conn:
@@ -840,26 +777,6 @@ class BigQueryManager(DBManager):
         # in BQ, TRUNCATE TABLE deletes row-level security, so using DELETE instead:
         return "DELETE"
 
-    def _load_discount_table(self, project_dicts):
-        """project_dicts is a list of dicts. Each dict represents a different
-        project from the project info file. The keys are the names of the
-        columns in the file/project_info table.
-        """
-        self._prepare_table(
-            "discount",
-            "bq_create_discount.sql",
-            # index_filepaths=["flexvalue/sql/discount_index.sql"],
-            truncate=True,
-        )
-        discount_dicts = self._get_discount_dicts(project_dicts)
-        table = self.client.get_table(f'{self.config.dataset}.discount')
-        job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
-        load_job = self.client.load_table_from_json(discount_dicts, destination=table, job_config=job_config)
-        try:
-            _ = load_job.result()
-        except api_core.exceptions.BadRequest:
-            logging.error(f"Loading discount table '{table}' caused the following errors: {load_job.errors}")
-
     def _get_db_engine(self, config: FLEXValueConfig) -> Engine:
         # Not using sqlalchemy in BigQuery; TODO refactor so this isn't necessary
         return None
@@ -1040,4 +957,3 @@ class BigQueryManager(DBManager):
     def process_project_info(self, project_info_path: str):
         project_info = self._get_project_info_data()
         logging.debug(f'project_info = {project_info}')
-        self._load_discount_table(project_info)

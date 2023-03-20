@@ -34,7 +34,6 @@ project_costs_with_discounted_gas_av AS (SELECT
     FROM project_costs
     JOIN {{ gac_table }} gas_av_costs
         ON gas_av_costs.utility = project_costs.utility
-            -- AND gas_av_costs.region = project_costs.region
             AND gas_av_costs.timestamp >= CAST(DATE(project_costs.start_year, project_costs.start_quarter * 3, 1) AS TIMESTAMP)
             AND gas_av_costs.timestamp < CAST(DATE(project_costs.start_year + project_costs.eul, (MOD(project_costs.start_quarter + 2, 4) + 1) * 3, 1) AS TIMESTAMP)
 )

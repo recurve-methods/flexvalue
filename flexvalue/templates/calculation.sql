@@ -1,30 +1,79 @@
---WITH elec_cte as (
-    SELECT project_info.project_id,
-    project_info.units
-    * project_info.ntg
-    * project_info.mwh_savings
-    * SUM(elec_av_costs.total * elec_load_shape.value * discount.discount) AS electric_benefits
-    , project_info.units * project_info.mwh_savings * project_info.ntg * sum(elec_load_shape.value) as first_year_net_mwh_savings
-    , project_info.units * project_info.mwh_savings * project_info.ntg * sum(elec_load_shape.value) * project_info.eul as project_lifecycle_elec_savings
-    , (project_info.admin_cost + (1 - project_info.ntg) * project_info.incentive_cost + project_info.ntg * project_info.measure_cost) / 1 + (project_info.discount_rate / 4) as trc_costs
-    , (project_info.admin_cost + project_info.incentive_cost) / (1 + (project_info.discount_rate / 4)) as pac_costs
-    , (project_info.units * project_info.ntg * sum(elec_av_costs.marginal_ghg * elec_load_shape.value)) as elec_avoided_ghg
-    FROM project_info
-    JOIN elec_load_shape ON project_info.elec_load_shape = elec_load_shape.name AND project_info.utility = elec_load_shape.utility
-    JOIN elec_av_costs ON elec_av_costs.utility = project_info.utility and elec_av_costs.region = project_info.region and elec_load_shape.timestamp = elec_av_costs.timestamp
-    JOIN discount ON discount.project_id = project_info.project_id AND elec_load_shape.timestamp = discount.timestamp
-    GROUP BY project_info.project_id
---)
--- , gas_cte as (
+WITH project_costs AS (
+    SELECT
+        project_info.*,
+        project_info.admin_cost + (((1 - project_info.ntg) * project_info.incentive_cost) + (project_info.ntg * project_info.measure_cost)) / (1 + (project_info.discount_rate / 4.0)) as trc_costs,
+        project_info.admin_cost + (project_info.incentive_cost / (1 + (project_info.discount_rate / 4.0))) as pac_costs
+    FROM
+    {{ project_info_table }} project_info
+),
+project_costs_with_discounted_elec_av AS (
+    SELECT
+        project_costs.*,
+        elec_av_costs.hour_of_year,
+        elec_av_costs.energy, elec_av_costs.losses, elec_av_costs.ancillary_services,
+        elec_av_costs.capacity, elec_av_costs.transmission, elec_av_costs.distribution,
+        elec_av_costs.cap_and_trade, elec_av_costs.ghg_adder, elec_av_costs.ghg_rebalancing,
+        elec_av_costs.methane_leakage, elec_av_costs.total, elec_av_costs.marginal_ghg,
+        elec_av_costs.ghg_adder_rebalancing,
+        1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter) AS discount
+    FROM project_costs
+    JOIN {{ eac_table }} elec_av_costs
+        ON elec_av_costs.utility = project_costs.utility
+            AND elec_av_costs.region = project_costs.region
+            AND elec_av_costs.datetime >= CAST(DATE(project_costs.start_year, project_costs.start_quarter * 3, 1) AS TIMESTAMP)
+            AND elec_av_costs.datetime < CAST(DATE(project_costs.start_year + project_costs.eul, (MOD(project_costs.start_quarter + 2, 4) + 1) * 3, 1) AS TIMESTAMP)
+),
 
--- )
--- SELECT project_info.project_id
--- , elec_cte.electric_benefits
--- , elec_cte.first_year_net_mwh_savings
--- , elec_cte.project_lifecycle_elec_savings
--- , elec_cte.trc_costs
--- , elec_cte.pac_costs
--- , elec_cte.elec_avoided_ghg
--- FROM project_info
--- JOIN elec_cte ON project_info.project_id = elec_cte.project_id
--- ;
+project_costs_with_discounted_gas_av AS (SELECT
+        project_costs.*,
+        gas_av_costs.month,
+        gas_av_costs.total, gas_av_costs.market, gas_av_costs.t_d,
+        gas_av_costs.environment, gas_av_costs.btm_methane, gas_av_costs.upstream_methane,
+        gas_av_costs.marginal_ghg,
+        1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((gas_av_costs.year - project_costs.start_year) * 4) + gas_av_costs.quarter - project_costs.start_quarter) AS discount
+    FROM project_costs
+    JOIN {{ gac_table }} gas_av_costs
+        ON gas_av_costs.utility = project_costs.utility
+            -- AND gas_av_costs.region = project_costs.region
+            AND gas_av_costs.timestamp >= CAST(DATE(project_costs.start_year, project_costs.start_quarter * 3, 1) AS TIMESTAMP)
+            AND gas_av_costs.timestamp < CAST(DATE(project_costs.start_year + project_costs.eul, (MOD(project_costs.start_quarter + 2, 4) + 1) * 3, 1) AS TIMESTAMP)
+)
+
+SELECT pcwdea.ID,
+  SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.losses) AS losses
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.ancillary_services) AS ancillary_services
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.capacity) AS capacity
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.transmission) AS transmission
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.distribution) AS distribution
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.cap_and_trade) AS cap_and_trade
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.ghg_adder_rebalancing) AS ghg_adder_rebalancing
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.methane_leakage) AS methane_leakage
+, SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) / CAST(pcwdea.eul AS FLOAT64) as first_year_net_mwh_savings
+, SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) as project_lifecycle_elec_savings
+, pcwdea.trc_costs, pcwdea.pac_costs
+, sum(pcwdea.marginal_ghg * pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as elec_avoided_ghg
+, SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount) as gas_savings
+, SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
+, SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS FLOAT64) as first_year_net_therms_savings
+, SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
+, SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
+, SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) + SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) AS total_benefits
+
+FROM project_costs_with_discounted_elec_av pcwdea
+JOIN {{ els_table }} elec_load_shape
+    ON elec_load_shape.load_shape_name = pcwdea.elec_load_shape
+        AND elec_load_shape.utility = pcwdea.utility
+        AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
+JOIN project_costs_with_discounted_gas_av pcwdga
+    ON pcwdea.ID = pcwdga.ID
+JOIN {{ therms_profile_table }} therms_profile
+    ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
+        AND therms_profile.utility = pcwdga.utility
+        AND therms_profile.month = pcwdga.month
+GROUP BY pcwdea.ID, pcwdea.units, pcwdea.ntg, pcwdea.mwh_savings, pcwdea.eul, pcwdga.eul, pcwdea.admin_cost,
+         pcwdea.incentive_cost, pcwdea.measure_cost, pcwdea.discount_rate,
+         pcwdea.trc_costs, pcwdea.pac_costs
+;

@@ -456,8 +456,6 @@ class DBManager:
         return empty_tables
 
     def _perform_calculation(self):
-        from datetime import datetime
-
         empty_tables = self._get_empty_tables()
         if empty_tables:
             # TODO the table names are implementation-dependent, let's see if we can give a better error message here
@@ -465,19 +463,30 @@ class DBManager:
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )
         sql = self._get_calculation_sql()
+        logging.info(f"calculation sql =\n{sql}")
+        self._run_calc(sql)
+
+    def _run_calc(self, sql):
         with self.engine.begin() as conn:
-            logging.debug(f"before calc sql, it is {datetime.now()}")
             result = conn.execute(text(sql))
-            logging.debug(f"after calc sql, it is {datetime.now()}")
             print(", ".join(result.keys()))
             for row in result:
                 print(", ".join([str(col) for col in row]))
 
     def _get_calculation_sql(self):
-        context = {}
+        context = self._get_calculation_sql_context()
         template = self.template_env.get_template("calculation.sql")
         sql = template.render(context)
         return sql
+
+    def _get_calculation_sql_context(self):
+        return {
+            "project_info_table": "project_info",
+            "eac_table": "elec_av_costs",
+            "els_table": "elec_load_shape",
+            "gac_table": "gas_av_costs",
+            "therms_profile_table": "therms_profile"
+        }
 
     def _csv_file_to_dicts(
         self, csv_file_path: str, fieldnames: str, fields_to_upper=None
@@ -880,7 +889,6 @@ class BigQueryManager(DBManager):
             query_job = self.client.query(sql)  # API request
             result = query_job.result()
             for row in result: # there will be only one, but we have to iterate
-                logging.debug(f"row has the following keys: {row.keys()}")
                 if row.get("count") == 0:
                     empty_tables.append(table_name)
         return empty_tables
@@ -973,6 +981,23 @@ class BigQueryManager(DBManager):
         })
         query_job = self.client.query(sql)
         result = query_job.result()
+
+    def _get_calculation_sql_context(self):
+        context = {
+            "project_info_table": f"`{self.config.dataset}.{self.config.project_info_table}`",
+            "eac_table": f"`{self.config.dataset}.{self.config.elec_av_cost_table}`",
+            "els_table": f"`{self.config.dataset}.elec_load_shape`",
+            "gac_table": f"`{self.config.dataset}.{self.config.gas_av_cost_table}`",
+            "therms_profile_table": f"`{self.config.dataset}.therms_profile`"
+        }
+        return context
+
+    def _run_calc(self, sql):
+        pass
+        query_job = self.client.query(sql)
+        result = query_job.result()
+        for row in result:
+            print(row.values())
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

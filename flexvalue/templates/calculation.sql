@@ -44,6 +44,7 @@ elec_calculations AS (
     , pcwdea.hour_of_day
     , pcwdea.quarter
     , pcwdea.discount
+    , pcwdea.datetime
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
@@ -69,7 +70,7 @@ elec_calculations AS (
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.hour_of_year, pcwdea.hour_of_day, pcwdea.units, pcwdea.ntg, pcwdea.mwh_savings, pcwdea.eul, pcwdea.admin_cost,
              pcwdea.incentive_cost, pcwdea.measure_cost, pcwdea.discount_rate,
-             pcwdea.trc_costs, pcwdea.pac_costs, elec_load_shape.load_shape_name, pcwdea.utility, pcwdea.region, pcwdea.year, pcwdea.month, pcwdea.quarter, pcwdea.discount
+             pcwdea.trc_costs, pcwdea.pac_costs, elec_load_shape.load_shape_name, pcwdea.utility, pcwdea.region, pcwdea.year, pcwdea.month, pcwdea.quarter, pcwdea.discount, pcwdea.datetime
 ),
 project_costs_with_discounted_gas_av AS (
     SELECT

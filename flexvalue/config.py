@@ -24,7 +24,8 @@ class FLEXValueConfig:
     therms_profiles_table: str
     gas_av_cost_table: str
     project_info_table: str
-
+    output_file: str
+    output_table: str
 
     @staticmethod
     def from_file(config_file):
@@ -51,6 +52,8 @@ class FLEXValueConfig:
             therms_profiles=run.get('therms_profiles', None),
             gas_av_costs=run.get('gas_av_costs', None),
             project_info=run.get('project_info', None),
+            output_file=run.get('output_file', None),
+            output_table=run.get('output_table', None)
         )
 
     def use_specified_db(self):
@@ -68,4 +71,10 @@ class FLEXValueConfig:
         if self.database_type == "bigquery":
             if not all([self.project, self.dataset]):
                 raise FLEXValueException("When using bigquery, you must provide all of the following values in the config file: project, dataset.")
+
+    def float_type(self):
+        if self.database_type == "bigquery":
+            return "FLOAT64"
+        else:
+            return "FLOAT"
 

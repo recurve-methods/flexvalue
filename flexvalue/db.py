@@ -943,7 +943,7 @@ class BigQueryManager(DBManager):
             eul = row.eul
             month = self._quarter_to_month(row.start_quarter)
             project_info_data.append({
-                "project_id":row.ID,
+                "project_id":row.project_id,
                 "start_year": start_year,
                 "start_quarter": row.start_quarter,
                 "month": month,

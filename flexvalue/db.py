@@ -416,7 +416,7 @@ class DBManager:
         return sql
 
     def _get_calculation_sql_context(self):
-        return {
+        context = {
             "project_info_table": "project_info",
             "eac_table": "elec_av_costs",
             "els_table": "elec_load_shape",
@@ -425,6 +425,9 @@ class DBManager:
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type
         }
+        if self.config.output_table:
+            context['create_clause'] = f"DROP TABLE IF EXISTS {self.config.output_table};CREATE TABLE {self.config.output_table} AS ("
+        return context
 
     def _csv_file_to_dicts(
         self, csv_file_path: str, fieldnames: str, fields_to_upper=None
@@ -549,6 +552,68 @@ class PostgresqlManager(DBManager):
 
     def _get_truncate_prefix(self):
         return "TRUNCATE TABLE"
+
+    def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
+        def copy_write(cur, rows):
+            with cur.copy("""COPY gas_av_costs (
+                    state,
+                    utility,
+                    region,
+                    year,
+                    quarter,
+                    month,
+                    timestamp,
+                    market,
+                    t_d,
+                    environment,
+                    btm_methane,
+                    total,
+                    upstream_methane,
+                    marginal_ghg)
+                    FROM STDIN"""
+            ) as copy:
+                for row in rows:
+                    copy.write_row(row)
+        self._prepare_table(
+            "gas_av_costs",
+            "flexvalue/sql/create_gas_av_cost.sql"
+        )
+        MAX_ROWS = sys.maxsize
+        logging.info("IN PG VERSION OF LOAD GAS AV COSTS")
+        try:
+            cur = self.connection.cursor()
+            buf = []
+            with open(gas_av_costs_path) as f:
+                reader = csv.DictReader(f)
+                for i, r in enumerate(reader):
+                    dt = datetime(year=int(r["year"]), month=int(r["month"]), day=1, hour=0, minute=0, second=0)
+                    gac_timestamp = dt.strftime("%Y-%m-%d %H:%M:%S %Z")
+                    buf.append(
+                        [
+                            r["state"],
+                            r["utility"],
+                            r["region"],
+                            int(r["year"]),
+                            int(r["quarter"]),
+                            int(r["month"]),
+                            gac_timestamp,
+                            float(r["market"]),
+                            float(r["t_d"]),
+                            float(r["environment"]),
+                            float(r["btm_methane"]),
+                            float(r["total"]),
+                            float(r["upstream_methane"]),
+                            float(r["marginal_ghg"])
+                        ]
+                    )
+                    if len(buf) == MAX_ROWS:
+                        copy_write(cur, buf)
+                        buf = []
+                else:
+                    copy_write(cur, buf)
+            self.connection.commit()
+        except Exception as e:
+            logging.error(f"Error loading the gas avoided costs: {e}")
 
     def process_elec_av_costs(self, elec_av_costs_path):
         def copy_write(cur, rows):
@@ -910,21 +975,15 @@ class BigQueryManager(DBManager):
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type
         }
+        if self.config.output_table:
+            context["create_clause"] = f"CREATE OR REPLACE TABLE {self.config.dataset}.{self.config.output_table} AS ("
         return context
 
     def _run_calc(self, sql):
-        if self.config.output_table:
-            sql = self._get_output_sql(sql)
-        logging.info(f'in _run_calc, sql=\n{sql}')
         query_job = self.client.query(sql)
         result = query_job.result()
         for row in result:
             print(",".join([f"{x}" for x in row.values()]))
-
-    def _get_output_sql(self, sql):
-        output_table = f"{self.config.dataset}.{self.config.output_table}"
-        output_sql = f"CREATE OR REPLACE TABLE {output_table} AS (\n{sql}\n)"
-        return output_sql
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

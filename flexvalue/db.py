@@ -400,7 +400,6 @@ class DBManager:
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )
         sql = self._get_calculation_sql()
-        logging.info(f"calculation sql =\n{sql}")
         self._run_calc(sql)
 
     def _run_calc(self, sql):
@@ -422,7 +421,8 @@ class DBManager:
             "eac_table": "elec_av_costs",
             "els_table": "elec_load_shape",
             "gac_table": "gas_av_costs",
-            "therms_profile_table": "therms_profile"
+            "therms_profile_table": "therms_profile",
+            "float_type": self.config.float_type()
         }
 
     def _csv_file_to_dicts(
@@ -905,16 +905,24 @@ class BigQueryManager(DBManager):
             "eac_table": f"`{self.config.dataset}.{self.config.elec_av_cost_table}`",
             "els_table": f"`{self.config.dataset}.elec_load_shape`",
             "gac_table": f"`{self.config.dataset}.{self.config.gas_av_cost_table}`",
-            "therms_profile_table": f"`{self.config.dataset}.therms_profile`"
+            "therms_profile_table": f"`{self.config.dataset}.therms_profile`",
+            "float_type": self.config.float_type()
         }
         return context
 
     def _run_calc(self, sql):
-        pass
+        if self.config.output_table:
+            sql = self._get_output_sql(sql)
+        logging.info(f'in _run_calc, sql=\n{sql}')
         query_job = self.client.query(sql)
         result = query_job.result()
         for row in result:
             print(",".join([f"{x}" for x in row.values()]))
+
+    def _get_output_sql(self, sql):
+        output_table = f"{self.config.dataset}.{self.config.output_table}"
+        output_sql = f"CREATE OR REPLACE TABLE {output_table} AS (\n{sql}\n)"
+        return output_sql
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

@@ -20,10 +20,13 @@ project_costs_with_discounted_elec_av AS (
     JOIN {{ eac_table }} elec_av_costs
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
+            {% if database_type == "postgresql" %}
+            AND elec_av_costs.datetime >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
+            AND elec_av_costs.datetime < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
+            {% else %}
             AND elec_av_costs.datetime >= CAST(DATE(project_costs.start_year, project_costs.start_quarter * 3, 1) AS TIMESTAMP)
             AND elec_av_costs.datetime < CAST(DATE(project_costs.start_year + project_costs.eul, (MOD(project_costs.start_quarter + 2, 4) + 1) * 3, 1) AS TIMESTAMP)
-            -- AND elec_av_costs.datetime >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
-            -- AND elec_av_costs.datetime < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
+            {% endif %}
 ),
 elec_calculations AS (
     SELECT pcwdea.project_id,
@@ -62,10 +65,13 @@ project_costs_with_discounted_gas_av AS (
     FROM project_costs
     JOIN {{ gac_table }} gas_av_costs
         ON gas_av_costs.utility = project_costs.utility
+            {% if database_type == "postgresql" %}
+            AND gas_av_costs.timestamp >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
+            AND gas_av_costs.timestamp < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
+            {% else %}
             AND gas_av_costs.timestamp >= CAST(DATE(project_costs.start_year, project_costs.start_quarter * 3, 1) AS TIMESTAMP)
             AND gas_av_costs.timestamp < CAST(DATE(project_costs.start_year + project_costs.eul, (MOD(project_costs.start_quarter + 2, 4) + 1) * 3, 1) AS TIMESTAMP)
-            -- AND gas_av_costs.timestamp >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
-            -- AND gas_av_costs.timestamp < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
+            {% endif %}
 ),
 gas_calculations AS (
     SELECT pcwdga.project_id

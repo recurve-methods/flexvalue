@@ -422,7 +422,8 @@ class DBManager:
             "els_table": "elec_load_shape",
             "gac_table": "gas_av_costs",
             "therms_profile_table": "therms_profile",
-            "float_type": self.config.float_type()
+            "float_type": self.config.float_type(),
+            "database_type": self.config.database_type
         }
 
     def _csv_file_to_dicts(
@@ -906,7 +907,8 @@ class BigQueryManager(DBManager):
             "els_table": f"`{self.config.dataset}.elec_load_shape`",
             "gac_table": f"`{self.config.dataset}.{self.config.gas_av_cost_table}`",
             "therms_profile_table": f"`{self.config.dataset}.therms_profile`",
-            "float_type": self.config.float_type()
+            "float_type": self.config.float_type(),
+            "database_type": self.config.database_type
         }
         return context
 

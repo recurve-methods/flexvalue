@@ -1,3 +1,6 @@
+{% if create_clause %}
+{{ create_clause }}
+{% endif %}
 WITH project_costs AS (
     SELECT
         project_info.*,
@@ -112,3 +115,7 @@ gas_calculations.gas_savings, gas_calculations.gas_benefits, gas_calculations.fi
 elec_calculations.electric_benefits + gas_calculations.gas_benefits as total_benefits
 FROM elec_calculations
 JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id
+
+{% if create_clause %}
+)
+{% endif %}

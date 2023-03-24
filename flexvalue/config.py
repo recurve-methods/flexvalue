@@ -78,3 +78,14 @@ class FLEXValueConfig:
         else:
             return "FLOAT"
 
+    def aggregation_columns(self):
+        return [
+        {
+            "prefix": "pcwdea",
+            "columns":["hour_of_year", "year", "eul", "utility", "region", "month", "quarter", "discount", "hour_of_day", "timestamp"]
+        }, {
+            "prefix": "elec_load_shape",
+            "columns": ["load_shape_name"]
+        }
+    ]
+

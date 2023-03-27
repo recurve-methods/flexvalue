@@ -78,7 +78,7 @@ class FLEXValueConfig:
         else:
             return "FLOAT"
 
-    def aggregation_columns(self):
+    def elec_aggregation_columns(self):
         return [
         {
             "prefix": "pcwdea",
@@ -89,3 +89,13 @@ class FLEXValueConfig:
         }
     ]
 
+    def gas_aggregation_columns(self):
+        return [
+        {
+            "prefix": "pcwdga",
+            "columns":["year", "eul", "utility", "region", "month", "quarter", "discount", "timestamp"]
+        }, {
+            "prefix": "therms_profile",
+            "columns": ["profile_name"]
+        }
+    ]

@@ -400,6 +400,7 @@ class DBManager:
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )
         sql = self._get_calculation_sql()
+        logging.debug(f'sql =\n{sql}')
         self._run_calc(sql)
 
     def _run_calc(self, sql):
@@ -978,9 +979,13 @@ class BigQueryManager(DBManager):
         if self.config.output_table:
             context["create_clause"] = f"CREATE OR REPLACE TABLE {self.config.dataset}.{self.config.output_table} AS ("
         field_list = []
-        for column_info in self.config.aggregation_columns():
+        for column_info in self.config.elec_aggregation_columns():
             field_list.extend([f"{column_info['prefix']}.{x}" for x in column_info['columns']])
-        context['elec_aggregation_columns'] = ",".join(field_list)
+        context['elec_aggregation_columns'] = ", ".join(field_list)
+        field_list = []
+        for column_info in self.config.gas_aggregation_columns():
+            field_list.extend([f"{column_info['prefix']}.{x}" for x in column_info["columns"]])
+        context['gas_aggregation_columns'] = ", ".join(field_list)
         return context
 
     def _run_calc(self, sql):

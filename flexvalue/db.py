@@ -400,7 +400,7 @@ class DBManager:
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )
         sql = self._get_calculation_sql()
-        logging.debug(f'sql =\n{sql}')
+        logging.info(f'sql =\n{sql}')
         self._run_calc(sql)
 
     def _run_calc(self, sql):
@@ -822,10 +822,10 @@ class BigQueryManager(DBManager):
         self.config = fv_config
         self.table_names = [
             f"{self.config.dataset}.{x}" for x in
-                [self.config.elec_av_cost_table,
+                [self.config.elec_av_costs_table,
                 self.config.elec_load_shape_table,
                 self.config.therms_profiles_table,
-                self.config.gas_av_cost_table,
+                self.config.gas_av_costs_table,
                 self.config.project_info_table
             ]
         ]
@@ -891,7 +891,7 @@ class BigQueryManager(DBManager):
                 result = query_job.result()
 
     def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
-        logging.debug("In bq.process_elec_av_costs")
+        logging.debug("In bq.process_elec_av_costs, doing nothing")
         # We don't need to do anything with this in BQ, just use the table provided
         pass
 
@@ -900,7 +900,7 @@ class BigQueryManager(DBManager):
         will be used to join on in later calculations.
         """
         logging.debug("In bq process_gas_av_costs")
-        table_name = f"{self.config.dataset}.{self.config.gas_av_cost_table}"
+        table_name = f"{self.config.dataset}.{self.config.gas_av_costs_table}"
         self._ensure_timestamp_column(table_name)
         sql = f'UPDATE {table_name} gac SET timestamp = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
         query_job = self.client.query(sql)
@@ -931,8 +931,8 @@ class BigQueryManager(DBManager):
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
         if not self._table_exists(
-            f"{self.config.dataset}.{self.config.elec_av_cost_table}"
-            ) or f"{self.config.dataset}.{self.config.elec_av_cost_table}" in self._get_empty_tables():
+            f"{self.config.dataset}.{self.config.elec_av_costs_table}"
+            ) or f"{self.config.dataset}.{self.config.elec_av_costs_table}" in self._get_empty_tables():
             raise FLEXValueException(
                 "You must process the electric avoided cost data before you can process the electric load shape data."
             )
@@ -969,9 +969,9 @@ class BigQueryManager(DBManager):
     def _get_calculation_sql_context(self):
         context = {
             "project_info_table": f"`{self.config.dataset}.{self.config.project_info_table}`",
-            "eac_table": f"`{self.config.dataset}.{self.config.elec_av_cost_table}`",
+            "eac_table": f"`{self.config.dataset}.{self.config.elec_av_costs_table}`",
             "els_table": f"`{self.config.dataset}.elec_load_shape`",
-            "gac_table": f"`{self.config.dataset}.{self.config.gas_av_cost_table}`",
+            "gac_table": f"`{self.config.dataset}.{self.config.gas_av_costs_table}`",
             "therms_profile_table": f"`{self.config.dataset}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type

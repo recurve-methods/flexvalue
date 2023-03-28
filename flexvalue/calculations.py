@@ -35,46 +35,43 @@ __all__ = ("run",)
 
 # TODO Do we even want this file?
 def run(
-    config_file,
-    project_info=None,
-    elec_av_costs=None,
-    gas_av_costs=None,
-    elec_load_shape_file=None,
-    therms_profiles_path=None,
-    reset_elec_load_shape=None,
-    reset_elec_av_costs=None,
-    reset_therms_profiles=None,
-    reset_gas_av_costs=None,
+    config_file=None,
+    **kwargs
 ):
-    config = FLEXValueConfig.from_file(config_file)
+    # TODO: if file, load that first, then load from command line; if not file, just load from command line
+    try:
+        config = FLEXValueConfig.from_file(config_file)
+    except TypeError:
+        config = FLEXValueConfig(**kwargs)
     db_manager = DBManager.get_db_manager(config)
-    if reset_elec_load_shape:
+    if config.reset_elec_load_shape:
         db_manager.reset_elec_load_shape()
-    if reset_elec_av_costs:
+    if config.reset_elec_av_costs:
         db_manager.reset_elec_av_costs()
-    if reset_therms_profiles:
+    if config.reset_therms_profiles:
         db_manager.reset_therms_profiles()
-    if reset_gas_av_costs:
+    if config.reset_gas_av_costs:
         db_manager.reset_gas_av_costs()
-    if elec_av_costs or config.elec_av_costs:
+
+    if config.process_elec_av_costs:
         db_manager.process_elec_av_costs(
-            elec_av_costs if elec_av_costs else config.elec_av_costs
+            config.elec_av_costs_file if config.elec_av_costs_file else config.elec_av_costs_table
         )
     # Have to load elec load shape after avoided costs
-    if elec_load_shape_file or config.elec_load_shape:
+    if config.process_elec_load_shape:
         db_manager.process_elec_load_shape(
-            elec_load_shape_file if elec_load_shape_file else config.elec_load_shape
+            config.elec_load_shape_file if config.elec_load_shape_file else config.elec_load_shape_table
         )
-    if gas_av_costs or config.gas_av_costs:
+    if config.process_gas_av_costs:
         db_manager.process_gas_av_costs(
-            gas_av_costs if gas_av_costs else config.gas_av_costs
+            config.gas_av_costs_file if config.gas_av_costs_file else config.gas_av_costs_table
         )
-    if therms_profiles_path or config.therms_profiles:
+    if config.process_therms_profiles:
         db_manager.process_therms_profile(
-            therms_profiles_path if therms_profiles_path else config.therms_profiles
+            config.therms_profiles_file if config.therms_profiles_file else config.therms_profiles_file
         )
-    if project_info or config.project_info:
+    if config.project_info_file or config.project_info_table:
         db_manager.process_project_info(
-            project_info if project_info else config.project_info
+            config.project_info_file if config.project_info_file else config.project_info_table
         )
         db_manager.run()

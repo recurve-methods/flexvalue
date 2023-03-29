@@ -297,8 +297,7 @@ class DBManager:
             with self.engine.begin() as conn:
                 result = conn.execute(text(sql))
         except sqlalchemy.exc.ProgrammingError:
-            # in case this is called before the table is created
-            pass
+            logging.info(f"Table {table_name} doesn't exist; no need to reset it.")
 
     def _get_truncate_prefix(self):
         raise FLEXValueException("You need to implement _get_truncate_prefix for your database manager.")
@@ -894,6 +893,7 @@ class BigQueryManager(DBManager):
                 result = query_job.result()
 
     def process_elec_av_costs(self, elec_av_costs_path: str, truncate=False):
+        logging.debug("In bq.process_elec_av_costs, doing nothing")
         # We don't need to do anything with this in BQ, just use the table provided
         pass
 
@@ -932,6 +932,12 @@ class BigQueryManager(DBManager):
                 raise FLEXValueException(f"Unable to add a timestamp column to {table_name}; can't process gas avoided costs.")
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
+        if not self._table_exists(
+            f"{self.config.dataset}.{self.config.elec_av_costs_table}"
+            ) or f"{self.config.dataset}.{self.config.elec_av_costs_table}" in self._get_empty_tables():
+            raise FLEXValueException(
+                "You must process the electric avoided cost data before you can process the electric load shape data."
+            )
         self._prepare_table(
             "elec_load_shape",
             "bq_create_elec_load_shape.sql",
@@ -946,7 +952,7 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
 
-    def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
+    def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
         logging.debug("In bq version of process therms")
         self._prepare_table(
             "therms_profile",
@@ -1025,25 +1031,3 @@ class BigQueryManager(DBManager):
     def process_project_info(self, project_info_path: str):
         project_info = self._get_project_info_data()
         logging.debug(f'project_info = {project_info}')
-
-    def reset_elec_av_costs(self):
-        # The elec avoided costs table doesn't get changed; the super()'s
-        # reset_elec_av_costs will truncate this table, so add a no-op here.
-        pass
-
-    def reset_gas_av_costs(self):
-        # FLEXvalue adds and populates the `timestamp` column, so remove it:
-        sql = f"ALTER TABLE {self.config.dataset}.{self.config.gas_av_costs_table} DROP COLUMN timestamp;"
-        query_job = self.client.query(sql)
-        try:
-            result = query_job.result()
-        except api_core.exceptions.BadRequest as e:
-            # We are resetting before timestamp was added, ignore exception
-            logging.info("+*+*+* got exception when resetting gas av costs in BQ")
-            pass
-
-    def _reset_table(self, table_name):
-        truncate_prefix = self._get_truncate_prefix()
-        sql = f"{truncate_prefix} {self.config.dataset}.{table_name} WHERE TRUE;"
-        query_job = self.client.query(sql)
-        result = query_job.result()

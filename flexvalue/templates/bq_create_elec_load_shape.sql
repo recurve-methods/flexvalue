@@ -1,7 +1,6 @@
 CREATE TABLE {{ dataset }}.elec_load_shape (
     state STRING,
     utility STRING,
-    util_load_shape STRING,
     region STRING,
     quarter INTEGER,
     month INTEGER,

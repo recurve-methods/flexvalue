@@ -352,7 +352,6 @@ class DBManager:
             month = self._quarter_to_month(quarter)
             d["start_date"] = f"{start_year}-{month}-01"
             d["end_date"] = f"{start_year + eul}-{month}-01"
-            d["util_load_shape"] = d["utility"] + d["elec_load_shape"]
 
         logging.debug(f"in loading project_info, dicts = {dicts}")
         insert_text = self._file_to_string("flexvalue/templates/load_project_info.sql")
@@ -732,7 +731,7 @@ class PostgresqlManager(DBManager):
     def process_elec_load_shape(self, elec_load_shapes_path: str):
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY elec_load_shape (state, utility, util_load_shape, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
+                "COPY elec_load_shape (state, utility, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
@@ -764,7 +763,6 @@ class PostgresqlManager(DBManager):
                         (
                             r["state"].upper(),
                             r["utility"].upper(),
-                            r["utility"].upper() + load_shape.upper(),
                             r["region"].upper(),
                             int(r["quarter"]),
                             int(r["month"]),
@@ -786,12 +784,12 @@ class PostgresqlManager(DBManager):
         """ insert_text isn't needed for postgresql """
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY project_info (project_id, state, utility, region, mwh_savings, therms_savings, elec_load_shape, util_load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
+                "COPY project_info (project_id, state, utility, region, mwh_savings, therms_savings, elec_load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
         rows = [
-            (x["project_id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["elec_load_shape"], x["util_load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
+            (x["project_id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["elec_load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
             for x in project_info_dicts
         ]
         cursor = self.connection.cursor()

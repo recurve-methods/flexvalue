@@ -3,7 +3,6 @@ CREATE TABLE elec_load_shape (
     timestamp TIMESTAMP,
     state TEXT,
     utility TEXT,
-    util_load_shape TEXT,
     region TEXT,
     quarter INTEGER,
     month INTEGER,

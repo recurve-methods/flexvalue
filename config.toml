@@ -1,11 +1,16 @@
 [run]
-project_info = "example_user_inputs.csv"
-#elec_load_shape = "ca_hourly_electric_load_shapes.csv"
-#elec_av_costs = "full_ca_avoided_costs_2020acc.csv"
-#therms_profiles = "ca_monthly_therms_load_profiles.csv"
-#gas_av_costs = "full_ca_avoided_costs_2020acc_gas.csv"
+project_info_file = "example_user_inputs.csv"
+#elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+#elec_av_costs_file = "full_ca_avoided_costs_2020acc.csv"
+#therms_profiles_file = "ca_monthly_therms_load_profiles.csv"
+# gas_av_costs_file = "full_ca_avoided_costs_2020acc_gas.csv"
 # output_file = "output.csv"
 output_table = "output_table"
+process_elec_load_shape = false
+process_elec_av_costs = false
+process_therms_profiles = false
+process_gas_av_costs = false
+aggregation_columns = ["project_id", "hour_of_year", "year"]
 
 [database]
 # database_type = "postgresql"
@@ -16,12 +21,12 @@ output_table = "output_table"
 # database = "postgres"
 
 # Example for bigquery
+#credentials = ""
 database_type = "bigquery"
 project = "oeem-avdcosts-platform"
 dataset = "flexvalue_refactor_tables"
-#credentials = ""
-elec_av_cost_table = "full_ca_avoided_costs_2020acc_copy"
+elec_av_costs_table = "full_ca_avoided_costs_2020acc_copy"
 elec_load_shape_table = "ca_hourly_electric_load_shapes_horizontal_copy"
 therms_profiles_table = "ca_monthly_therms_load_profiles_copy"
-gas_av_cost_table = "full_ca_avoided_costs_2020acc_gas_copy"
+gas_av_costs_table = "full_ca_avoided_costs_2020acc_gas_copy"
 project_info_table = "example_user_inputs"

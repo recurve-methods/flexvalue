@@ -194,10 +194,7 @@ class DBManager:
                         "hour_of_day": rows[row][5],
                         "hour_of_year": rows[row][6],
                         "load_shape_name": rows[0][col].upper(),
-                        "value": rows[row][col],
-                        "hoy_util_st": rows[row][6]
-                        + rows[row][1].upper()
-                        + rows[row][0].upper(),
+                        "value": rows[row][col]
                     }
                 )
         insert_text = self._file_to_string(
@@ -269,11 +266,6 @@ class DBManager:
         dict_to_process["date_str"] = dict_to_process["datetime"][
             :10
         ]  # just the 'yyyy-mm-dd'
-        dict_to_process["hoy_util_st"] = (
-            dict_to_process["hour_of_year"]
-            + dict_to_process["utility"]
-            + dict_to_process["state"]
-        )
         return dict_to_process
 
     def _file_to_string(self, filename):

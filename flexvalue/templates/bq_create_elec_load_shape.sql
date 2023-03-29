@@ -1,5 +1,4 @@
 CREATE TABLE {{ dataset }}.elec_load_shape (
-    timestamp TIMESTAMP,
     state STRING,
     utility STRING,
     util_load_shape STRING,

@@ -216,7 +216,7 @@ def get_results(
             reset_elec_av_costs=reset_elec_av_costs,
             reset_therms_profiles=reset_therms_profiles,
             reset_gas_av_costs=reset_gas_av_costs,
-            aggregation_columns=aggregation_columns,
+            aggregation_columns=aggregation_columns.split(",") if aggregation_columns else aggregation_columns,
             process_elec_load_shape=process_elec_load_shape,
             process_elec_av_costs=process_elec_av_costs,
             process_therms_profiles=process_therms_profiles,

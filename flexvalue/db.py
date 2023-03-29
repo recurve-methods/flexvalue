@@ -22,6 +22,7 @@ import csv
 import logging
 import calendar
 from datetime import datetime, timedelta
+import sqlalchemy
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
@@ -301,8 +302,11 @@ class DBManager:
     def _reset_table(self, table_name):
         truncate_prefix = self._get_truncate_prefix()
         sql = f"{truncate_prefix} {table_name}"
-        with self.engine.begin() as conn:
-            result = conn.execute(text(sql))
+        try:
+            with self.engine.begin() as conn:
+                result = conn.execute(text(sql))
+        except sqlalchemy.exc.ProgrammingError:
+            logging.info(f"Table {table_name} doesn't exist; no need to reset it.")
 
     def _get_truncate_prefix(self):
         raise FLEXValueException("You need to implement _get_truncate_prefix for your database manager.")

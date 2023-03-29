@@ -276,7 +276,6 @@ class DBManager:
         )
         return dict_to_process
 
-
     def _file_to_string(self, filename):
         ret = None
         with open(filename) as f:
@@ -410,9 +409,10 @@ class DBManager:
     def _run_calc(self, sql):
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
-            print(", ".join(result.keys()))
-            for row in result:
-                print(", ".join([str(col) for col in row]))
+            if not self.config.output_table:
+                print(", ".join(result.keys()))
+                for row in result:
+                    print(", ".join([str(col) for col in row]))
 
     def _get_calculation_sql(self):
         context = self._get_calculation_sql_context()

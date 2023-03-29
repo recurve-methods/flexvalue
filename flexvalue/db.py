@@ -428,11 +428,55 @@ class DBManager:
             "gac_table": "gas_av_costs",
             "therms_profile_table": "therms_profile",
             "float_type": self.config.float_type(),
-            "database_type": self.config.database_type
+            "database_type": self.config.database_type,
+            "elec_aggregation_columns": self._elec_aggregation_columns(),
+            "gas_aggregation_columns": self._gas_aggregation_columns()
         }
         if self.config.output_table:
             context['create_clause'] = f"DROP TABLE IF EXISTS {self.config.output_table};CREATE TABLE {self.config.output_table} AS ("
         return context
+
+    def _elec_aggregation_columns(self):
+        prefix_map = {
+            "hour_of_year": "pcwdea",
+            "year": "pcwdea",
+            "eul": "pcwdea",
+            "utility": "pcwdea",
+            "region": "pcwdea",
+            "month": "pcwdea",
+            "quarter": "pcwdea",
+            "discount": "pcwdea",
+            "hour_of_day": "pcwdea",
+            "timestamp": "pcwdea",
+            "load_shape_name": "elec_load_shape"
+        }
+        columns = []
+        for col in self.config.aggregation_columns:
+            try:
+                columns.append(f"{prefix_map[col]}.{col}")
+            except KeyError:
+                pass
+        return ", ".join(columns)
+
+    def _gas_aggregation_columns(self):
+        prefix_map = {
+            "year": "pcwdga",
+            "eul": "pcwdga",
+            "utility": "pcwdga",
+            "region": "pcwdga",
+            "month": "pcwdga",
+            "quarter": "pcwdga",
+            "discount": "pcwdga",
+            "timestamp": "pcwdga",
+            "profile_name": "therms_profile"
+        }
+        columns = []
+        for col in self.config.aggregation_columns:
+            try:
+                columns.append(f"{prefix_map[col]}.{col}")
+            except KeyError:
+                pass
+        return ", ".join(columns)
 
     def _csv_file_to_dicts(
         self, csv_file_path: str, fieldnames: str, fields_to_upper=None
@@ -942,18 +986,12 @@ class BigQueryManager(DBManager):
             "gac_table": f"`{self.config.dataset}.{self.config.gas_av_costs_table}`",
             "therms_profile_table": f"`{self.config.dataset}.therms_profile`",
             "float_type": self.config.float_type(),
-            "database_type": self.config.database_type
+            "database_type": self.config.database_type,
+            "elec_aggregation_columns": self._elec_aggregation_columns(),
+            "gas_aggregation_columns": self._gas_aggregation_columns()
         }
         if self.config.output_table:
             context["create_clause"] = f"CREATE OR REPLACE TABLE {self.config.dataset}.{self.config.output_table} AS ("
-        field_list = []
-        for column_info in self.config.elec_aggregation_columns():
-            field_list.extend([f"{column_info['prefix']}.{x}" for x in column_info['columns']])
-        context['elec_aggregation_columns'] = ", ".join(field_list)
-        field_list = []
-        for column_info in self.config.gas_aggregation_columns():
-            field_list.extend([f"{column_info['prefix']}.{x}" for x in column_info["columns"]])
-        context['gas_aggregation_columns'] = ", ".join(field_list)
         return context
 
     def _run_calc(self, sql):

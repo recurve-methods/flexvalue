@@ -98,7 +98,6 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
-    -- , pcwdga.timestamp
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
@@ -106,7 +105,6 @@ gas_calculations AS (
             AND therms_profile.month = pcwdga.month
     GROUP BY pcwdga.project_id, pcwdga.eul
     {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif %}
-    -- , pcwdga.timestamp
  )
 
 SELECT

@@ -42,6 +42,26 @@ def cli():
     help="One of 'postgresql', 'bigquery', or 'sqlite'"
 )
 @click.option(
+    "--host",
+    help="The host for the postgresql database to which you are connecting."
+)
+@click.option(
+    "--port",
+    help="The port for the postgresql database to which you are connecting."
+)
+@click.option(
+    "--user",
+    help="The user for the postgresql database to which you are connecting."
+)
+@click.option(
+    "--password",
+    help="The password for the postgresql database to which you are connecting."
+)
+@click.option(
+    "--database",
+    help="The database for the postgresql database to which you are connecting."
+)
+@click.option(
     "--elec-av-costs-table",
     help="Used when --database-type is bigquery. Specifies the electric avoided costs table."
 )
@@ -143,6 +163,11 @@ def get_results(
     config_file,
     project_info_file,
     database_type,
+    host,
+    port,
+    user,
+    password,
+    database,
     elec_av_costs_table,
     elec_load_shape_table,
     gas_av_costs_table,
@@ -170,6 +195,11 @@ def get_results(
         run(config_file=config_file,
             project_info_file=project_info_file,
             database_type=database_type,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
             elec_av_costs_table=elec_av_costs_table,
             elec_load_shape_table=elec_load_shape_table,
             gas_av_costs_table=gas_av_costs_table,

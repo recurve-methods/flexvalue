@@ -38,7 +38,6 @@ def run(
     config_file=None,
     **kwargs
 ):
-    # TODO: if file, load that first, then load from command line; if not file, just load from command line
     try:
         config = FLEXValueConfig.from_file(config_file)
     except TypeError:

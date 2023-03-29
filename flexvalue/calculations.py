@@ -43,6 +43,7 @@ def run(
     except TypeError:
         config = FLEXValueConfig(**kwargs)
     db_manager = DBManager.get_db_manager(config)
+    # if resetting any tables, do those before we load:
     if config.reset_elec_load_shape:
         db_manager.reset_elec_load_shape()
     if config.reset_elec_av_costs:
@@ -56,7 +57,6 @@ def run(
         db_manager.process_elec_av_costs(
             config.elec_av_costs_file if config.elec_av_costs_file else config.elec_av_costs_table
         )
-    # Have to load elec load shape after avoided costs
     if config.process_elec_load_shape:
         db_manager.process_elec_load_shape(
             config.elec_load_shape_file if config.elec_load_shape_file else config.elec_load_shape_table

@@ -476,18 +476,6 @@ class DBManager:
                 rows.append(row)
         return rows
 
-    def _get_timestamp_range(self):
-        min_ts_query = "SELECT MIN(timestamp) FROM elec_av_costs;"
-        max_ts_query = "SELECT MAX(timestamp) FROM elec_av_costs;"
-        min_ts = None
-        max_ts = None
-        with self.engine.begin() as conn:
-            result = conn.execute(text(min_ts_query))
-            min_ts = result.scalar()
-            result = conn.execute(text(max_ts_query))
-            max_ts = result.scalar()
-        return (min_ts, max_ts)
-
     def _load_csv_file(
         self,
         csv_file_path: str,
@@ -708,18 +696,10 @@ class PostgresqlManager(DBManager):
     def process_elec_load_shape(self, elec_load_shapes_path: str):
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY elec_load_shape (timestamp, state, utility, util_load_shape, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
+                "COPY elec_load_shape (state, utility, util_load_shape, region, quarter, month, hour_of_day, hour_of_year, load_shape_name, value) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
-
-        inspection = inspect(self.engine)
-        table_exists = inspection.has_table('elec_av_costs')
-        if not table_exists:
-            raise FLEXValueException("You must load the electric avoided costs data before you load the electric load shape data")
-
-        min_ts, max_ts = self._get_timestamp_range()
-        logging.debug(f'min_ts = {min_ts}, max_ts = {max_ts}')
 
         self._prepare_table(
             "elec_load_shape",
@@ -731,9 +711,6 @@ class PostgresqlManager(DBManager):
         MAX_ROWS = sys.maxsize
 
         buf = []
-        min_year = min_ts.year
-        year_span = max_ts.year - min_ts.year
-        logging.debug(f"year_span = {year_span}")
         with open(elec_load_shapes_path) as f:
             # this probably escapes fine but a csv reader is a safer bet
             columns = f.readline().split(",")
@@ -746,34 +723,21 @@ class PostgresqlManager(DBManager):
             f.seek(0)
             reader = csv.DictReader(f)
             for r in reader:
-                for eul_year in range(year_span):
-                    year = min_year + eul_year
-                    hour_of_year = int(r["hour_of_year"])
-                    eac_timestamp = datetime(year, 1, 1) + timedelta(
-                        hours=hour_of_year
-                    )
-                    # If the year is a leap year, move forward a day to avoid Feb 29
-                    if calendar.isleap(year) and eac_timestamp >= datetime(
-                        year, 2, 29
-                    ):
-                        eac_timestamp = eac_timestamp + timedelta(hours=24)
-
-                    for load_shape in load_shape_names:
-                        buf.append(
-                            (
-                                eac_timestamp,
-                                r["state"].upper(),
-                                r["utility"].upper(),
-                                r["utility"].upper() + load_shape.upper(),
-                                r["region"].upper(),
-                                int(r["quarter"]),
-                                int(r["month"]),
-                                int(r["hour_of_day"]),
-                                hour_of_year,
-                                load_shape.upper(),
-                                float(r[load_shape]),
-                            )
+                for load_shape in load_shape_names:
+                    buf.append(
+                        (
+                            r["state"].upper(),
+                            r["utility"].upper(),
+                            r["utility"].upper() + load_shape.upper(),
+                            r["region"].upper(),
+                            int(r["quarter"]),
+                            int(r["month"]),
+                            int(r["hour_of_day"]),
+                            int(r["hour_of_year"]),
+                            load_shape.upper(),
+                            float(r[load_shape]),
                         )
+                    )
                 if len(buf) >= MAX_ROWS:
                     copy_write(cur, buf)
                     buf = []

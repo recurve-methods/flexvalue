@@ -10,7 +10,11 @@ process_elec_load_shape = false
 process_elec_av_costs = false
 process_therms_profiles = false
 process_gas_av_costs = false
-aggregation_columns = ["project_id", "hour_of_year", "year"]
+aggregation_columns = ["project_id"]#, "hour_of_year", "year"]
+reset_elec_load_shape = true
+reset_elec_av_costs = true
+reset_therms_profiles = true
+reset_gas_av_costs = true
 
 [database]
 # database_type = "postgresql"

@@ -44,8 +44,7 @@ class FLEXValueConfig:
         data = toml.load(config_file)
         print(f"config data = {data}")
         db = data.get('database', dict())
-        run = data.get('run', dict())
-        aggregation_columns = ",".split(run.get("aggregation_columns", []))
+        run_info = data.get('run', dict())
         return FLEXValueConfig(
             database_type=db.get('database_type', None),
             host=db.get('host', None),
@@ -60,18 +59,18 @@ class FLEXValueConfig:
             therms_profiles_table=db.get("therms_profiles_table", None),
             gas_av_costs_table=db.get("gas_av_costs_table", None),
             project_info_table=db.get("project_info_table", None),
-            elec_load_shape_file=run.get('elec_load_shape', None),
-            elec_av_costs_file=run.get('elec_av_costs', None),
-            therms_profiles_file=run.get('therms_profiles', None),
-            gas_av_costs_file=run.get('gas_av_costs', None),
-            project_info_file=run.get('project_info', None),
-            output_file=run.get('output_file', None),
-            output_table=run.get('output_table', None),
-            aggregation_columns=aggregation_columns,
-            reset_elec_load_shape=run.get("reset_elec_load_shape", None),
-            reset_elec_av_costs=run.get("reset_elec_av_costs", None),
-            reset_gas_av_costs=run.get("reset_gas_av_costs", None),
-            reset_therms_profiles=run.get("reset_therms_profiles", None)
+            elec_load_shape_file=run_info.get('elec_load_shape', None),
+            elec_av_costs_file=run_info.get('elec_av_costs', None),
+            therms_profiles_file=run_info.get('therms_profiles', None),
+            gas_av_costs_file=run_info.get('gas_av_costs', None),
+            project_info_file=run_info.get('project_info', None),
+            output_file=run_info.get('output_file', None),
+            output_table=run_info.get('output_table', None),
+            aggregation_columns=run_info.get("aggregation_columns", []),
+            reset_elec_load_shape=run_info.get("reset_elec_load_shape", None),
+            reset_elec_av_costs=run_info.get("reset_elec_av_costs", None),
+            reset_gas_av_costs=run_info.get("reset_gas_av_costs", None),
+            reset_therms_profiles=run_info.get("reset_therms_profiles", None)
         )
 
 

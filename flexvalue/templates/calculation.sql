@@ -40,6 +40,7 @@ elec_calculations AS (
     SELECT
     pcwdea.project_id
     {% if elec_aggregation_columns %}, {{ elec_aggregation_columns }} {% endif %}
+    , pcwdea.timestamp
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
@@ -64,7 +65,7 @@ elec_calculations AS (
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.elec_load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
-    GROUP BY pcwdea.project_id, pcwdea.eul
+    GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.timestamp
      {%- if elec_aggregation_columns %}, {{ elec_aggregation_columns }}{% endif %}
 )
 , project_costs_with_discounted_gas_av AS (
@@ -98,22 +99,29 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
+    , pcwdga.timestamp
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.project_id, pcwdga.eul
+    GROUP BY pcwdga.project_id, pcwdga.eul, pcwdga.timestamp
     {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif %}
  )
 
 SELECT
-elec_calculations.*
-, gas_calculations.gas_savings, gas_calculations.gas_benefits, gas_calculations.first_year_net_therms_savings, gas_calculations.lifecyle_net_therms_savings, gas_calculations.lifecycle_gas_ghg_savings,
+elec_calculations.electric_savings, elec_calculations.electric_benefits, elec_calculations.energy,
+elec_calculations.losses, elec_calculations.ancillary_services, elec_calculations.capacity,
+elec_calculations.transmission, elec_calculations.distribution, elec_calculations.cap_and_trade,
+elec_calculations.ghg_adder_rebalancing, elec_calculations.ghg_adder, elec_calculations.ghg_rebalancing,
+elec_calculations.methane_leakage, elec_calculations.marginal_ghg, elec_calculations.first_year_net_mwh_savings,
+elec_calculations.project_lifecycle_mwh_savings,
+gas_calculations.gas_savings, gas_calculations.gas_benefits, gas_calculations.first_year_net_therms_savings,
+gas_calculations.lifecyle_net_therms_savings, gas_calculations.lifecycle_gas_ghg_savings,
 elec_calculations.electric_benefits + gas_calculations.gas_benefits as total_benefits
 FROM
 elec_calculations
-LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id {% if "timestamp" in elec_aggregation_columns or "timestamp" in gas_aggregation_columns -%} AND elec_calculations.timestamp = gas_calculations.timestamp {% endif -%}
-{% if create_clause -%}
+LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.timestamp = gas_calculations.timestamp
+{% if create_clause %}
 )
 {% endif %}

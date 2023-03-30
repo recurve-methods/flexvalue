@@ -91,7 +91,7 @@ def cli():
 )
 @click.option(
     "--output-table",
-    help="The database table to write output to. This table gets overwritten."
+    help="The database table to write output to. This table gets overwritten (not appended to)."
 )
 @click.option(
     "--config-file",
@@ -99,19 +99,19 @@ def cli():
 )
 @click.option(
     "--elec-av-costs-file",
-    help="Filepath to the electric avoided costs."
+    help="Filepath to the electric avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file."
 )
 @click.option(
     "--gas-av-costs-file",
-    help="Filepath to the gas avoided costs."
+    help="Filepath to the gas avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file."
 )
 @click.option(
     "--elec-load-shape-file",
-    help="Filepath to the hourly electric load shape file."
+    help="Filepath to the hourly electric load shape file. Used when --database-type is not BigQuery to load this data into the database from a file."
 )
 @click.option(
     "--therms-profiles-file",
-    help="Filepath to the therms profiles file."
+    help="Filepath to the therms profiles file. Used when --database-type is not BigQuery to load this data into the database from a file."
 )
 @click.option(
     "--aggregation-columns",
@@ -120,22 +120,22 @@ def cli():
 )
 @click.option(
     "--reset-elec-load-shape",
-    help="Clear all data from the electric load shape table.",
+    help="Reset the data in the electric load shape table. This restores it to its contents prior to running FLEXvalue.",
     is_flag=True
 )
 @click.option(
     "--reset-elec-av-costs",
-    help="Clear all data from the electric avoided costs table.",
+    help="Reset the data in the electric avoided costs table. This restores it to its contents prior to running FLEXvalue.",
     is_flag=True
 )
 @click.option(
     "--reset-therms-profiles",
-    help="Clear all data from the therms profiles table.",
+    help="Reset the data in the therms profiles table. This restores it to its contents prior to running FLEXvalue.",
     is_flag=True
 )
 @click.option(
     "--reset-gas-av-costs",
-    help="Clear all data from the gas avoided costs table.",
+    help="Reset the data in the gas avoided costs table. This restores it to its contents prior to running FLEXvalue.",
     is_flag=True
 )
 @click.option(

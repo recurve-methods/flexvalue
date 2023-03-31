@@ -20,16 +20,14 @@
 import sys
 import csv
 import logging
-import calendar
-from datetime import datetime, timedelta
 import sqlalchemy
+import psycopg
 
+from datetime import datetime
+from flexvalue.config import FLEXValueConfig, FLEXValueException
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.engine import Engine
-import psycopg
-from .settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS, database_location
-from .config import FLEXValueConfig, FLEXValueException
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 from google import api_core

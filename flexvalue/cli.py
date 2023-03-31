@@ -19,8 +19,8 @@
 """
 import click
 
-from .calculations import run
-from .config import FLEXValueException
+from flexvalue.calculations import run
+from flexvalue.config import FLEXValueException
 
 __all__ = (
     "get_results",

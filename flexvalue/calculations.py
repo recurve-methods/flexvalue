@@ -18,17 +18,11 @@
 
 """
 from dataclasses import dataclass
-from .config import FLEXValueConfig
+from flexvalue.config import FLEXValueConfig
 
 from .db import (
     DBManager,
-)  # get_filtered_acc_elec, get_filtered_acc_gas, get_deer_load_shape
-
-# from .settings import (
-#     ACC_COMPONENTS_ELECTRICITY,
-#     ACC_COMPONENTS_GAS,
-#     THERMS_PROFILE_ADJUSTMENT,
-# )
+)
 
 __all__ = ("run",)
 

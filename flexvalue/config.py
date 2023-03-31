@@ -42,7 +42,6 @@ class FLEXValueConfig:
     @staticmethod
     def from_file(config_file):
         data = toml.load(config_file)
-        print(f"config data = {data}")
         db = data.get('database', dict())
         run_info = data.get('run', dict())
         return FLEXValueConfig(

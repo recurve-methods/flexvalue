@@ -3,7 +3,7 @@ CREATE TABLE elec_av_costs (
     state TEXT,
     utility TEXT,
     region TEXT,
-    timestamp TIMESTAMP, -- TODO figure this out for the various dbs
+    timestamp TIMESTAMP,
     year INTEGER,
     quarter INTEGER,
     month INTEGER,

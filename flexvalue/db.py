@@ -177,7 +177,6 @@ class DBManager:
             truncate=truncate,
         )
         rows = self._csv_file_to_rows(elec_load_shapes_path)
-        # TODO can we clean this up?
         num_columns = len(rows[0])
         buffer = []
         for col in range(7, num_columns):
@@ -388,7 +387,6 @@ class DBManager:
     def _perform_calculation(self):
         empty_tables = self._get_empty_tables()
         if empty_tables:
-            # TODO the table names are implementation-dependent, let's see if we can give a better error message here
             raise FLEXValueException(
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )

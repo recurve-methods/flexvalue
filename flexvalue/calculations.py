@@ -27,7 +27,6 @@ from .db import (
 __all__ = ("run",)
 
 
-# TODO Do we even want this file?
 def run(
     config_file=None,
     **kwargs

@@ -351,7 +351,6 @@ class DBManager:
             d["start_date"] = f"{start_year}-{month}-01"
             d["end_date"] = f"{start_year + eul}-{month}-01"
 
-        logging.debug(f"in loading project_info, dicts = {dicts}")
         insert_text = self._file_to_string("flexvalue/templates/load_project_info.sql")
         self._load_project_info_data(insert_text, dicts)
 
@@ -418,7 +417,9 @@ class DBManager:
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),
-            "gas_aggregation_columns": self._gas_aggregation_columns()
+            "gas_aggregation_columns": self._gas_aggregation_columns(),
+            "show_elec_components": self.config.show_elec_components,
+            "show_gas_components": self.config.show_gas_components
         }
         if self.config.output_table:
             context['create_clause'] = f"DROP TABLE IF EXISTS {self.config.output_table};CREATE TABLE {self.config.output_table} AS ("
@@ -968,7 +969,9 @@ class BigQueryManager(DBManager):
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),
-            "gas_aggregation_columns": self._gas_aggregation_columns()
+            "gas_aggregation_columns": self._gas_aggregation_columns(),
+            "show_elec_components": self.config.show_elec_components,
+            "show_gas_components": self.config.show_gas_components
         }
         if self.config.output_table:
             context["create_clause"] = f"CREATE OR REPLACE TABLE {self.config.dataset}.{self.config.output_table} AS ("

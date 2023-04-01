@@ -110,15 +110,39 @@ gas_calculations AS (
  )
 
 SELECT
-elec_calculations.electric_savings, elec_calculations.electric_benefits, elec_calculations.energy,
-elec_calculations.losses, elec_calculations.ancillary_services, elec_calculations.capacity,
-elec_calculations.transmission, elec_calculations.distribution, elec_calculations.cap_and_trade,
-elec_calculations.ghg_adder_rebalancing, elec_calculations.ghg_adder, elec_calculations.ghg_rebalancing,
-elec_calculations.methane_leakage, elec_calculations.marginal_ghg, elec_calculations.first_year_net_mwh_savings,
-elec_calculations.project_lifecycle_mwh_savings,
-gas_calculations.gas_savings, gas_calculations.gas_benefits, gas_calculations.first_year_net_therms_savings,
-gas_calculations.lifecyle_net_therms_savings, gas_calculations.lifecycle_gas_ghg_savings,
-elec_calculations.electric_benefits + gas_calculations.gas_benefits as total_benefits
+elec_calculations.project_id
+, (elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.trc_costs as trc_ratio
+, (elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.pac_costs as pac_ratio
+, elec_calculations.electric_benefits
+, gas_calculations.gas_benefits
+, elec_calculations.electric_benefits + gas_calculations.gas_benefits as total_benefits
+, elec_calculations.trc_costs
+, elec_calculations.pac_costs
+, elec_calculations.first_year_net_mwh_savings
+, elec_calculations.project_lifecycle_mwh_savings
+, gas_calculations.first_year_net_therms_savings
+, gas_calculations.lifecyle_net_therms_savings
+, elec_calculations.elec_avoided_ghg
+, gas_calculations.lifecycle_gas_ghg_savings
+, elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
+{% if show_elec_components %}
+, elec_calculations.electric_savings
+, elec_calculations.energy
+, elec_calculations.losses
+, elec_calculations.ancillary_services
+, elec_calculations.capacity
+, elec_calculations.transmission
+, elec_calculations.distribution
+, elec_calculations.cap_and_trade
+, elec_calculations.ghg_adder_rebalancing
+, elec_calculations.ghg_adder
+, elec_calculations.ghg_rebalancing
+, elec_calculations.methane_leakage
+, elec_calculations.marginal_ghg
+{% endif %}
+{% if show_gas_components %}
+, gas_calculations.gas_savings
+{% endif %}
 FROM
 elec_calculations
 LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.timestamp = gas_calculations.timestamp

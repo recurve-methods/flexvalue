@@ -10,11 +10,13 @@ process_elec_load_shape = false
 process_elec_av_costs = false
 process_therms_profiles = false
 process_gas_av_costs = false
-aggregation_columns = ["project_id"]#, "hour_of_year", "year"]
-reset_elec_load_shape = true
-reset_elec_av_costs = true
-reset_therms_profiles = true
-reset_gas_av_costs = true
+aggregation_columns = ["project_id", "hour_of_year", "year"]
+reset_elec_load_shape = false
+reset_elec_av_costs = false
+reset_therms_profiles = false
+reset_gas_av_costs = false
+show_elec_components = true
+show_gas_components = true
 
 [database]
 # database_type = "postgresql"
@@ -33,4 +35,4 @@ elec_av_costs_table = "full_ca_avoided_costs_2020acc_copy"
 elec_load_shape_table = "ca_hourly_electric_load_shapes_horizontal_copy"
 therms_profiles_table = "ca_monthly_therms_load_profiles_copy"
 gas_av_costs_table = "full_ca_avoided_costs_2020acc_gas_copy"
-project_info_table = "example_user_inputs"
+project_info_table = "example_user_inputs_38"

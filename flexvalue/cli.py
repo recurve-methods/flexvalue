@@ -158,6 +158,16 @@ def cli():
     help="Process (load/transform) the gas avoided costs data.",
     is_flag=True
 )
+@click.option(
+    "--show-elec-components",
+    help="Include the electric avoided cost components in the output.",
+    is_flag=True
+)
+@click.option(
+    "--show-gas-components",
+    help="Include the gas avoided cost components in the output.",
+    is_flag=True
+)
 
 def get_results(
     config_file,
@@ -188,10 +198,11 @@ def get_results(
     process_elec_load_shape,
     process_elec_av_costs,
     process_therms_profiles,
-    process_gas_av_costs
+    process_gas_av_costs,
+    show_elec_components,
+    show_gas_components
 ):
     try:
-        print(f"******aggregation_columns = {aggregation_columns}")
         run(config_file=config_file,
             project_info_file=project_info_file,
             database_type=database_type,
@@ -220,7 +231,9 @@ def get_results(
             process_elec_load_shape=process_elec_load_shape,
             process_elec_av_costs=process_elec_av_costs,
             process_therms_profiles=process_therms_profiles,
-            process_gas_av_costs=process_gas_av_costs
+            process_gas_av_costs=process_gas_av_costs,
+            show_elec_components=show_elec_components,
+            show_gas_components=show_gas_components
         )
     except FLEXValueException as e:
         print(e)

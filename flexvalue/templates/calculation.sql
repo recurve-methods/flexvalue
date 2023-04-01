@@ -125,7 +125,7 @@ elec_calculations.project_id
 , elec_calculations.elec_avoided_ghg
 , gas_calculations.lifecycle_gas_ghg_savings
 , elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
-{% if show_elec_components %}
+{% if show_elec_components -%}
 , elec_calculations.electric_savings
 , elec_calculations.energy
 , elec_calculations.losses
@@ -140,7 +140,7 @@ elec_calculations.project_id
 , elec_calculations.methane_leakage
 , elec_calculations.marginal_ghg
 {% endif %}
-{% if show_gas_components %}
+{% if show_gas_components -%}
 , gas_calculations.gas_savings
 {% endif %}
 FROM

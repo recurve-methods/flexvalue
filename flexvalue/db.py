@@ -971,7 +971,8 @@ class BigQueryManager(DBManager):
             "elec_aggregation_columns": self._elec_aggregation_columns(),
             "gas_aggregation_columns": self._gas_aggregation_columns(),
             "show_elec_components": self.config.show_elec_components,
-            "show_gas_components": self.config.show_gas_components
+            "show_gas_components": self.config.show_gas_components,
+            "include_addl_fields": self.config.include_addl_fields
         }
         if self.config.output_table:
             context["create_clause"] = f"CREATE OR REPLACE TABLE {self.config.dataset}.{self.config.output_table} AS ("

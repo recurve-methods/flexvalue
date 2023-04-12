@@ -60,12 +60,24 @@ elec_calculations AS (
     , SUM(pcwdea.trc_costs) AS trc_costs
     , SUM(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.marginal_ghg * pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as elec_avoided_ghg
+    {% if include_addl_fields -%}
+    , pcwdea.utility
+    , pcwdea.region
+    , pcwdea.month
+    , pcwdea.quarter
+    , pcwdea.hour_of_day
+    , pcwdea.total
+    , pcwdea.discount
+    {% endif %}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table}} elec_load_shape
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.elec_load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.timestamp
+    {% if include_addl_fields -%}
+    , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount
+    {% endif %}
      {%- if elec_aggregation_columns %}, {{ elec_aggregation_columns }}{% endif %}
 )
 , project_costs_with_discounted_gas_av AS (
@@ -99,13 +111,17 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
+    {% if include_addl_fields -%}
     , pcwdga.timestamp
+    , pcwdga.total
+    {% endif %}
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.project_id, pcwdga.eul, pcwdga.timestamp
+    GROUP BY pcwdga.project_id, pcwdga.eul
+    {% if include_addl_fields %}, pcwdga.timestamp, pcwdga.total {% endif %}
     {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif %}
  )
 
@@ -125,6 +141,20 @@ elec_calculations.project_id
 , elec_calculations.elec_avoided_ghg
 , gas_calculations.lifecycle_gas_ghg_savings
 , elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
+{% if include_addl_fields -%}
+, elec_calculations.hour_of_year
+, elec_calculations.utility
+, elec_calculations.region
+, elec_calculations.year
+, elec_calculations.month
+, elec_calculations.quarter
+, elec_calculations.hour_of_day
+, elec_calculations.timestamp as `datetime`
+, elec_calculations.total as elec_total
+, gas_calculations.total as gas_total
+, elec_calculations.discount
+, elec_calculations.total * elec_calculations.discount as av_csts_levelized
+{% endif %}
 {% if show_elec_components -%}
 , elec_calculations.electric_savings
 , elec_calculations.energy

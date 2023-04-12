@@ -17,6 +17,7 @@ reset_therms_profiles = false
 reset_gas_av_costs = false
 show_elec_components = true
 show_gas_components = true
+include_addl_fields = true
 
 [database]
 # database_type = "postgresql"

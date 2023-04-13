@@ -29,6 +29,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 NAME = "flexvalue"
+
 # TODO: fix psycopg-binary; use correct dependency for distributing
 INSTALL_REQUIRES = [
     "click==8.0.3",
@@ -44,6 +45,7 @@ INSTALL_REQUIRES = [
     "matplotlib<3.6",
     "numpy<1.23.0",
     "psycopg[binary]==3.1.8",
+    "google-cloud-bigquery==3.6.0"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

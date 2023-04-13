@@ -15,4 +15,4 @@ COPY flexvalue/ /app/flexvalue/
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-RUN cd /usr/local/lib/ && python /app/setup.py develop
+RUN cd /usr/local/lib/ && python -m pip install -e /app

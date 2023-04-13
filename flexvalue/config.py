@@ -77,7 +77,7 @@ class FLEXValueConfig:
             process_elec_av_costs=run_info.get("process_elec_av_costs", None),
             process_therms_profiles=run_info.get("process_therms_profiles", None),
             process_gas_av_costs=run_info.get("process_gas_av_costs", None),
-            show_elec_components= run_info.get("show_elec_components", None),
+            show_elec_components=run_info.get("show_elec_components", None),
             show_gas_components=run_info.get("show_gas_components", None),
             include_addl_fields=run_info.get("include_addl_fields", None)
         )

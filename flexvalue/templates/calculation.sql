@@ -1,6 +1,6 @@
 {% if create_clause -%}
 {{ create_clause }}
-{% endif %}
+{% endif -%}
 WITH project_costs AS (
     SELECT
         project_info.*,
@@ -28,18 +28,18 @@ project_costs_with_discounted_elec_av AS (
     JOIN {{ eac_table }} elec_av_costs
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
-            {% if database_type == "postgresql" %}
+            {% if database_type == "postgresql" -%}
             AND elec_av_costs.timestamp >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
             AND elec_av_costs.timestamp < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
-            {% else %}
+            {% else -%}
             AND elec_av_costs.timestamp >= CAST(DATE(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
             AND elec_av_costs.timestamp < CAST(DATE(project_costs.start_year + project_costs.eul, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
-            {% endif %}
+            {% endif -%}
 ),
 elec_calculations AS (
     SELECT
     pcwdea.project_id
-    {% if elec_aggregation_columns %}, {{ elec_aggregation_columns }} {% endif %}
+    {% if elec_aggregation_columns -%}, {{ elec_aggregation_columns }} {% endif -%}
     , pcwdea.timestamp
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
@@ -68,7 +68,7 @@ elec_calculations AS (
     , pcwdea.hour_of_day
     , pcwdea.total
     , pcwdea.discount
-    {% endif %}
+    {% endif -%}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table}} elec_load_shape
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.elec_load_shape)
@@ -77,8 +77,8 @@ elec_calculations AS (
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.timestamp
     {% if include_addl_fields -%}
     , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount
-    {% endif %}
-     {%- if elec_aggregation_columns %}, {{ elec_aggregation_columns }}{% endif %}
+    {% endif -%}
+     {%- if elec_aggregation_columns -%}, {{ elec_aggregation_columns }}{% endif -%}
 )
 , project_costs_with_discounted_gas_av AS (
     SELECT
@@ -94,13 +94,13 @@ elec_calculations AS (
     FROM project_costs
     JOIN {{ gac_table }} gas_av_costs
         ON gas_av_costs.utility = project_costs.utility
-            {% if database_type == "postgresql" %}
+            {% if database_type == "postgresql" -%}
             AND gas_av_costs.timestamp >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
             AND gas_av_costs.timestamp < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
-            {% else %}
+            {% else -%}
             AND gas_av_costs.timestamp >= CAST(DATE(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
             AND gas_av_costs.timestamp < CAST(DATE(project_costs.start_year + project_costs.eul, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
-            {% endif %}
+            {% endif -%}
 ),
 gas_calculations AS (
     SELECT pcwdga.project_id
@@ -114,15 +114,15 @@ gas_calculations AS (
     {% if include_addl_fields -%}
     , pcwdga.timestamp
     , pcwdga.total
-    {% endif %}
+    {% endif -%}
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
     GROUP BY pcwdga.project_id, pcwdga.eul
-    {% if include_addl_fields %}, pcwdga.timestamp, pcwdga.total {% endif %}
-    {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif %}
+    {% if include_addl_fields -%}, pcwdga.timestamp, pcwdga.total {% endif -%}
+    {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif -%}
  )
 
 SELECT
@@ -154,7 +154,7 @@ elec_calculations.project_id
 , gas_calculations.total as gas_total
 , elec_calculations.discount
 , elec_calculations.total * elec_calculations.discount as av_csts_levelized
-{% endif %}
+{% endif -%}
 {% if show_elec_components -%}
 , elec_calculations.electric_savings
 , elec_calculations.energy
@@ -169,13 +169,13 @@ elec_calculations.project_id
 , elec_calculations.ghg_rebalancing
 , elec_calculations.methane_leakage
 , elec_calculations.marginal_ghg
-{% endif %}
+{% endif -%}
 {% if show_gas_components -%}
 , gas_calculations.gas_savings
 {% endif %}
 FROM
 elec_calculations
 LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.timestamp = gas_calculations.timestamp
-{% if create_clause %}
+{% if create_clause -%}
 )
 {% endif %}

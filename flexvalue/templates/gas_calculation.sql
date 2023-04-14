@@ -9,7 +9,6 @@ WITH project_costs AS (
     FROM
     {{ project_info_table }} project_info
 )
-
 , project_costs_with_discounted_gas_av AS (
     SELECT
         project_costs.*
@@ -48,16 +47,21 @@ gas_calculations AS (
     , pcwdga.total * pcwdga.discount as av_csts_levelized
     , pcwdga.market
     , pcwdga.btm_methane
-    {% endif %}
+    , pcwdga.month
+    , pcwdga.quarter
+    , pcwdga.t_d
+    , pcwdga.environment
+    , pcwdga.upstream_methane
+    {% endif -%}
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
     GROUP BY pcwdga.project_id, pcwdga.eul
-    {% if include_addl_fields %}, pcwdga.total {% endif %}
+    {% if include_addl_fields %}, pcwdga.total, pcwdga.discount, pcwdga.therms_savings, pcwdga.market, pcwdga.btm_methane, pcwdga.month, pcwdga.quarter, pcwdga.t_d, pcwdga.environment, pcwdga.upstream_methane{% endif -%}
     {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif %}
- )
+)
 
 SELECT
 gas_calculations.project_id
@@ -68,55 +72,18 @@ gas_calculations.project_id
 , gas_calculations.t_d
 , gas_calculations.environment
 , gas_calculations.upstream_methane
-{% if include_addl_fields %}
-, gas_calculations.total
+{% if include_addl_fields -%}
 , gas_calculations.discount
 , gas_calculations.therms_savings
 , gas_calculations.market
 , gas_calculations.av_csts_levelized
 , gas_calculations.btm_methane
-{% endif %}
-, gas_calculations.btm_methane
-, (elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.trc_costs as trc_ratio
-, (elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.pac_costs as pac_ratio
-, elec_calculations.electric_benefits
-, gas_calculations.gas_benefits
-, elec_calculations.electric_benefits + gas_calculations.gas_benefits as total_benefits
-, elec_calculations.trc_costs
-, elec_calculations.pac_costs
-, elec_calculations.first_year_net_mwh_savings
-, elec_calculations.project_lifecycle_mwh_savings
-, gas_calculations.first_year_net_therms_savings
-, gas_calculations.lifecyle_net_therms_savings
-, elec_calculations.elec_avoided_ghg
-, gas_calculations.lifecycle_gas_ghg_savings
-, elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
-{% if include_addl_fields -%}
-, elec_calculations.utility
-, elec_calculations.region
-, elec_calculations.total * elec_calculations.discount as av_csts_levelized
-{% endif %}
-{% if show_elec_components -%}
-, elec_calculations.electric_savings
-, elec_calculations.energy
-, elec_calculations.losses
-, elec_calculations.ancillary_services
-, elec_calculations.capacity
-, elec_calculations.transmission
-, elec_calculations.distribution
-, elec_calculations.cap_and_trade
-, elec_calculations.ghg_adder_rebalancing
-, elec_calculations.ghg_adder
-, elec_calculations.ghg_rebalancing
-, elec_calculations.methane_leakage
-, elec_calculations.marginal_ghg
-{% endif %}
+{% endif -%}
 {% if show_gas_components -%}
 , gas_calculations.gas_savings
-{% endif %}
+{% endif -%}
 FROM
-elec_calculations
-LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.timestamp = gas_calculations.timestamp
-{% if create_clause %}
+  gas_calculations
+{% if create_clause -%}
 )
 {% endif %}

@@ -383,15 +383,24 @@ class DBManager:
                     empty_tables.append(table_name)
         return empty_tables
 
+    # TODO: allow better configuration of gas vs electric table names
     def _perform_calculation(self):
         empty_tables = self._get_empty_tables()
         if empty_tables:
             raise FLEXValueException(
                 f"Not all data has been loaded. Please provide data for the following tables: {', '.join(empty_tables)}"
             )
-        sql = self._get_calculation_sql()
-        logging.info(f'sql =\n{sql}')
-        self._run_calc(sql)
+        if self.config.separate_output_tables:
+            sql = self._get_calculation_sql(mode="electric")
+            logging.info(f'electric sql =\n{sql}')
+            self._run_calc(sql)
+            sql = self._get_calculation_sql(mode="gas")
+            logging.info(f'gas sql =\n{sql}')
+            self._run_calc(sql)
+        else:
+            sql = self._get_calculation_sql()
+            logging.info(f'sql =\n{sql}')
+            self._run_calc(sql)
 
     def _run_calc(self, sql):
         with self.engine.begin() as conn:
@@ -401,13 +410,20 @@ class DBManager:
                 for row in result:
                     print(", ".join([str(col) for col in row]))
 
-    def _get_calculation_sql(self):
-        context = self._get_calculation_sql_context()
-        template = self.template_env.get_template("calculation.sql")
+    def _get_calculation_sql(self, mode="both"):
+        if mode == "both":
+            context = self._get_calculation_sql_context()
+            template = self.template_env.get_template("calculation.sql")
+        elif mode == "electric":
+            context = self._get_calculation_sql_context(mode=mode)
+            template = self.template_env.get_template("elec_calculation.sql")
+        elif mode == "gas":
+            context = self._get_calculation_sql_context(mode=mode)
+            template = self.template_env.get_template("gas_calculation.sql")
         sql = template.render(context)
         return sql
 
-    def _get_calculation_sql_context(self):
+    def _get_calculation_sql_context(self, mode=""):
         context = {
             "project_info_table": "project_info",
             "eac_table": "elec_av_costs",
@@ -422,7 +438,10 @@ class DBManager:
             "show_gas_components": self.config.show_gas_components
         }
         if self.config.output_table:
-            context['create_clause'] = f"DROP TABLE IF EXISTS {self.config.output_table};CREATE TABLE {self.config.output_table} AS ("
+            table_name = self.config.output_table
+            if mode:
+                table_name = mode + "_" + table_name
+            context['create_clause'] = f"DROP TABLE IF EXISTS {table_name};CREATE TABLE {table_name} AS ("
         return context
 
     def _elec_aggregation_columns(self):
@@ -959,7 +978,7 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
 
-    def _get_calculation_sql_context(self):
+    def _get_calculation_sql_context(self, mode=""):
         context = {
             "project_info_table": f"`{self.config.dataset}.{self.config.project_info_table}`",
             "eac_table": f"`{self.config.dataset}.{self.config.elec_av_costs_table}`",
@@ -975,7 +994,8 @@ class BigQueryManager(DBManager):
             "include_addl_fields": self.config.include_addl_fields
         }
         if self.config.output_table:
-            context["create_clause"] = f"CREATE OR REPLACE TABLE {self.config.dataset}.{self.config.output_table} AS ("
+            table_name = f"{self.config.dataset}.{mode}_{self.config.output_table}" if mode else f"{self.config.dataset}.{self.config.output_table}"
+            context["create_clause"] = f"CREATE OR REPLACE TABLE {table_name} AS ("
         return context
 
     def _run_calc(self, sql):
@@ -1024,7 +1044,6 @@ class BigQueryManager(DBManager):
 
     def process_project_info(self, project_info_path: str):
         project_info = self._get_project_info_data()
-        logging.debug(f'project_info = {project_info}')
 
     def reset_elec_av_costs(self):
         # The elec avoided costs table doesn't get changed; the super()'s

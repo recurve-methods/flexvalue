@@ -41,6 +41,7 @@ class FLEXValueConfig:
     show_elec_components: bool = False
     show_gas_components: bool = False
     include_addl_fields: bool = False
+    separate_output_tables: bool = False
 
     @staticmethod
     def from_file(config_file):
@@ -79,7 +80,8 @@ class FLEXValueConfig:
             process_gas_av_costs=run_info.get("process_gas_av_costs", None),
             show_elec_components=run_info.get("show_elec_components", None),
             show_gas_components=run_info.get("show_gas_components", None),
-            include_addl_fields=run_info.get("include_addl_fields", None)
+            include_addl_fields=run_info.get("include_addl_fields", None),
+            separate_output_tables=run_info.get("separate_output_tables", None)
         )
 
 

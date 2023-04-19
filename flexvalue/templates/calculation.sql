@@ -68,6 +68,8 @@ elec_calculations AS (
     , pcwdea.hour_of_day
     , pcwdea.total
     , pcwdea.discount
+    , pcwdea.hour_of_year
+    , pcwdea.year
     {% endif -%}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table}} elec_load_shape
@@ -76,7 +78,7 @@ elec_calculations AS (
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.timestamp
     {% if include_addl_fields -%}
-    , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount
+    , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount, pcwdea.hour_of_year, pcwdea.year
     {% endif -%}
      {%- if elec_aggregation_columns -%}, {{ elec_aggregation_columns }}{% endif -%}
 )

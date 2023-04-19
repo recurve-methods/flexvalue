@@ -109,6 +109,9 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "ghg_adder_rebalancing",
 ]
 
+ELEC_ADDL_FIELDS = ["utility", "region", "month", "quarter", "hour_of_day", "total", "discount", "hour_of_year", "timestamp"]
+GAS_ADDL_FIELDS = ["timestamp", "total", "timestamp"]
+
 logging.basicConfig(stream=sys.stderr, format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 # This is the number of bytes to read when determining whether a csv file has
@@ -435,13 +438,19 @@ class DBManager:
             "elec_aggregation_columns": self._elec_aggregation_columns(),
             "gas_aggregation_columns": self._gas_aggregation_columns(),
             "show_elec_components": self.config.show_elec_components,
-            "show_gas_components": self.config.show_gas_components
+            "show_gas_components": self.config.show_gas_components,
         }
+        if self.config.include_addl_fields:
+            context['elec_addl_fields'] = self._elec_addl_fields("pcwdea")
+            context['elec_output_addl_fields'] = self._elec_addl_fields("elec_calculations")
+            context['gas_addl_fields'] = self._gas_addl_fields("pcwdga")
+            context['gas_output_addl_fields'] = self._gas_addl_fields("gas_calculations")
         if self.config.output_table:
             table_name = self.config.output_table
             if mode:
                 table_name = mode + "_" + table_name
             context['create_clause'] = f"DROP TABLE IF EXISTS {table_name};CREATE TABLE {table_name} AS ("
+
         return context
 
     def _elec_aggregation_columns(self):
@@ -459,7 +468,8 @@ class DBManager:
             "load_shape_name": "elec_load_shape"
         }
         columns = []
-        for col in self.config.aggregation_columns:
+        aggregation_columns = set(self.config.aggregation_columns) - set(ELEC_ADDL_FIELDS)
+        for col in aggregation_columns:
             try:
                 columns.append(f"{prefix_map[col]}.{col}")
             except KeyError:
@@ -479,11 +489,26 @@ class DBManager:
             "profile_name": "therms_profile"
         }
         columns = []
-        for col in self.config.aggregation_columns:
+        aggregation_columns = set(self.config.aggregation_columns) - set(GAS_ADDL_FIELDS)
+        for col in aggregation_columns:
             try:
                 columns.append(f"{prefix_map[col]}.{col}")
             except KeyError:
                 pass
+        return ", ".join(columns)
+
+    def _elec_addl_fields(self, prefix):
+        fields = ELEC_ADDL_FIELDS
+        columns = []
+        for col in fields:
+            columns.append(f"{prefix}.{col}")
+        return ", ".join(columns)
+
+    def _gas_addl_fields(self, prefix):
+        fields = GAS_ADDL_FIELDS
+        columns = []
+        for col in fields:
+            columns.append(f"{prefix}.{col}")
         return ", ".join(columns)
 
     def _csv_file_to_dicts(
@@ -866,12 +891,6 @@ class BigQueryManager(DBManager):
     def _get_db_engine(self, config: FLEXValueConfig) -> Engine:
         # Not using sqlalchemy in BigQuery; TODO refactor so this isn't necessary
         return None
-
-    # def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
-    #     project = config.project
-    #     dataset = config.dataset
-    #     conn_str = f"bigquery://{project}/{dataset}"
-    #     return conn_str
 
     def _table_exists(self, table_name):
         # This is basically straight from the google docs:

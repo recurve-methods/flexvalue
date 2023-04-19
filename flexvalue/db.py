@@ -1001,9 +1001,9 @@ class BigQueryManager(DBManager):
         context = {
             "project_info_table": f"`{self.config.source_dataset}.{self.config.project_info_table}`",
             "eac_table": f"`{self.config.source_dataset}.{self.config.elec_av_costs_table}`",
-            "els_table": f"`{self.config.source_dataset}.elec_load_shape`",
+            "els_table": f"`{self.config.source_dataset}.{self.config.elec_load_shape_table}}`",
             "gac_table": f"`{self.config.source_dataset}.{self.config.gas_av_costs_table}`",
-            "therms_profile_table": f"`{self.config.source_dataset}.therms_profile`",
+            "therms_profile_table": f"`{self.config.source_dataset}.{self.config.therms_profiles_table}`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),

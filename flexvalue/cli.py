@@ -86,8 +86,12 @@ def cli():
     help="Used when --database-type is bigquery. Specifies the google project."
 )
 @click.option(
-    "--dataset",
-    help="Used when --database-type is bigquery. Specifies the dataset."
+    "--source-dataset",
+    help="Used when --database-type is bigquery. Specifies the dataset that is the source of the data."
+)
+@click.option(
+    "--target-dataset",
+    help="Used when --database-type is bigquery. Specifies the dataset that is the target of the data."
 )
 @click.option(
     "--output-table",
@@ -188,7 +192,8 @@ def get_results(
     therms_profiles_table,
     project_info_table,
     project,
-    dataset,
+    source_dataset,
+    target_dataset,
     output_table,
     elec_av_costs_file,
     gas_av_costs_file,
@@ -222,7 +227,8 @@ def get_results(
             therms_profiles_table=therms_profiles_table,
             project_info_table=project_info_table,
             project=project,
-            dataset=dataset,
+            source_dataset=source_dataset,
+            target_dataset=target_dataset,
             output_table=output_table,
             elec_av_costs_file=elec_av_costs_file,
             gas_av_costs_file=gas_av_costs_file,

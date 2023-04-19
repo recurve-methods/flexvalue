@@ -865,7 +865,7 @@ class BigQueryManager(DBManager):
         )
         self.config = fv_config
         self.table_names = [
-            f"{self.config.dataset}.{x}" for x in
+            f"{self.config.source_dataset}.{x}" for x in
                 [self.config.elec_av_costs_table,
                 self.config.elec_load_shape_table,
                 self.config.therms_profiles_table,
@@ -916,15 +916,15 @@ class BigQueryManager(DBManager):
         return empty_tables
 
     def _prepare_table(self, table_name: str, sql_filepath: str, index_filepaths=[], truncate: bool = False):
-        if not self._table_exists(f"{self.config.dataset}.{table_name}"):
+        if not self._table_exists(f"{self.config.source_dataset}.{table_name}"):
             template = self.template_env.get_template(sql_filepath)
-            sql = template.render({"dataset": self.config.dataset})
+            sql = template.render({"dataset": self.config.source_dataset})
             logging.debug(f"create sql = \n{sql}")
             query_job = self.client.query(sql)
             result = query_job.result()
         else:
             if truncate:
-                sql = f"DELETE FROM {self.config.dataset}.{table_name} WHERE TRUE;"
+                sql = f"DELETE FROM {self.config.source_dataset}.{table_name} WHERE TRUE;"
                 query_job = self.client.query(sql)
                 result = query_job.result()
 
@@ -937,7 +937,7 @@ class BigQueryManager(DBManager):
         will be used to join on in later calculations.
         """
         logging.debug("In bq process_gas_av_costs")
-        table_name = f"{self.config.dataset}.{self.config.gas_av_costs_table}"
+        table_name = f"{self.config.source_dataset}.{self.config.gas_av_costs_table}"
         self._ensure_timestamp_column(table_name)
         sql = f'UPDATE {table_name} gac SET timestamp = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
         query_job = self.client.query(sql)
@@ -975,7 +975,7 @@ class BigQueryManager(DBManager):
         template = self.template_env.get_template("bq_populate_elec_load_shape.sql")
         sql = template.render({
             "project": self.config.project,
-            "dataset": self.config.dataset,
+            "dataset": self.config.source_dataset,
             "elec_load_shape_table": self.config.elec_load_shape_table
         })
         query_job = self.client.query(sql)
@@ -991,7 +991,7 @@ class BigQueryManager(DBManager):
         template = self.template_env.get_template("bq_populate_therms_profile.sql")
         sql = template.render({
             "project": self.config.project,
-            "dataset": self.config.dataset,
+            "dataset": self.config.source_dataset,
             "therms_profiles_table": self.config.therms_profiles_table
         })
         query_job = self.client.query(sql)
@@ -999,11 +999,11 @@ class BigQueryManager(DBManager):
 
     def _get_calculation_sql_context(self, mode=""):
         context = {
-            "project_info_table": f"`{self.config.dataset}.{self.config.project_info_table}`",
-            "eac_table": f"`{self.config.dataset}.{self.config.elec_av_costs_table}`",
-            "els_table": f"`{self.config.dataset}.elec_load_shape`",
-            "gac_table": f"`{self.config.dataset}.{self.config.gas_av_costs_table}`",
-            "therms_profile_table": f"`{self.config.dataset}.therms_profile`",
+            "project_info_table": f"`{self.config.source_dataset}.{self.config.project_info_table}`",
+            "eac_table": f"`{self.config.source_dataset}.{self.config.elec_av_costs_table}`",
+            "els_table": f"`{self.config.source_dataset}.elec_load_shape`",
+            "gac_table": f"`{self.config.source_dataset}.{self.config.gas_av_costs_table}`",
+            "therms_profile_table": f"`{self.config.source_dataset}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),
@@ -1013,7 +1013,7 @@ class BigQueryManager(DBManager):
             "include_addl_fields": self.config.include_addl_fields
         }
         if self.config.output_table:
-            table_name = f"{self.config.dataset}.{mode}_{self.config.output_table}" if mode else f"{self.config.dataset}.{self.config.output_table}"
+            table_name = f"{self.config.target_dataset}.{mode}_{self.config.output_table}" if mode else f"{self.config.target_dataset}.{self.config.output_table}"
             context["create_clause"] = f"CREATE OR REPLACE TABLE {table_name} AS ("
         return context
 
@@ -1027,7 +1027,7 @@ class BigQueryManager(DBManager):
         """ Generator to fetch existing electric load shape data from BigQuery. """
         template = self.template_env.get_template("get_elec_load_shape.sql")
         sql = template.render({
-            'dataset': self.config.dataset,
+            'dataset': self.config.source_dataset,
             'elec_load_shape_table': self.config.elec_load_shape_table
         })
         query_job = self.client.query(sql)
@@ -1038,7 +1038,7 @@ class BigQueryManager(DBManager):
     def _get_project_info_data(self):
         template = self.template_env.get_template("get_project_info.sql")
         sql = template.render({
-            'dataset': self.config.dataset,
+            'dataset': self.config.source_dataset,
             'project_info_table': self.config.project_info_table
         })
         logging.debug(f"project_info sql = {sql}")
@@ -1071,7 +1071,7 @@ class BigQueryManager(DBManager):
 
     def reset_gas_av_costs(self):
         # FLEXvalue adds and populates the `timestamp` column, so remove it:
-        sql = f"ALTER TABLE {self.config.dataset}.{self.config.gas_av_costs_table} DROP COLUMN timestamp;"
+        sql = f"ALTER TABLE {self.config.source_dataset}.{self.config.gas_av_costs_table} DROP COLUMN timestamp;"
         query_job = self.client.query(sql)
         try:
             result = query_job.result()
@@ -1081,6 +1081,6 @@ class BigQueryManager(DBManager):
 
     def _reset_table(self, table_name):
         truncate_prefix = self._get_truncate_prefix()
-        sql = f"{truncate_prefix} {self.config.dataset}.{table_name} WHERE TRUE;"
+        sql = f"{truncate_prefix} {self.config.source_dataset}.{table_name} WHERE TRUE;"
         query_job = self.client.query(sql)
         result = query_job.result()

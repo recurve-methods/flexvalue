@@ -19,7 +19,7 @@
 """
 import click
 
-from flexvalue.calculations import run
+from flexvalue.flexvalue import FlexValueRun
 from flexvalue.config import FLEXValueException
 
 __all__ = (
@@ -213,7 +213,7 @@ def get_results(
     include_addl_fields
 ):
     try:
-        run(config_file=config_file,
+        fv_run = FlexValueRun(config_file=config_file,
             project_info_file=project_info_file,
             database_type=database_type,
             host=host,
@@ -247,5 +247,6 @@ def get_results(
             show_gas_components=show_gas_components,
             include_addl_fields=include_addl_fields
         )
+        fv_run.run()
     except FLEXValueException as e:
         print(e)

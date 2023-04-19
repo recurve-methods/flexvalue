@@ -25,7 +25,7 @@ import random
 import sqlite3
 from tempfile import mkdtemp
 
-from flexvalue.calculations import FlexValueRun
+from flexvalue.flexvalue import FlexValueRun
 from flexvalue.settings import ACC_COMPONENTS_ELECTRICITY, ACC_COMPONENTS_GAS
 
 

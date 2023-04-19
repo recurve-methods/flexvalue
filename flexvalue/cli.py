@@ -168,7 +168,11 @@ def cli():
     help="Include the gas avoided cost components in the output.",
     is_flag=True
 )
-
+@click.option(
+    "--include-addl-fields",
+    help="Include extra columns in the output.",
+    is_flag=True
+)
 def get_results(
     config_file,
     project_info_file,
@@ -200,7 +204,8 @@ def get_results(
     process_therms_profiles,
     process_gas_av_costs,
     show_elec_components,
-    show_gas_components
+    show_gas_components,
+    include_addl_fields
 ):
     try:
         run(config_file=config_file,
@@ -233,7 +238,8 @@ def get_results(
             process_therms_profiles=process_therms_profiles,
             process_gas_av_costs=process_gas_av_costs,
             show_elec_components=show_elec_components,
-            show_gas_components=show_gas_components
+            show_gas_components=show_gas_components,
+            include_addl_fields=include_addl_fields
         )
     except FLEXValueException as e:
         print(e)

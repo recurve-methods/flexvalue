@@ -49,7 +49,7 @@ PROJECT_INFO_FIELDS = [
     "region",
     "mwh_savings",
     "therms_savings",
-    "elec_load_shape",
+    "load_shape",
     "therms_profile",
     "start_year",
     "start_quarter",
@@ -344,7 +344,7 @@ class DBManager:
         dicts = self._csv_file_to_dicts(
             project_info_path,
             fieldnames=PROJECT_INFO_FIELDS,
-            fields_to_upper=["elec_load_shape", "state", "region", "utility"],
+            fields_to_upper=["load_shape", "state", "region", "utility"],
         )
         for d in dicts:
             start_year = int(d["start_year"])
@@ -826,12 +826,12 @@ class PostgresqlManager(DBManager):
         """ insert_text isn't needed for postgresql """
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY project_info (project_id, state, utility, region, mwh_savings, therms_savings, elec_load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
+                "COPY project_info (project_id, state, utility, region, mwh_savings, therms_savings, load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
         rows = [
-            (x["project_id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["elec_load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
+            (x["project_id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
             for x in project_info_dicts
         ]
         cursor = self.connection.cursor()

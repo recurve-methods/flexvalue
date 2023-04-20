@@ -978,6 +978,7 @@ class BigQueryManager(DBManager):
             "dataset": self.config.source_dataset,
             "elec_load_shape_table": self.config.elec_load_shape_table
         })
+        logging.debug(f'elec_load_shape sql = {sql}')
         query_job = self.client.query(sql)
         result = query_job.result()
 

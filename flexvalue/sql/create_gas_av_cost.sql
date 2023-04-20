@@ -5,7 +5,7 @@ CREATE TABLE gas_av_costs (
     year INTEGER,
     quarter INTEGER,
     month INTEGER,
-    timestamp TIMESTAMP,
+    datetime TIMESTAMP,
     market FLOAT,
     t_d FLOAT,
     environment FLOAT,

@@ -1,6 +1,6 @@
 CREATE TABLE elec_load_shape (
     pk SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP,
+    datetime TIMESTAMP,
     state TEXT,
     utility TEXT,
     region TEXT,

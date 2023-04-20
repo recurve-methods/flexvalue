@@ -16,7 +16,7 @@ project_costs_with_discounted_elec_av AS (
         elec_av_costs.year,
         elec_av_costs.month,
         elec_av_costs.hour_of_day,
-        elec_av_costs.timestamp,
+        elec_av_costs.datetime,
         elec_av_costs.quarter,
         elec_av_costs.energy, elec_av_costs.losses, elec_av_costs.ancillary_services,
         elec_av_costs.capacity, elec_av_costs.transmission, elec_av_costs.distribution,
@@ -29,18 +29,18 @@ project_costs_with_discounted_elec_av AS (
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
             {% if database_type == "postgresql" -%}
-            AND elec_av_costs.timestamp >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
-            AND elec_av_costs.timestamp < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
+            AND elec_av_costs.datetime >= make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC')
+            AND elec_av_costs.datetime < make_timestamptz(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0, 'UTC') + make_interval(project_costs.eul)
             {% else %}
-            AND elec_av_costs.timestamp >= CAST(DATE(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
-            AND elec_av_costs.timestamp < CAST(DATE(project_costs.start_year + project_costs.eul, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
+            AND elec_av_costs.datetime >= CAST(DATE(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
+            AND elec_av_costs.datetime < CAST(DATE(project_costs.start_year + project_costs.eul, (project_costs.start_quarter - 1) * 3 + 1, 1) AS TIMESTAMP)
             {% endif -%}
 ),
 elec_calculations AS (
     SELECT
     pcwdea.project_id
     {% if elec_aggregation_columns %}, {{ elec_aggregation_columns }} {% endif %}
-    , pcwdea.timestamp
+    , pcwdea.datetime
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
@@ -74,7 +74,7 @@ elec_calculations AS (
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.elec_load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
-    GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.timestamp
+    GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
     {% if include_addl_fields -%}
     , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount
     {% endif -%}
@@ -99,7 +99,7 @@ elec_calculations.project_id
 , elec_calculations.month
 , elec_calculations.quarter
 , elec_calculations.hour_of_day
-, elec_calculations.timestamp as `datetime`
+, elec_calculations.datetime
 , elec_calculations.total as elec_total
 , elec_calculations.discount
 , elec_calculations.total * elec_calculations.discount as av_csts_levelized

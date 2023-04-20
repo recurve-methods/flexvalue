@@ -1,5 +1,5 @@
 INSERT INTO elec_load_shape (
-    timestamp,
+    datetime,
     state,
     utility,
     region,
@@ -10,4 +10,4 @@ INSERT INTO elec_load_shape (
     load_shape_name,
     value
 )
-VALUES (:timestamp, :state, :utility, :region, :quarter, :month, :hour_of_day, :hour_of_year, :load_shape_name, :value)
+VALUES (:datetime, :state, :utility, :region, :quarter, :month, :hour_of_day, :hour_of_year, :load_shape_name, :value)

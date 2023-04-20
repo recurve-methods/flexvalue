@@ -464,7 +464,7 @@ class DBManager:
             "quarter": "pcwdea",
             "discount": "pcwdea",
             "hour_of_day": "pcwdea",
-            "timestamp": "pcwdea",
+            "datetime": "pcwdea",
             "load_shape_name": "elec_load_shape"
         }
         columns = []
@@ -485,7 +485,7 @@ class DBManager:
             "month": "pcwdga",
             "quarter": "pcwdga",
             "discount": "pcwdga",
-            "timestamp": "pcwdga",
+            "datetime": "pcwdga",
             "profile_name": "therms_profile"
         }
         columns = []
@@ -632,7 +632,7 @@ class PostgresqlManager(DBManager):
                     year,
                     quarter,
                     month,
-                    timestamp,
+                    datetime,
                     market,
                     t_d,
                     environment,
@@ -692,7 +692,7 @@ class PostgresqlManager(DBManager):
                     state,
                     utility,
                     region,
-                    timestamp,
+                    datetime,
                     year,
                     quarter,
                     month,
@@ -933,30 +933,30 @@ class BigQueryManager(DBManager):
         pass
 
     def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
-        """ Add a timestamp column if none exists, and populate it. It
+        """ Add a datetime column if none exists, and populate it. It
         will be used to join on in later calculations.
         """
         logging.debug("In bq process_gas_av_costs")
         table_name = f"{self.config.source_dataset}.{self.config.gas_av_costs_table}"
-        self._ensure_timestamp_column(table_name)
-        sql = f'UPDATE {table_name} gac SET timestamp = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
+        self._ensure_datetime_column(table_name)
+        sql = f'UPDATE {table_name} gac SET datetime = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
         query_job = self.client.query(sql)
         result = query_job.result()
 
-    def _ensure_timestamp_column(self, table_name):
+    def _ensure_datetime_column(self, table_name):
         """ Ensure that the table with name `table_name` has a column
-        named `timestamp`, of type `TIMESTAMP`.
+        named `datetime`, of type `TIMESTAMP`.
         """
         table = self.client.get_table(table_name)
-        has_timestamp = False
+        has_datetime = False
         for column in table.schema:
-            if column.name == 'timestamp' and column.field_type == "TIMESTAMP":
-                has_timestamp = True
+            if column.name == 'datetime' and column.field_type == "TIMESTAMP":
+                has_datetime = True
                 break
-        if not has_timestamp:
+        if not has_datetime:
             original_schema = table.schema
             new_schema = original_schema[:]  # Creates a copy of the schema.
-            new_schema.append(bigquery.SchemaField("timestamp", "TIMESTAMP"))
+            new_schema.append(bigquery.SchemaField("datetime", "TIMESTAMP"))
 
             table.schema = new_schema
             table = self.client.update_table(table, ["schema"])  # Make an API request.
@@ -964,7 +964,7 @@ class BigQueryManager(DBManager):
             if len(table.schema) == len(original_schema) + 1 == len(new_schema):
                 print("A new column has been added.")
             else:
-                raise FLEXValueException(f"Unable to add a timestamp column to {table_name}; can't process gas avoided costs.")
+                raise FLEXValueException(f"Unable to add a datetime column to {table_name}; can't process gas avoided costs.")
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
         self._prepare_table(
@@ -1072,13 +1072,13 @@ class BigQueryManager(DBManager):
         pass
 
     def reset_gas_av_costs(self):
-        # FLEXvalue adds and populates the `timestamp` column, so remove it:
-        sql = f"ALTER TABLE {self.config.source_dataset}.{self.config.gas_av_costs_table} DROP COLUMN timestamp;"
+        # FLEXvalue adds and populates the `datetime` column, so remove it:
+        sql = f"ALTER TABLE {self.config.source_dataset}.{self.config.gas_av_costs_table} DROP COLUMN datetime;"
         query_job = self.client.query(sql)
         try:
             result = query_job.result()
         except api_core.exceptions.BadRequest as e:
-            # We are resetting before timestamp was added, ignore exception
+            # We are resetting before datetime was added, ignore exception
             pass
 
     def _reset_table(self, table_name):

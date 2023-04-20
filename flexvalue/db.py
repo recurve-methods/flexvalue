@@ -986,7 +986,7 @@ class BigQueryManager(DBManager):
         logging.debug("In bq version of process therms")
         self._prepare_table(
             "therms_profile",
-            "flexvalue/sql/create_therms_profile.sql",
+            "bq_create_therms_profile.sql",
             truncate=truncate,
         )
         template = self.template_env.get_template("bq_populate_therms_profile.sql")

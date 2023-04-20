@@ -995,6 +995,7 @@ class BigQueryManager(DBManager):
             "dataset": self.config.source_dataset,
             "therms_profiles_table": self.config.therms_profiles_table
         })
+        logging.debug(f'therms_profile sql = {sql}')
         query_job = self.client.query(sql)
         result = query_job.result()
 

@@ -66,6 +66,7 @@ elec_calculations AS (
     , pcwdea.month
     , pcwdea.quarter
     , pcwdea.hour_of_day
+    , pcwdea.hour_of_year
     , pcwdea.total
     , pcwdea.discount
     {% endif -%}
@@ -76,7 +77,7 @@ elec_calculations AS (
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
     {% if include_addl_fields -%}
-    , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount
+    , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.hour_of_year, pcwdea.total, pcwdea.discount
     {% endif -%}
      {%- if elec_aggregation_columns %}, {{ elec_aggregation_columns }}{% endif %}
 )

@@ -437,8 +437,8 @@ class DBManager:
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),
             "gas_aggregation_columns": self._gas_aggregation_columns(),
-            "show_elec_components": self.config.show_elec_components,
-            "show_gas_components": self.config.show_gas_components,
+            "elec_components": [f"elec_calculations.{x}" for x in self.config.elec_components],
+            "gas_components": [f"gas_calculations.{x}" for x in self.config.gas_components],
         }
         if self.config.include_addl_fields:
             context['elec_addl_fields'] = self._elec_addl_fields("pcwdea")
@@ -1010,8 +1010,8 @@ class BigQueryManager(DBManager):
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),
             "gas_aggregation_columns": self._gas_aggregation_columns(),
-            "show_elec_components": self.config.show_elec_components,
-            "show_gas_components": self.config.show_gas_components,
+            "elec_components": [f"elec_calculations.{x}" for x in self.config.elec_components],
+            "gas_components": [f"gas_calculations.{x}" for x in self.config.gas_components],
             "include_addl_fields": self.config.include_addl_fields
         }
         if self.config.output_table:

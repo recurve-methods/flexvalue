@@ -157,24 +157,8 @@ elec_calculations.project_id
 , elec_calculations.discount
 , elec_calculations.total * elec_calculations.discount as av_csts_levelized
 {% endif -%}
-{% if show_elec_components -%}
-, elec_calculations.electric_savings
-, elec_calculations.energy
-, elec_calculations.losses
-, elec_calculations.ancillary_services
-, elec_calculations.capacity
-, elec_calculations.transmission
-, elec_calculations.distribution
-, elec_calculations.cap_and_trade
-, elec_calculations.ghg_adder_rebalancing
-, elec_calculations.ghg_adder
-, elec_calculations.ghg_rebalancing
-, elec_calculations.methane_leakage
-, elec_calculations.marginal_ghg
-{% endif -%}
-{% if show_gas_components -%}
-, gas_calculations.gas_savings
-{% endif %}
+{% if elec_components -%}, {{ elec_components }}{% endif -%}
+{% if gas_components -%}, {{ gas_components }}{% endif -%}
 FROM
 elec_calculations
 LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.datetime = gas_calculations.datetime

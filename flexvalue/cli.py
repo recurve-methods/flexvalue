@@ -163,13 +163,13 @@ def cli():
     is_flag=True
 )
 @click.option(
-    "--show-elec-components",
-    help="Include the electric avoided cost components in the output.",
+    "--elec-components",
+    help="Comma-separated list of electric avoided cost component field names",
     is_flag=True
 )
 @click.option(
-    "--show-gas-components",
-    help="Include the gas avoided cost components in the output.",
+    "--gas-components",
+    help="Comma-separated list of electric avoided cost component field names",
     is_flag=True
 )
 @click.option(
@@ -208,8 +208,8 @@ def get_results(
     process_elec_av_costs,
     process_therms_profiles,
     process_gas_av_costs,
-    show_elec_components,
-    show_gas_components,
+    elec_components,
+    gas_components,
     include_addl_fields
 ):
     try:
@@ -243,8 +243,8 @@ def get_results(
             process_elec_av_costs=process_elec_av_costs,
             process_therms_profiles=process_therms_profiles,
             process_gas_av_costs=process_gas_av_costs,
-            show_elec_components=show_elec_components,
-            show_gas_components=show_gas_components,
+            elec_components=elec_components.split(",") if elec_components else elec_components,
+            gas_components=gas_components.split(",") if gas_components else gas_components,
             include_addl_fields=include_addl_fields
         )
         fv_run.run()

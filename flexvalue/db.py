@@ -143,7 +143,7 @@ class DBManager:
 
     def __init__(self, fv_config: FLEXValueConfig) -> None:
         self.template_env = Environment(
-            loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
+            loader=PackageLoader("flexvalue"), autoescape=select_autoescape(), trim_blocks=True
         )
         self.config = fv_config
         self.engine = self._get_db_engine(fv_config)

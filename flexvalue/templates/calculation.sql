@@ -140,6 +140,12 @@ elec_calculations.project_id
 , elec_calculations.elec_avoided_ghg
 , gas_calculations.lifecycle_gas_ghg_savings
 , elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
+{% for column in elec_aggregation_columns -%}
+, elec_calculations.{{ column }} as elec_{{ column }}
+{% endfor -%}
+{% for column in gas_aggregation_columns -%}
+, gas_calculations.{{ column }} as gas_{{ column }}
+{% endfor -%}
 {% for addl_field in elec_addl_fields -%}
 , elec_calculations.{{ addl_field }} as elec_{{ addl_field }}
 {% endfor -%}

@@ -90,6 +90,9 @@ elec_calculations.project_id
 {% for field in elec_addl_fields -%}
 , elec_calculations.{{field}}
 {% endfor -%}
+{% for column in elec_aggregation_columns -%}
+, elec_calculations.{{ column }}
+{% endfor -%}
 {% if show_elec_components -%}
 , elec_calculations.electric_savings
 , elec_calculations.energy

@@ -54,7 +54,6 @@ gas_calculations AS (
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
     GROUP BY pcwdga.project_id, pcwdga.eul
-    {% for field in gas_addl_fields -%}, pcwdga.{{field}}{% endfor -%}
     {% for field in gas_addl_fields -%}
     , pcwdga.{{ field }}
     {% endfor -%}
@@ -65,6 +64,9 @@ SELECT
 gas_calculations.project_id
 {% for field in gas_addl_fields -%}
 , gas_calculations.{{ field }}
+{% endfor -%}
+{% for column in gas_aggregation_columns -%}
+, gas_calculations.{{ column }}
 {% endfor -%}
 {% for component in gas_components -%}
 , gas_calculations.{{ component }}

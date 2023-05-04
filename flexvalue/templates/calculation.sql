@@ -39,7 +39,9 @@ project_costs_with_discounted_elec_av AS (
 elec_calculations AS (
     SELECT
     pcwdea.project_id
-    {% if elec_aggregation_columns -%}, {{ elec_aggregation_columns }} {% endif -%}
+    {% for column in elec_aggregation_columns -%}
+    , pcwdea.{{ column }}
+    {% endfor -%}
     , pcwdea.datetime
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
@@ -60,7 +62,7 @@ elec_calculations AS (
     , SUM(pcwdea.trc_costs) AS trc_costs
     , SUM(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.marginal_ghg * pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as elec_avoided_ghg
-    {% for addl_field in elec_addl_fields %}
+    {% for addl_field in elec_addl_fields -%}
     , pcwdea.{{ addl_field }}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
@@ -70,7 +72,7 @@ elec_calculations AS (
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
     {% for field in elec_addl_fields %}, pcwdea.{{ field }}{% endfor -%}
-    {%- if elec_aggregation_columns -%}, {{ elec_aggregation_columns }}{% endif -%}
+    {%- for column in elec_aggregation_columns -%}, pcwdea.{{ column }}{% endfor -%}
 )
 , project_costs_with_discounted_gas_av AS (
     SELECT
@@ -96,7 +98,9 @@ elec_calculations AS (
 ),
 gas_calculations AS (
     SELECT pcwdga.project_id
-    {% if gas_aggregation_columns %}, {{ gas_aggregation_columns }} {% endif %}
+    {% for column in gas_aggregation_columns -%}
+    , pcwdga.{{ column }}
+    {% endfor -%}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount) as gas_savings
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
     , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as first_year_net_therms_savings
@@ -117,7 +121,7 @@ gas_calculations AS (
             AND therms_profile.month = pcwdga.month
     GROUP BY pcwdga.project_id, pcwdga.eul, pcwdga.datetime
     {% for field in gas_addl_fields %}, pcwdga.{{field}} {% endfor %}
-    {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif -%}
+    {%- for column in gas_aggregation_columns %}, pcwdga.{{ column }}{% endfor -%}
  )
 
 SELECT

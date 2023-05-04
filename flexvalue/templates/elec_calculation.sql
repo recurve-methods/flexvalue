@@ -39,7 +39,9 @@ project_costs_with_discounted_elec_av AS (
 elec_calculations AS (
     SELECT
     pcwdea.project_id
-    {% if elec_aggregation_columns %}, {{ elec_aggregation_columns }} {% endif %}
+    {% for column in elec_aggregation_columns -%}
+    , pcwdea.{{ column }}
+    {% endfor -%}
     , pcwdea.datetime
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
@@ -72,7 +74,7 @@ elec_calculations AS (
     {% for field in elec_addl_fields -%}
     , pcwdea.{{field}}
     {% endfor -%}
-     {%- if elec_aggregation_columns %}, {{ elec_aggregation_columns }}{% endif %}
+    {%- for column in elec_aggregation_columns %}, pcwdea.{{ column }}{% endfor %}
 )
 
 SELECT

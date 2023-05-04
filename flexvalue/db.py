@@ -449,48 +449,24 @@ class DBManager:
         return context
 
     def _elec_aggregation_columns(self):
-        prefix_map = {
-            "hour_of_year": "pcwdea",
-            "year": "pcwdea",
-            "eul": "pcwdea",
-            "utility": "pcwdea",
-            "region": "pcwdea",
-            "month": "pcwdea",
-            "quarter": "pcwdea",
-            "discount": "pcwdea",
-            "hour_of_day": "pcwdea",
-            "datetime": "pcwdea",
-            "load_shape_name": "elec_load_shape"
-        }
-        columns = []
-        aggregation_columns = set(self.config.aggregation_columns) - set(ELEC_ADDL_FIELDS)
-        for col in aggregation_columns:
-            try:
-                columns.append(f"{prefix_map[col]}.{col}")
-            except KeyError:
-                pass
-        return ", ".join(columns)
+        ELECTRIC_AGG_COLUMNS = set([
+            "hour_of_year",
+            "year",
+            "region",
+            "month",
+            "quarter",
+            "hour_of_day",
+            "datetime"
+        ])
+        aggregation_columns = set(self.config.aggregation_columns) & ELECTRIC_AGG_COLUMNS
+        return aggregation_columns
 
     def _gas_aggregation_columns(self):
-        prefix_map = {
-            "year": "pcwdga",
-            "eul": "pcwdga",
-            "utility": "pcwdga",
-            "region": "pcwdga",
-            "month": "pcwdga",
-            "quarter": "pcwdga",
-            "discount": "pcwdga",
-            "datetime": "pcwdga",
-            "profile_name": "therms_profile"
-        }
-        columns = []
-        aggregation_columns = set(self.config.aggregation_columns) - set(GAS_ADDL_FIELDS)
-        for col in aggregation_columns:
-            try:
-                columns.append(f"{prefix_map[col]}.{col}")
-            except KeyError:
-                pass
-        return ", ".join(columns)
+        GAS_AGG_COLUMNS = set([
+             "region", "year", "month", "quarter", "datetime",
+        ])
+        aggregation_columns = set(self.config.aggregation_columns) & GAS_AGG_COLUMNS
+        return aggregation_columns
 
     def _elec_addl_fields(self, elec_agg_columns):
         fields = set(self.config.elec_addl_fields) - set(elec_agg_columns)

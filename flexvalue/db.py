@@ -440,11 +440,6 @@ class DBManager:
             "elec_components": [f"elec_calculations.{x}" for x in self.config.elec_components],
             "gas_components": [f"gas_calculations.{x}" for x in self.config.gas_components],
         }
-        if self.config.include_addl_fields:
-            context['elec_addl_fields'] = self._elec_addl_fields("pcwdea")
-            context['elec_output_addl_fields'] = self._elec_addl_fields("elec_calculations")
-            context['gas_addl_fields'] = self._gas_addl_fields("pcwdga")
-            context['gas_output_addl_fields'] = self._gas_addl_fields("gas_calculations")
         if self.config.output_table:
             table_name = self.config.output_table
             if mode:
@@ -497,19 +492,15 @@ class DBManager:
                 pass
         return ", ".join(columns)
 
-    def _elec_addl_fields(self, prefix):
-        fields = ELEC_ADDL_FIELDS
-        columns = []
-        for col in fields:
-            columns.append(f"{prefix}.{col}")
-        return ", ".join(columns)
+    def _elec_addl_fields(self, elec_agg_columns):
+        fields = set(self.config.elec_addl_fields) - set(elec_agg_columns)
+        logging.debug(f"elec_addl_fields = {self.config.elec_addl_fields}\nelec_agg_columns = {elec_agg_columns}\nset diff = {fields}")
+        return fields
 
-    def _gas_addl_fields(self, prefix):
-        fields = GAS_ADDL_FIELDS
-        columns = []
-        for col in fields:
-            columns.append(f"{prefix}.{col}")
-        return ", ".join(columns)
+    def _gas_addl_fields(self, gas_agg_columns):
+        fields = set(self.config.gas_addl_fields) - set(gas_agg_columns)
+        logging.debug(f"gas_addl_fields = {self.config.gas_addl_fields}\ngas_agg_columns = {gas_agg_columns}\nset diff = {fields}")
+        return fields
 
     def _csv_file_to_dicts(
         self, csv_file_path: str, fieldnames: str, fields_to_upper=None
@@ -1000,6 +991,8 @@ class BigQueryManager(DBManager):
         result = query_job.result()
 
     def _get_calculation_sql_context(self, mode=""):
+        elec_agg_columns = self._elec_aggregation_columns()
+        gas_agg_columns = self._gas_aggregation_columns()
         context = {
             "project_info_table": f"`{self.config.source_dataset}.{self.config.project_info_table}`",
             "eac_table": f"`{self.config.source_dataset}.{self.config.elec_av_costs_table}`",
@@ -1008,11 +1001,12 @@ class BigQueryManager(DBManager):
             "therms_profile_table": f"`{self.config.source_dataset}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
-            "elec_aggregation_columns": self._elec_aggregation_columns(),
-            "gas_aggregation_columns": self._gas_aggregation_columns(),
-            "elec_components": [f"elec_calculations.{x}" for x in self.config.elec_components],
-            "gas_components": [f"gas_calculations.{x}" for x in self.config.gas_components],
-            "include_addl_fields": self.config.include_addl_fields
+            "elec_aggregation_columns": elec_agg_columns,
+            "gas_aggregation_columns": gas_agg_columns,
+            "elec_components": self.config.elec_components,
+            "gas_components": self.config.gas_components,
+            "elec_addl_fields": self._elec_addl_fields(elec_agg_columns),
+            "gas_addl_fields": self._gas_addl_fields(gas_agg_columns),
         }
         if self.config.output_table:
             table_name = f"{self.config.target_dataset}.{mode}_{self.config.output_table}" if mode else f"{self.config.target_dataset}.{self.config.output_table}"

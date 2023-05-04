@@ -60,27 +60,17 @@ elec_calculations AS (
     , SUM(pcwdea.trc_costs) AS trc_costs
     , SUM(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.marginal_ghg * pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as elec_avoided_ghg
-    {% if include_addl_fields -%}
-    , pcwdea.utility
-    , pcwdea.region
-    , pcwdea.month
-    , pcwdea.quarter
-    , pcwdea.hour_of_day
-    , pcwdea.total
-    , pcwdea.discount
-    , pcwdea.hour_of_year
-    , pcwdea.year
-    {% endif -%}
+    {% for addl_field in elec_addl_fields %}
+    , pcwdea.{{ addl_field }}
+    {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table}} elec_load_shape
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
-    {% if include_addl_fields -%}
-    , pcwdea.utility, pcwdea.region, pcwdea.month, pcwdea.quarter, pcwdea.hour_of_day, pcwdea.total, pcwdea.discount, pcwdea.hour_of_year, pcwdea.year
-    {% endif -%}
-     {%- if elec_aggregation_columns -%}, {{ elec_aggregation_columns }}{% endif -%}
+    {% for field in elec_addl_fields %}, pcwdea.{{ field }}{% endfor -%}
+    {%- if elec_aggregation_columns -%}, {{ elec_aggregation_columns }}{% endif -%}
 )
 , project_costs_with_discounted_gas_av AS (
     SELECT
@@ -113,17 +103,20 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
-    {% if include_addl_fields -%}
+    {% for comp in gas_components -%}
+    , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{comp}}) as {{comp}}
+    {% endfor -%}
+    {% for addl_field in gas_addl_fields -%}
+    , pcwdga.{{ addl_field }}
+    {% endfor -%}
     , pcwdga.datetime
-    , pcwdga.total
-    {% endif -%}
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.project_id, pcwdga.eul
-    {% if include_addl_fields -%}, pcwdga.datetime, pcwdga.total {% endif -%}
+    GROUP BY pcwdga.project_id, pcwdga.eul, pcwdga.datetime
+    {% for field in gas_addl_fields %}, pcwdga.{{field}} {% endfor %}
     {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif -%}
  )
 
@@ -143,22 +136,20 @@ elec_calculations.project_id
 , elec_calculations.elec_avoided_ghg
 , gas_calculations.lifecycle_gas_ghg_savings
 , elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
-{% if include_addl_fields -%}
-, elec_calculations.hour_of_year
-, elec_calculations.utility
-, elec_calculations.region
-, elec_calculations.year
-, elec_calculations.month
-, elec_calculations.quarter
-, elec_calculations.hour_of_day
-, elec_calculations.datetime
-, elec_calculations.total as elec_total
-, gas_calculations.total as gas_total
-, elec_calculations.discount
-, elec_calculations.total * elec_calculations.discount as av_csts_levelized
-{% endif -%}
-{% if elec_components -%}, {{ elec_components }}{% endif -%}
-{% if gas_components -%}, {{ gas_components }}{% endif -%}
+{% for addl_field in elec_addl_fields -%}
+, elec_calculations.{{ addl_field }} as elec_{{ addl_field }}
+{% endfor -%}
+{% for addl_field in gas_addl_fields -%}
+, gas_calculations.{{ addl_field }} as gas_{{ addl_field }}
+{% endfor -%}
+-- , elec_calculations.total * elec_calculations.discount as av_csts_levelized
+{% for comp in elec_components -%}
+, elec_calculations.{{comp}}
+{% endfor -%}
+{% for comp in gas_components -%}
+, gas_calculations.{{comp}}
+{% endfor -%}
+
 FROM
 elec_calculations
 LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.datetime = gas_calculations.datetime

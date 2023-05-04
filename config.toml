@@ -17,7 +17,8 @@ reset_therms_profiles = false
 reset_gas_av_costs = false
 elec_components = ["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"]
 gas_components = ["market", "t_d", "environment", "btm_methane", "upstream_methane"]
-include_addl_fields = true
+elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"]
+gas_addl_fields = ["total", "month", "quarter"]
 separate_output_tables = true
 
 [database]

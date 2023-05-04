@@ -40,48 +40,33 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
-    {% if include_addl_fields -%}
-    , pcwdga.total
-    , pcwdga.discount
-    , pcwdga.therms_savings
-    , pcwdga.total * pcwdga.discount as av_csts_levelized
-    , pcwdga.market
-    , pcwdga.btm_methane
-    , pcwdga.month
-    , pcwdga.quarter
-    , pcwdga.t_d
-    , pcwdga.environment
-    , pcwdga.upstream_methane
-    {% endif -%}
+    {% for component in gas_components -%}
+    , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{component}}) as {{component}}
+    {% endfor -%}
+    {% for field in gas_addl_fields -%}
+    , pcwdga.{{ field }}
+    {% endfor -%}
     FROM project_costs_with_discounted_gas_av pcwdga
     JOIN {{ therms_profile_table }} therms_profile
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
     GROUP BY pcwdga.project_id, pcwdga.eul
-    {% if include_addl_fields %}, pcwdga.total, pcwdga.discount, pcwdga.therms_savings, pcwdga.market, pcwdga.btm_methane, pcwdga.month, pcwdga.quarter, pcwdga.t_d, pcwdga.environment, pcwdga.upstream_methane{% endif -%}
+    {% for field in gas_addl_fields -%}, pcwdga.{{field}}{% endfor -%}
+    {% for field in gas_addl_fields -%}
+    , pcwdga.{{ field }}
+    {% endfor -%}
     {%- if gas_aggregation_columns %}, {{ gas_aggregation_columns }}{% endif %}
 )
 
 SELECT
 gas_calculations.project_id
-, gas_calculations.year
-, gas_calculations.month
-, gas_calculations.quarter
-, gas_calculations.total
-, gas_calculations.t_d
-, gas_calculations.environment
-, gas_calculations.upstream_methane
-{% if include_addl_fields -%}
-, gas_calculations.discount
-, gas_calculations.therms_savings
-, gas_calculations.market
-, gas_calculations.av_csts_levelized
-, gas_calculations.btm_methane
-{% endif -%}
-{% if show_gas_components -%}
-, gas_calculations.gas_savings
-{% endif -%}
+{% for field in gas_addl_fields -%}
+, gas_calculations.{{ field }}
+{% endfor -%}
+{% for component in gas_components -%}
+, gas_calculations.{{ component }}
+{% endfor -%}
 FROM
   gas_calculations
 {% if create_clause -%}

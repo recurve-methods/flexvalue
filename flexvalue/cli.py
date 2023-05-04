@@ -173,8 +173,13 @@ def cli():
     is_flag=True
 )
 @click.option(
-    "--include-addl-fields",
-    help="Include extra columns in the output.",
+    "--elec-addl-fields",
+    help="Comma-separated list of additional fields from electric data to include in output",
+    is_flag=True
+)
+@click.option(
+    "--gas-addl-fields",
+    help="Comma-separated list of additional fields from gas data to include in output",
     is_flag=True
 )
 def get_results(
@@ -210,7 +215,8 @@ def get_results(
     process_gas_av_costs,
     elec_components,
     gas_components,
-    include_addl_fields
+    elec_addl_fields,
+    gas_addl_fields
 ):
     try:
         fv_run = FlexValueRun(config_file=config_file,
@@ -245,7 +251,8 @@ def get_results(
             process_gas_av_costs=process_gas_av_costs,
             elec_components=elec_components.split(",") if elec_components else elec_components,
             gas_components=gas_components.split(",") if gas_components else gas_components,
-            include_addl_fields=include_addl_fields
+            elec_addl_fields=elec_addl_fields.split(",") if elec_addl_fields else elec_addl_fields,
+            gas_addl_fields=gas_addl_fields.split(",") if gas_addl_fields else gas_addl_fields,
         )
         fv_run.run()
     except FLEXValueException as e:

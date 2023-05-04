@@ -41,7 +41,8 @@ class FLEXValueConfig:
     reset_gas_av_costs: bool = False
     elec_components: List[str] = field(default_factory=list)
     gas_components: List[str] = field(default_factory=list)
-    include_addl_fields: bool = False
+    elec_addl_fields: List[str] = field(default_factory=list)
+    gas_addl_fields: List[str] = field(default_factory=list)
     separate_output_tables: bool = False
 
     @staticmethod
@@ -82,8 +83,9 @@ class FLEXValueConfig:
             process_gas_av_costs=run_info.get("process_gas_av_costs", None),
             elec_components=run_info.get("elec_components", []),
             gas_components=run_info.get("gas_components", []),
-            include_addl_fields=run_info.get("include_addl_fields", None),
-            separate_output_tables=run_info.get("separate_output_tables", None)
+            separate_output_tables=run_info.get("separate_output_tables", None),
+            elec_addl_fields=run_info.get("elec_addl_fields", []),
+            gas_addl_fields=run_info.get("gas_addl_fields", [])
         )
 
 

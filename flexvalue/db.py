@@ -1056,3 +1056,10 @@ class BigQueryManager(DBManager):
         sql = f"{truncate_prefix} {self.config.source_dataset}.{table_name} WHERE TRUE;"
         query_job = self.client.query(sql)
         result = query_job.result()
+
+    def _exec_select_sql(self, sql: str):
+        # This is just here to support testing
+        ret = None
+        query_job = self.client.query(sql)
+        result = query_job.result()
+        return [x for x in result]

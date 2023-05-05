@@ -126,43 +126,50 @@ gas_calculations AS (
 
 SELECT
 elec_calculations.project_id
-, (elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.trc_costs as trc_ratio
-, (elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.pac_costs as pac_ratio
-, elec_calculations.electric_benefits
-, gas_calculations.gas_benefits
-, elec_calculations.electric_benefits + gas_calculations.gas_benefits as total_benefits
-, elec_calculations.trc_costs
-, elec_calculations.pac_costs
-, elec_calculations.first_year_net_mwh_savings
-, elec_calculations.project_lifecycle_mwh_savings
-, gas_calculations.first_year_net_therms_savings
-, gas_calculations.lifecyle_net_therms_savings
-, elec_calculations.elec_avoided_ghg
-, gas_calculations.lifecycle_gas_ghg_savings
-, elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings as lifecycle_total_ghg_savings
+, SUM((elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.trc_costs) as trc_ratio
+, SUM((elec_calculations.electric_benefits + gas_calculations.gas_benefits) / elec_calculations.pac_costs) as pac_ratio
+, SUM(elec_calculations.electric_benefits) as electric_benefits
+, SUM(gas_calculations.gas_benefits) as gas_benefits
+, SUM(elec_calculations.electric_benefits + gas_calculations.gas_benefits) as total_benefits
+, SUM(elec_calculations.trc_costs) as trc_costs
+, SUM(elec_calculations.pac_costs) as pac_costs
+, SUM(elec_calculations.first_year_net_mwh_savings) as first_year_net_mwh_savings
+, SUM(elec_calculations.project_lifecycle_mwh_savings) as project_lifecycle_mwh_savings
+, SUM(gas_calculations.first_year_net_therms_savings) as first_year_net_therms_savings
+, SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
+, SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
+, SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
+, SUM(elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_total_ghg_savings
 {% for column in elec_aggregation_columns -%}
-, elec_calculations.{{ column }} as elec_{{ column }}
+, SUM(elec_calculations.{{ column }}) as elec_{{ column }}
 {% endfor -%}
 {% for column in gas_aggregation_columns -%}
-, gas_calculations.{{ column }} as gas_{{ column }}
+, SUM(gas_calculations.{{ column }}) as gas_{{ column }}
 {% endfor -%}
 {% for addl_field in elec_addl_fields -%}
-, elec_calculations.{{ addl_field }} as elec_{{ addl_field }}
+, SUM(elec_calculations.{{ addl_field }}) as elec_{{ addl_field }}
 {% endfor -%}
 {% for addl_field in gas_addl_fields -%}
-, gas_calculations.{{ addl_field }} as gas_{{ addl_field }}
+, SUM(gas_calculations.{{ addl_field }}) as gas_{{ addl_field }}
 {% endfor -%}
 -- , elec_calculations.total * elec_calculations.discount as av_csts_levelized
 {% for comp in elec_components -%}
-, elec_calculations.{{comp}}
+, SUM(elec_calculations.{{comp}}) as {{ comp }}
 {% endfor -%}
 {% for comp in gas_components -%}
-, gas_calculations.{{comp}}
+, SUM(gas_calculations.{{comp}}) as {{ comp }}
 {% endfor -%}
 
 FROM
 elec_calculations
 LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.datetime = gas_calculations.datetime
+GROUP BY elec_calculations.project_id
+{% for column in elec_aggregation_columns -%}
+  , elec_calculations.{{ column }}
+{% endfor -%}
+{% for column in gas_aggregation_columns -%}
+  , gas_calculations.{{ column }}
+{% endfor -%}
 {% if create_clause -%}
 )
 {% endif %}

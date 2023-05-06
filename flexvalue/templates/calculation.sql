@@ -141,16 +141,16 @@ elec_calculations.project_id
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
 , SUM(elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_total_ghg_savings
 {% for column in elec_aggregation_columns -%}
-, SUM(elec_calculations.{{ column }}) as elec_{{ column }}
+, elec_calculations.{{ column }} as elec_{{ column }}
 {% endfor -%}
 {% for column in gas_aggregation_columns -%}
-, SUM(gas_calculations.{{ column }}) as gas_{{ column }}
+, gas_calculations.{{ column }} as gas_{{ column }}
 {% endfor -%}
 {% for addl_field in elec_addl_fields -%}
-, SUM(elec_calculations.{{ addl_field }}) as elec_{{ addl_field }}
+, elec_calculations.{{ addl_field }} as elec_{{ addl_field }}
 {% endfor -%}
 {% for addl_field in gas_addl_fields -%}
-, SUM(gas_calculations.{{ addl_field }}) as gas_{{ addl_field }}
+, gas_calculations.{{ addl_field }} as gas_{{ addl_field }}
 {% endfor -%}
 -- , elec_calculations.total * elec_calculations.discount as av_csts_levelized
 {% for comp in elec_components -%}
@@ -169,6 +169,12 @@ GROUP BY elec_calculations.project_id
 {% endfor -%}
 {% for column in gas_aggregation_columns -%}
   , gas_calculations.{{ column }}
+{% endfor -%}
+{% for field in elec_addl_fields -%}
+  , elec_calculations.{{ field }}
+{% endfor -%}
+{% for field in gas_addl_fields -%}
+  , gas_calculations.{{ field }}
 {% endfor -%}
 {% if create_clause -%}
 )

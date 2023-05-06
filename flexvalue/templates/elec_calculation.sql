@@ -79,14 +79,14 @@ elec_calculations AS (
 
 SELECT
 elec_calculations.project_id
-, elec_calculations.electric_benefits / elec_calculations.trc_costs as trc_ratio
-, elec_calculations.electric_benefits / elec_calculations.pac_costs as pac_ratio
-, elec_calculations.electric_benefits
-, elec_calculations.trc_costs
-, elec_calculations.pac_costs
-, elec_calculations.first_year_net_mwh_savings
-, elec_calculations.project_lifecycle_mwh_savings
-, elec_calculations.elec_avoided_ghg
+, SUM(elec_calculations.electric_benefits / elec_calculations.trc_costs) as trc_ratio
+, SUM(elec_calculations.electric_benefits / elec_calculations.pac_costs) as pac_ratio
+, SUM(elec_calculations.electric_benefits) as electric_benefits
+, SUM(elec_calculations.trc_costs) as trc_costs
+, SUM(elec_calculations.pac_costs) as pac_costs
+, SUM(elec_calculations.first_year_net_mwh_savings) as first_year_net_mwh_savings
+, SUM(elec_calculations.project_lifecycle_mwh_savings) as project_lifecycle_mwh_savings
+, SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
 {% for field in elec_addl_fields -%}
 , elec_calculations.{{field}}
 {% endfor -%}
@@ -94,22 +94,29 @@ elec_calculations.project_id
 , elec_calculations.{{ column }}
 {% endfor -%}
 {% if show_elec_components -%}
-, elec_calculations.electric_savings
-, elec_calculations.energy
-, elec_calculations.losses
-, elec_calculations.ancillary_services
-, elec_calculations.capacity
-, elec_calculations.transmission
-, elec_calculations.distribution
-, elec_calculations.cap_and_trade
-, elec_calculations.ghg_adder_rebalancing
-, elec_calculations.ghg_adder
-, elec_calculations.ghg_rebalancing
-, elec_calculations.methane_leakage
-, elec_calculations.marginal_ghg
+, SUM(elec_calculations.electric_savings) as electric_savings
+, SUM(elec_calculations.energy) as energy
+, SUM(elec_calculations.losses) as losses
+, SUM(elec_calculations.ancillary_services) as ancillary_services
+, SUM(elec_calculations.capacity) as capacity
+, SUM(elec_calculations.transmission) as transmission
+, SUM(elec_calculations.distribution) as distribution
+, SUM(elec_calculations.cap_and_trade) as cap_and_trade
+, SUM(elec_calculations.ghg_adder_rebalancing) as ghg_adder_rebalancing
+, SUM(elec_calculations.ghg_adder) as ghg_adder
+, SUM(elec_calculations.ghg_rebalancing) as ghg_rebalancing
+, SUM(elec_calculations.methane_leakage) as methane_leakage
+, SUM(elec_calculations.marginal_ghg) as marginal_ghg
 {% endif -%}
 FROM
 elec_calculations
+GROUP BY elec_calculations.project_id
+{% for column in elec_aggregation_columns -%}
+, elec_calculations.{{ column }}
+{% endfor -%}
+{% for field in elec_addl_fields -%}
+, elec_calculations.{{ field }}
+{% endfor -%}
 {% if create_clause -%}
 )
 {% endif %}

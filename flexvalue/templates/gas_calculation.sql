@@ -62,6 +62,10 @@ gas_calculations AS (
 
 SELECT
 gas_calculations.project_id
+, SUM(gas_calculations.gas_savings) as gas_savings
+, SUM(gas_calculations.gas_benefits) as gas_benefits
+, SUM(gas_calculations.first_year_net_therms_savings) as first_year_net_therms_savings
+, SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
 {% for field in gas_addl_fields -%}
 , gas_calculations.{{ field }}
 {% endfor -%}
@@ -69,10 +73,18 @@ gas_calculations.project_id
 , gas_calculations.{{ column }}
 {% endfor -%}
 {% for component in gas_components -%}
-, gas_calculations.{{ component }}
+, SUM(gas_calculations.{{ component }}) as {{ component }}
 {% endfor -%}
 FROM
   gas_calculations
+GROUP BY
+  gas_calculations.project_id
+{% for column in gas_aggregation_columns -%}
+, gas_calculations.{{ column }}
+{% endfor -%}
+{% for field in gas_addl_fields -%}
+, gas_calculations.{{ field }}
+{% endfor -%}
 {% if create_clause -%}
 )
 {% endif %}

@@ -408,7 +408,13 @@ class DBManager:
     def _run_calc(self, sql):
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
-            if not self.config.output_table:
+            if self.config.output_file:
+                with open(self.config.output_file, "w") as outfile:
+                    outfile.write(", ".join(result.keys()) + "\n")
+                    for row in result:
+                        outfile.write(", ".join([str(col) for col in row]) + "\n")
+
+            else:
                 print(", ".join(result.keys()))
                 for row in result:
                     print(", ".join([str(col) for col in row]))
@@ -992,8 +998,13 @@ class BigQueryManager(DBManager):
     def _run_calc(self, sql):
         query_job = self.client.query(sql)
         result = query_job.result()
-        for row in result:
-            print(",".join([f"{x}" for x in row.values()]))
+        if self.config.output_file:
+            with open(self.config.output_file, "w") as outfile:
+                for row in result:
+                    outfile.write(",".join([f"{x}" for x in row.values()]) + "\n")
+        else:
+            for row in result:
+                print(",".join([f"{x}" for x in row.values()]))
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

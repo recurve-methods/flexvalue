@@ -88,13 +88,6 @@ class FLEXValueConfig:
             gas_addl_fields=run_info.get("gas_addl_fields", [])
         )
 
-
-    def use_specified_db(self):
-        """ If the user has specified any of the database fields,
-        use this configuration.
-        """
-        return self.database_type != None and self.database_type != ""
-
     def validate(self):
         if not self.database_type:
             return

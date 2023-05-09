@@ -28,6 +28,7 @@ from flexvalue.config import FLEXValueConfig, FLEXValueException
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ResourceClosedError
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 from google import api_core
@@ -413,11 +414,15 @@ class DBManager:
                     outfile.write(", ".join(result.keys()) + "\n")
                     for row in result:
                         outfile.write(", ".join([str(col) for col in row]) + "\n")
-
             else:
-                print(", ".join(result.keys()))
-                for row in result:
-                    print(", ".join([str(col) for col in row]))
+                try:
+                    print(", ".join(result.keys()))
+                    for row in result:
+                        print(", ".join([str(col) for col in row]))
+                except ResourceClosedError:
+                    # If the query doesn't return rows (e.g. we are writing to
+                    # an output table), don't error out.
+                    pass
 
     def _get_calculation_sql(self, mode="both"):
         if mode == "both":
@@ -443,8 +448,8 @@ class DBManager:
             "database_type": self.config.database_type,
             "elec_aggregation_columns": self._elec_aggregation_columns(),
             "gas_aggregation_columns": self._gas_aggregation_columns(),
-            "elec_components": [f"elec_calculations.{x}" for x in self.config.elec_components],
-            "gas_components": [f"gas_calculations.{x}" for x in self.config.gas_components],
+            "elec_components": self.config.elec_components,
+            "gas_components": self.config.gas_components
         }
         if self.config.output_table:
             table_name = self.config.output_table

@@ -438,6 +438,8 @@ class DBManager:
         return sql
 
     def _get_calculation_sql_context(self, mode=""):
+        elec_agg_columns = self._elec_aggregation_columns()
+        gas_agg_columns = self._gas_aggregation_columns()
         context = {
             "project_info_table": "project_info",
             "eac_table": "elec_av_costs",
@@ -446,10 +448,12 @@ class DBManager:
             "therms_profile_table": "therms_profile",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
-            "elec_aggregation_columns": self._elec_aggregation_columns(),
-            "gas_aggregation_columns": self._gas_aggregation_columns(),
+            "elec_aggregation_columns": elec_agg_columns,
+            "gas_aggregation_columns": gas_agg_columns,
             "elec_components": self.config.elec_components,
-            "gas_components": self.config.gas_components
+            "gas_components": self.config.gas_components,
+            "elec_addl_fields": self._elec_addl_fields(elec_agg_columns),
+            "gas_addl_fields": self._gas_addl_fields(gas_agg_columns),
         }
         if self.config.output_table:
             table_name = self.config.output_table

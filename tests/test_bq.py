@@ -143,7 +143,25 @@ def real_data_calculations_aggregated():
         separate_output_tables=False
     )
 
-# TODO: find actual expected counts, do some math to get expected values, etc.
+@pytest.fixture
+def real_data_calculations_time_series():
+    return FlexValueRun(
+        database_type="bigquery",
+        project="oeem-avdcosts-platform",
+        source_dataset="flexvalue_refactor_tables",
+        target_dataset="flexvalue_refactor_tables",
+        elec_av_costs_table="full_ca_avoided_costs_2020acc_copy",
+        elec_load_shape_table="ca_hourly_electric_load_shapes_horizontal_copy",
+        therms_profiles_table="ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
+        project_info_table="formatted_for_metered_deer_run_p2021",
+        output_table="rdcts_output_table",
+        aggregation_columns=["project_id", "hour_of_year", "year"],
+        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
+        separate_output_tables=False
+    )
+
 def test_addl_fields_sep_output(addl_fields_sep_output):
     addl_fields_sep_output.run()
     result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.electric_afsepo_output_table")
@@ -195,3 +213,62 @@ def test_real_data_calculations_aggregated(real_data_calculations_aggregated):
         correct_vals = results_dict[row[0]]
         for i, val in enumerate(row[1:]):
             assert math.isclose(val, correct_vals[i], rel_tol=0.005)
+
+def test_real_data_calculations_time_series(real_data_calculations_time_series):
+    real_data_calculations_time_series.run()
+    result = real_data_calculations_time_series.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.rdcts_output_table")
+    assert result[0][0] == 30 * 12 * 8760 # num projects * EUL * hours per year
+    query_str = "SELECT project_id, SUM(electric_benefits), MAX(trc_costs), MAX(pac_costs), SUM(elec_avoided_ghg), SUM(lifecycle_gas_ghg_savings) FROM flexvalue_refactor_tables.rdcts_output_table WHERE project_id IN ({0}) GROUP BY project_id"
+    results_dict = {
+        "MAR101323": [55231.79, 20881.76, 8583.76, 191.286 / 1000.0, 0],
+        "MAR100695": [-13833.56, 13200.29, 2368.87, -46.548 / 1000.0 , 0],
+        "MAR101024": [127686.39, 103337.56, 57233.72, 451.753 / 1000.0, 0]
+    }
+    query = query_str.format(",".join([f"'{x}'" for x in results_dict.keys()]))
+    result = real_data_calculations_time_series.db_manager._exec_select_sql(sql=query)
+    for row in result:
+        correct_vals = results_dict[row[0]]
+        for i, val in enumerate(row[1:]):
+            assert math.isclose(val, correct_vals[i], rel_tol=0.005)
+
+    # Now cherry-pick some hourly calculations and compare them also
+    # Maps the column names from FV1:FV2
+    column_mapping = {
+        'flexvalue_id': 'project_id',
+        'year': 'elec_year',
+        'hour_of_year': 'elec_hour_of_year',
+        'hourly_savings': 'electric_savings', # different
+        'energy': 'energy',
+        'losses': 'losses',
+        'ancillary_services': 'ancillary_services',
+        'capacity': 'capacity',
+        'transmission': 'transmission',
+        'distribution': 'distribution',
+        'cap_and_trade': 'cap_and_trade',
+        'ghg_adder_rebalancing': 'ghg_adder_rebalancing',
+    }
+    query_str = "SELECT {columns} FROM {table_name} WHERE project_id IN ({projects}) ORDER BY project_id, elec_year, elec_hour_of_year"
+    results_dict = {
+        "MAR101323": [0.41806757266493833, 0.013389025632615839, 0.0015681452798683364 / 1000.0],
+        "MAR100695": [-0.0994271147418045, -0.000387365436068152, -0.000387365436068152 / 1000.0],
+        "MAR101024": [0.97777267304016569, -0.0031842512428534538, 0.0037377979065195471 / 1000.0]
+    }
+    projects = ",".join([f"'{x}'" for x in results_dict.keys()])
+    columns = ", ".join([x for x in column_mapping.values()])
+    query = query_str.format(columns=columns, table_name='flexvalue_refactor_tables.rdcts_output_table', projects=projects)
+    test_df = real_data_calculations_time_series.db_manager._select_as_df(sql=query)
+    like_clause = " OR ".join([f"flexvalue_id LIKE '{x}%'" for x in results_dict.keys()])
+    query_str = "SELECT {columns} from `{table_name}` where ({like_clause}) ORDER BY flexvalue_id, year, hour_of_year"
+    columns = ", ".join([f"{x}" for x in column_mapping.keys()])
+    query = query_str.format(
+        columns=columns,
+        table_name='oeem-mcemktpl-platform.cmkt_2023_04_01_flexvalue_metered_outputs.flexvalue_outputs_deer_p2021_ts_elec_latest',
+        like_clause=like_clause
+    )
+    prod_df = real_data_calculations_time_series.db_manager._select_as_df(sql=query)
+    for k,v in column_mapping.items():
+        if k != 'flexvalue_id':
+            print(f"Testing {k}:{v}: {len(test_df[v])}")
+            assert len(test_df[v]) == len(prod_df[k])
+            for x in range(0, len(test_df[v]), 1000):
+                assert math.isclose(test_df[v][x], prod_df[k][x], rel_tol=0.005)

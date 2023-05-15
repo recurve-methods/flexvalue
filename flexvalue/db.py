@@ -437,6 +437,8 @@ class DBManager:
     def _get_calculation_sql_context(self, mode=""):
         elec_agg_columns = self._elec_aggregation_columns()
         gas_agg_columns = self._gas_aggregation_columns()
+        elec_addl_fields = self._elec_addl_fields(elec_agg_columns)
+        gas_addl_fields = self._gas_addl_fields(gas_agg_columns)
         context = {
             "project_info_table": "project_info",
             "eac_table": "elec_av_costs",
@@ -449,8 +451,8 @@ class DBManager:
             "gas_aggregation_columns": gas_agg_columns,
             "elec_components": self.config.elec_components,
             "gas_components": self.config.gas_components,
-            "elec_addl_fields": self._elec_addl_fields(elec_agg_columns),
-            "gas_addl_fields": self._gas_addl_fields(gas_agg_columns),
+            "elec_addl_fields": elec_addl_fields,
+            "gas_addl_fields": set(gas_addl_fields) - set(elec_addl_fields)
         }
         if self.config.output_table:
             table_name = self.config.output_table

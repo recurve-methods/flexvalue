@@ -147,10 +147,10 @@ elec_calculations.project_id
 , gas_calculations.{{ column }} as gas_{{ column }}
 {% endfor -%}
 {% for addl_field in elec_addl_fields -%}
-, elec_calculations.{{ addl_field }} as elec_{{ addl_field }}
+, elec_calculations.{{ addl_field }}
 {% endfor -%}
 {% for addl_field in gas_addl_fields -%}
-, gas_calculations.{{ addl_field }} as gas_{{ addl_field }}
+, gas_calculations.{{ addl_field }}
 {% endfor -%}
 -- , elec_calculations.total * elec_calculations.discount as av_csts_levelized
 {% for comp in elec_components -%}

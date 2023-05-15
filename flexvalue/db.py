@@ -110,9 +110,6 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "ghg_adder_rebalancing",
 ]
 
-ELEC_ADDL_FIELDS = ["utility", "region", "month", "quarter", "hour_of_day", "total", "discount", "hour_of_year", "datetime"]
-GAS_ADDL_FIELDS = ["datetime", "total"]
-
 logging.basicConfig(stream=sys.stderr, format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 # This is the number of bytes to read when determining whether a csv file has

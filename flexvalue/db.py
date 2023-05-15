@@ -396,14 +396,14 @@ class DBManager:
             )
         if self.config.separate_output_tables:
             sql = self._get_calculation_sql(mode="electric")
-            logging.info(f'electric sql =\n{sql}')
+            # logging.info(f'electric sql =\n{sql}')
             self._run_calc(sql)
             sql = self._get_calculation_sql(mode="gas")
-            logging.info(f'gas sql =\n{sql}')
+            # logging.info(f'gas sql =\n{sql}')
             self._run_calc(sql)
         else:
             sql = self._get_calculation_sql()
-            logging.info(f'sql =\n{sql}')
+            # logging.info(f'sql =\n{sql}')
             self._run_calc(sql)
 
     def _run_calc(self, sql):
@@ -1079,7 +1079,9 @@ class BigQueryManager(DBManager):
 
     def _exec_select_sql(self, sql: str):
         # This is just here to support testing
-        ret = None
         query_job = self.client.query(sql)
         result = query_job.result()
         return [x for x in result]
+
+    def _select_as_df(self, sql: str):
+        return self.client.query(sql).to_dataframe()

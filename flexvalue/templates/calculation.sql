@@ -43,7 +43,7 @@ elec_calculations AS (
     , pcwdea.{{ column }}
     {% endfor -%}
     , pcwdea.datetime
-    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
+    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.losses) AS losses
@@ -101,7 +101,7 @@ gas_calculations AS (
     {% for column in gas_aggregation_columns -%}
     , pcwdga.{{ column }}
     {% endfor -%}
-    , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount) as gas_savings
+    , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value) as gas_savings
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
     , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as first_year_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
@@ -159,7 +159,6 @@ elec_calculations.project_id
 {% for comp in gas_components -%}
 , SUM(gas_calculations.{{comp}}) as {{ comp }}
 {% endfor -%}
-
 FROM
 elec_calculations
 LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.datetime = gas_calculations.datetime

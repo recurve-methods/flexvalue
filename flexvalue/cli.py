@@ -98,6 +98,14 @@ def cli():
     help="The database table to write output to. This table gets overwritten (not appended to)."
 )
 @click.option(
+    "--electric-output-table",
+    help="The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to)."
+)
+@click.option(
+    "--gas-output-table",
+    help="The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to)."
+)
+@click.option(
     "--config-file",
     help="Path to the toml configuration file."
 )
@@ -200,6 +208,8 @@ def get_results(
     source_dataset,
     target_dataset,
     output_table,
+    electric_output_table,
+    gas_output_table,
     elec_av_costs_file,
     gas_av_costs_file,
     elec_load_shape_file,
@@ -236,6 +246,8 @@ def get_results(
             source_dataset=source_dataset,
             target_dataset=target_dataset,
             output_table=output_table,
+            electric_output_table=electric_output_table,
+            gas_output_table=gas_output_table,
             elec_av_costs_file=elec_av_costs_file,
             gas_av_costs_file=gas_av_costs_file,
             elec_load_shape_file=elec_load_shape_file,

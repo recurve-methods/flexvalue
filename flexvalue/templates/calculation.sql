@@ -82,7 +82,6 @@ elec_calculations AS (
         , gas_av_costs.quarter
         , gas_av_costs.total, gas_av_costs.market, gas_av_costs.t_d
         , gas_av_costs.environment, gas_av_costs.btm_methane, gas_av_costs.upstream_methane
-        , gas_av_costs.marginal_ghg
         , 1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((gas_av_costs.year - project_costs.start_year) * 4) + gas_av_costs.quarter - project_costs.start_quarter) AS discount
         , gas_av_costs.datetime
     FROM project_costs

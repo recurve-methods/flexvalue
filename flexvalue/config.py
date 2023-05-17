@@ -30,6 +30,8 @@ class FLEXValueConfig:
     project_info_table: str = None
     output_file: str = None
     output_table: str = None
+    electric_output_table: str = None
+    gas_output_table: str = None
     aggregation_columns: List[str] = field(default_factory=list)
     process_elec_load_shape: bool = False
     process_elec_av_costs: bool = False

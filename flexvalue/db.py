@@ -393,14 +393,14 @@ class DBManager:
             )
         if self.config.separate_output_tables:
             sql = self._get_calculation_sql(mode="electric")
-            # logging.info(f'electric sql =\n{sql}')
+            logging.info(f'electric sql =\n{sql}')
             self._run_calc(sql)
             sql = self._get_calculation_sql(mode="gas")
-            # logging.info(f'gas sql =\n{sql}')
+            logging.info(f'gas sql =\n{sql}')
             self._run_calc(sql)
         else:
             sql = self._get_calculation_sql()
-            # logging.info(f'sql =\n{sql}')
+            logging.info(f'sql =\n{sql}')
             self._run_calc(sql)
 
     def _run_calc(self, sql):
@@ -456,8 +456,10 @@ class DBManager:
         }
         if self.config.output_table:
             table_name = self.config.output_table
-            if mode:
-                table_name = mode + "_" + table_name
+            if mode == "electric":
+                table_name = self.config.electric_output_table
+            elif mode == "gas":
+                table_name = self.config.gas_output_table
             context['create_clause'] = f"DROP TABLE IF EXISTS {table_name};CREATE TABLE {table_name} AS ("
 
         return context
@@ -999,7 +1001,11 @@ class BigQueryManager(DBManager):
             "gas_addl_fields": self._gas_addl_fields(gas_agg_columns),
         }
         if self.config.output_table:
-            table_name = f"{self.config.target_dataset}.{mode}_{self.config.output_table}" if mode else f"{self.config.target_dataset}.{self.config.output_table}"
+            table_name = f"{self.config.target_dataset}.{self.config.output_table}"
+            if mode == "electric":
+                table_name = f"{self.config.target_dataset}.{self.config.electric_output_table}"
+            elif mode == "gas":
+                table_name = f"{self.config.target_dataset}.{self.config.gas_output_table}"
             context["create_clause"] = f"CREATE OR REPLACE TABLE {table_name} AS ("
         return context
 

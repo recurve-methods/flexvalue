@@ -406,20 +406,21 @@ class DBManager:
     def _run_calc(self, sql):
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
-            if self.config.output_file:
-                with open(self.config.output_file, "w") as outfile:
-                    outfile.write(", ".join(result.keys()) + "\n")
-                    for row in result:
-                        outfile.write(", ".join([str(col) for col in row]) + "\n")
-            else:
-                try:
-                    print(", ".join(result.keys()))
-                    for row in result:
-                        print(", ".join([str(col) for col in row]))
-                except ResourceClosedError:
-                    # If the query doesn't return rows (e.g. we are writing to
-                    # an output table), don't error out.
-                    pass
+            if not self.config.output_table and not self.config.electric_output_table and not self.config.gas_output_table:
+                if self.config.output_file:
+                    with open(self.config.output_file, "w") as outfile:
+                        outfile.write(", ".join(result.keys()) + "\n")
+                        for row in result:
+                            outfile.write(", ".join([str(col) for col in row]) + "\n")
+                else:
+                    try:
+                        print(", ".join(result.keys()))
+                        for row in result:
+                            print(", ".join([str(col) for col in row]))
+                    except ResourceClosedError:
+                        # If the query doesn't return rows (e.g. we are writing to
+                        # an output table), don't error out.
+                        pass
 
     def _get_calculation_sql(self, mode="both"):
         if mode == "both":
@@ -1012,13 +1013,14 @@ class BigQueryManager(DBManager):
     def _run_calc(self, sql):
         query_job = self.client.query(sql)
         result = query_job.result()
-        if self.config.output_file:
-            with open(self.config.output_file, "w") as outfile:
+        if not self.config.output_table and not self.config.electric_output_table and not self.config.gas_output_table:
+            if self.config.output_file:
+                with open(self.config.output_file, "w") as outfile:
+                    for row in result:
+                        outfile.write(",".join([f"{x}" for x in row.values()]) + "\n")
+            else:
                 for row in result:
-                    outfile.write(",".join([f"{x}" for x in row.values()]) + "\n")
-        else:
-            for row in result:
-                print(",".join([f"{x}" for x in row.values()]))
+                    print(",".join([f"{x}" for x in row.values()]))
 
     def _get_original_elec_load_shape(self):
         """ Generator to fetch existing electric load shape data from BigQuery. """

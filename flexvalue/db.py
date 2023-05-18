@@ -1001,7 +1001,7 @@ class BigQueryManager(DBManager):
             "elec_addl_fields": self._elec_addl_fields(elec_agg_columns),
             "gas_addl_fields": self._gas_addl_fields(gas_agg_columns),
         }
-        if self.config.output_table:
+        if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
             table_name = f"{self.config.target_dataset}.{self.config.output_table}"
             if mode == "electric":
                 table_name = f"{self.config.target_dataset}.{self.config.electric_output_table}"

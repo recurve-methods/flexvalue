@@ -86,6 +86,10 @@ def cli():
     help="Used when --database-type is bigquery. Specifies the google project."
 )
 @click.option(
+    "--av-costs-dataset",
+    help="Used when --database-type is bigquery. Specifies the dataset that is the source of the electric and gas avoided costs data. Used with --av-costs-project. If this dataset is in a different google project, include it in the dataset name, like <google-project>.<av-costs-dataset>."
+)
+@click.option(
     "--source-dataset",
     help="Used when --database-type is bigquery. Specifies the dataset that is the source of the data."
 )
@@ -205,6 +209,7 @@ def get_results(
     therms_profiles_table,
     project_info_table,
     project,
+    av_costs_dataset,
     source_dataset,
     target_dataset,
     output_table,
@@ -243,6 +248,7 @@ def get_results(
             therms_profiles_table=therms_profiles_table,
             project_info_table=project_info_table,
             project=project,
+            av_costs_dataset=av_costs_dataset,
             source_dataset=source_dataset,
             target_dataset=target_dataset,
             output_table=output_table,

@@ -110,7 +110,7 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "ghg_adder_rebalancing",
 ]
 
-logging.basicConfig(stream=sys.stderr, format="%(levelname)s:%(message)s", level=logging.DEBUG)
+logging.basicConfig(stream=sys.stderr, format="%(levelname)s:%(message)s", level=logging.INFO)
 
 # This is the number of bytes to read when determining whether a csv file has
 # a header. 4096 was determined empirically; I don't recommend reading fewer
@@ -848,17 +848,15 @@ class BigQueryManager(DBManager):
             loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
         )
         self.config = fv_config
-        self.table_names = [
-            f"{self.config.source_dataset}.{x}" for x in
-                [self.config.elec_av_costs_table,
-                self.config.elec_load_shape_table,
+        self.table_names = []
+        for x in [self.config.elec_av_costs_table,
+                self.config.gas_av_costs_table]:
+            self.table_names.append(f"{self.config.av_costs_dataset}.{x}")
+        for x in [self.config.elec_load_shape_table,
                 self.config.therms_profiles_table,
-                self.config.gas_av_costs_table,
-                self.config.project_info_table
-            ]
-        ]
+                self.config.project_info_table]:
+            self.table_names.append(f"{self.config.source_dataset}.{x}")
         self.client = bigquery.Client(project=self.config.project)
-        # self._test_connection()
 
     def _test_connection(self):
         logging.debug('in bigquerymanager._test_connection')
@@ -900,15 +898,20 @@ class BigQueryManager(DBManager):
         return empty_tables
 
     def _prepare_table(self, table_name: str, sql_filepath: str, index_filepaths=[], truncate: bool = False):
-        if not self._table_exists(f"{self.config.source_dataset}.{table_name}"):
+        """ table_name: includes the dataset for the table 
+        sql_filepath: the path to the template that will be rendered to produce the preparation sql
+        truncate: if True, all data will be removed from the table; the table will not be dropped
+        """
+        if not self._table_exists(table_name):
+            dataset = ".".join(table_name.split(".")[:-1])  # get everything before last '.'
             template = self.template_env.get_template(sql_filepath)
-            sql = template.render({"dataset": self.config.source_dataset})
+            sql = template.render({"dataset": dataset})
             logging.debug(f"create sql = \n{sql}")
             query_job = self.client.query(sql)
             result = query_job.result()
         else:
             if truncate:
-                sql = f"DELETE FROM {self.config.source_dataset}.{table_name} WHERE TRUE;"
+                sql = f"DELETE FROM {table_name} WHERE TRUE;"
                 query_job = self.client.query(sql)
                 result = query_job.result()
 
@@ -921,7 +924,7 @@ class BigQueryManager(DBManager):
         will be used to join on in later calculations.
         """
         logging.debug("In bq process_gas_av_costs")
-        table_name = f"{self.config.source_dataset}.{self.config.gas_av_costs_table}"
+        table_name = f"{self.config.av_costs_dataset}.{self.config.gas_av_costs_table}"
         self._ensure_datetime_column(table_name)
         sql = f'UPDATE {table_name} gac SET datetime = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
         query_job = self.client.query(sql)
@@ -951,8 +954,9 @@ class BigQueryManager(DBManager):
                 raise FLEXValueException(f"Unable to add a datetime column to {table_name}; can't process gas avoided costs.")
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
+        """ Transforms data in the table specified by config.elec_load_shape_table, and loads it into `elec_load_shape`."""
         self._prepare_table(
-            "elec_load_shape",
+            f"{self.config.source_dataset}.elec_load_shape",
             "bq_create_elec_load_shape.sql",
             truncate=True
         )
@@ -962,14 +966,14 @@ class BigQueryManager(DBManager):
             "dataset": self.config.source_dataset,
             "elec_load_shape_table": self.config.elec_load_shape_table
         })
-        logging.debug(f'elec_load_shape sql = {sql}')
+        logging.info(f'elec_load_shape sql = {sql}')
         query_job = self.client.query(sql)
         result = query_job.result()
 
     def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
-        logging.debug("In bq version of process therms")
+        """ Transforms data in the table specified by config.therms_profile_table, and loads it into `therms_profile`."""
         self._prepare_table(
-            "therms_profile",
+            f"{self.config.source_dataset}.therms_profile",
             "bq_create_therms_profile.sql",
             truncate=truncate,
         )
@@ -988,9 +992,9 @@ class BigQueryManager(DBManager):
         gas_agg_columns = self._gas_aggregation_columns()
         context = {
             "project_info_table": f"`{self.config.source_dataset}.{self.config.project_info_table}`",
-            "eac_table": f"`{self.config.source_dataset}.{self.config.elec_av_costs_table}`",
+            "eac_table": f"`{self.config.av_costs_dataset}.{self.config.elec_av_costs_table}`",
             "els_table": f"`{self.config.source_dataset}.elec_load_shape`",
-            "gac_table": f"`{self.config.source_dataset}.{self.config.gas_av_costs_table}`",
+            "gac_table": f"`{self.config.av_costs_dataset}.{self.config.gas_av_costs_table}`",
             "therms_profile_table": f"`{self.config.source_dataset}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
@@ -1070,7 +1074,7 @@ class BigQueryManager(DBManager):
 
     def reset_gas_av_costs(self):
         # FLEXvalue adds and populates the `datetime` column, so remove it:
-        sql = f"ALTER TABLE {self.config.source_dataset}.{self.config.gas_av_costs_table} DROP COLUMN datetime;"
+        sql = f"ALTER TABLE {self.config.av_costs_dataset}.{self.config.gas_av_costs_table} DROP COLUMN datetime;"
         query_job = self.client.query(sql)
         try:
             result = query_job.result()
@@ -1078,9 +1082,25 @@ class BigQueryManager(DBManager):
             # We are resetting before datetime was added, ignore exception
             pass
 
+    def reset_elec_load_shape(self):
+        logging.debug("Resetting elec load shape")
+        self._reset_table(f"{self.config.source_dataset}.elec_load_shape")
+
+    def reset_elec_av_costs(self):
+        logging.debug("Resetting elec_av_costs")
+        self._reset_table(f"{self.config.av_costs_dataset}.elec_av_costs")
+
+    def reset_therms_profiles(self):
+        logging.debug("Resetting therms_profile")
+        self._reset_table(f"{self.config.source_dataset}.therms_profile")
+
+    def reset_gas_av_costs(self):
+        logging.debug("Resetting gas avoided costs")
+        self._reset_table(f"{self.config.av_costs_dataset}.gas_av_costs")
+
     def _reset_table(self, table_name):
         truncate_prefix = self._get_truncate_prefix()
-        sql = f"{truncate_prefix} {self.config.source_dataset}.{table_name} WHERE TRUE;"
+        sql = f"{truncate_prefix} {table_name} WHERE TRUE;"
         query_job = self.client.query(sql)
         result = query_job.result()
 

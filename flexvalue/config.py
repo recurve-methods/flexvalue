@@ -16,6 +16,7 @@ class FLEXValueConfig:
     password: str = None
     database: str = None
     project: str = None
+    av_costs_dataset: str = None
     source_dataset: str = None
     target_dataset: str = None
     elec_load_shape_file: str = None
@@ -60,6 +61,7 @@ class FLEXValueConfig:
             password=db.get('password', None),
             database=db.get('database', None),
             project=db.get('project', None),
+            av_costs_dataset=db.get('av_costs_dataset', None),
             source_dataset=db.get('source_dataset', None),
             target_dataset=db.get('target_dataset', None),
             elec_av_costs_table=db.get("elec_av_costs_table", None),

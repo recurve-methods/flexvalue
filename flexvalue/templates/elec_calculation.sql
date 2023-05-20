@@ -40,7 +40,9 @@ elec_calculations AS (
     SELECT
     pcwdea.project_id
     {% for column in elec_aggregation_columns -%}
+    {% if column != "datetime" -%}
     , pcwdea.{{ column }}
+    {% endif -%}
     {% endfor -%}
     , pcwdea.datetime
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings

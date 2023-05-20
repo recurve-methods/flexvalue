@@ -95,21 +95,10 @@ elec_calculations.project_id
 {% for column in elec_aggregation_columns -%}
 , elec_calculations.{{ column }}
 {% endfor -%}
-{% if show_elec_components -%}
-, SUM(elec_calculations.electric_savings) as electric_savings
-, SUM(elec_calculations.energy) as energy
-, SUM(elec_calculations.losses) as losses
-, SUM(elec_calculations.ancillary_services) as ancillary_services
-, SUM(elec_calculations.capacity) as capacity
-, SUM(elec_calculations.transmission) as transmission
-, SUM(elec_calculations.distribution) as distribution
-, SUM(elec_calculations.cap_and_trade) as cap_and_trade
-, SUM(elec_calculations.ghg_adder_rebalancing) as ghg_adder_rebalancing
-, SUM(elec_calculations.ghg_adder) as ghg_adder
-, SUM(elec_calculations.ghg_rebalancing) as ghg_rebalancing
-, SUM(elec_calculations.methane_leakage) as methane_leakage
-, SUM(elec_calculations.marginal_ghg) as marginal_ghg
-{% endif -%}
+{% for comp in elec_components -%}
+, SUM(elec_calculations.{{comp}}) as {{ comp }}
+{% endfor -%}
+
 FROM
 elec_calculations
 GROUP BY elec_calculations.project_id

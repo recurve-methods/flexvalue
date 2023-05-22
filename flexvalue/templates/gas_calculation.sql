@@ -41,6 +41,7 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
+    , therms_profile.value as therms_profile_value
     {% for component in gas_components -%}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{component}}) as {{component}}
     {% endfor -%}
@@ -52,7 +53,7 @@ gas_calculations AS (
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.project_id, pcwdga.eul
+    GROUP BY pcwdga.project_id, pcwdga.eul, therms_profile.value
     {% for field in gas_addl_fields -%}
     , pcwdga.{{ field }}
     {% endfor -%}
@@ -65,6 +66,7 @@ gas_calculations.project_id
 , SUM(gas_calculations.gas_benefits) as gas_benefits
 , SUM(gas_calculations.first_year_net_therms_savings) as first_year_net_therms_savings
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
+, MAX(gas_calculations.therms_profile_value) as therms_profile_value
 {% for field in gas_addl_fields -%}
 , gas_calculations.{{ field }}
 {% endfor -%}

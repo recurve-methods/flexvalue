@@ -40,11 +40,10 @@ elec_calculations AS (
     SELECT
     pcwdea.project_id
     {% for column in elec_aggregation_columns -%}
-    {% if column != "datetime" -%}
     , pcwdea.{{ column }}
-    {% endif -%}
     {% endfor -%}
     , pcwdea.datetime
+    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) AS non_discounted_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
@@ -64,7 +63,7 @@ elec_calculations AS (
     , SUM(pcwdea.trc_costs) AS trc_costs
     , SUM(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.marginal_ghg * pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as elec_avoided_ghg
-    {% for field in elec_addl_fields -%}
+    {% for field in elec_addl_fields if not field == "datetime" -%}
     , pcwdea.{{field}}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
@@ -73,7 +72,7 @@ elec_calculations AS (
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
-    {% for field in elec_addl_fields -%}
+    {% for field in elec_addl_fields if not field == "datetime" -%}
     , pcwdea.{{field}}
     {% endfor -%}
     {%- for column in elec_aggregation_columns %}, pcwdea.{{ column }}{% endfor %}
@@ -89,6 +88,7 @@ elec_calculations.project_id
 , SUM(elec_calculations.first_year_net_mwh_savings) as first_year_net_mwh_savings
 , SUM(elec_calculations.project_lifecycle_mwh_savings) as project_lifecycle_mwh_savings
 , SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
+, SUM(non_discounted_savings) as non_discounted_savings
 {% for field in elec_addl_fields -%}
 , elec_calculations.{{field}}
 {% endfor -%}
@@ -98,7 +98,6 @@ elec_calculations.project_id
 {% for comp in elec_components -%}
 , SUM(elec_calculations.{{comp}}) as {{ comp }}
 {% endfor -%}
-
 FROM
 elec_calculations
 GROUP BY elec_calculations.project_id

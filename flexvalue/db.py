@@ -804,7 +804,6 @@ class PostgresqlManager(DBManager):
             else:
                 copy_write(cur, buf)
         self.connection.commit()
-        self.connection.close()
 
     def _load_project_info_data(self, insert_text, project_info_dicts):
         """ insert_text isn't needed for postgresql """

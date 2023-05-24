@@ -20,6 +20,7 @@
 
 import pytest
 from flexvalue.db import DBManager
+from flexvalue.config import FLEXValueConfig
 from flexvalue.flexvalue import FlexValueRun
 
 TEST_HOST="postgresql"
@@ -29,35 +30,45 @@ TEST_PASSWORD="example"
 TEST_DATABASE="postgres"
 
 @pytest.fixture
-def dbm():
-    return DBManager("")
+def config():
+    config = FLEXValueConfig(
+        database_type="postgresql",
+        host=TEST_HOST,
+        port=TEST_PORT,
+        user=TEST_USER,
+        password=TEST_PASSWORD,
+        database=TEST_DATABASE
+    )
+    return config
 
 @pytest.fixture
-def dbm_with_project_loaded(dbm):
-    dbm.load_project_info_file("example_user_inputs.csv")
-    return dbm
+def config_with_project(config: FLEXValueConfig):
+    config.project_info_file = "example_user_inputs.csv"
+    return config
 
 @pytest.fixture
-def dbm_with_elec_load_shape_loaded(dbm):
-    # TRUNCATE the table first so we can assert the correct number of rows
-    dbm.load_elec_load_shapes_file("ca_hourly_electric_load_shapes.csv", truncate=True)
-    return dbm
+def config_with_elec_load_shape(config: FLEXValueConfig):
+    config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+    config.reset_elec_load_shapes = True
+    return config
 
 @pytest.fixture
-def dbm_with_therms_profiles_loaded(dbm):
-    dbm.load_therms_profiles_file("ca_monthly_therms_load_profiles.csv", truncate=True)
-    return dbm
+def config_with_therms_profiles(config: FLEXValueConfig):
+    config.therms_profiles_file = "ca_monthly_therms_load_profiles.csv"
+    config.reset_therms_profiles
+    return config
 
 @pytest.fixture
-def dbm_with_elec_avcosts_loaded(dbm):
-    # NOTE This takes several minutes
-    dbm.load_elec_avoided_costs_file("full_ca_avoided_costs_2020acc.csv", truncate=True)
-    return dbm
+def config_with_elec_avcosts(config: FLEXValueConfig):
+    config.elec_av_costs_file = "full_ca_avoided_costs_2020acc.csv"
+    config.reset_elec_av_costs = True
+    return config
 
 @pytest.fixture
-def dbm_with_gas_avcosts_loaded(dbm):
-    dbm.load_gas_avoided_costs_file("full_ca_avoided_costs_2020acc_gas.csv", truncate=True)
-    return dbm
+def config_with_gas_avcosts(config: FLEXValueConfig):
+    config.gas_av_costs_file = "full_ca_avoided_costs_2020acc_gas.csv"
+    config.reset_gas_av_costs = True
+    return config
 
 @pytest.fixture
 def addl_fields_sep_output():
@@ -73,6 +84,7 @@ def addl_fields_sep_output():
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
         project_info_file="example_user_inputs_cz12_37.csv",
+        # TODO Do we need separate output tables?
         output_table="afsepo_output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
         elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
@@ -204,27 +216,37 @@ def test_agg_project_id_no_fields_same_output(agg_project_id_no_fields_same_outp
     result = agg_project_id_no_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM apinfso_output_table")
     assert result[0][0] == 36 # 38 distinct projects minus 2 with no matching load shape
 
-def test_project_load(dbm_with_project_loaded):
-    result = dbm_with_project_loaded._exec_select_sql("SELECT COUNT(*) FROM project_info;")
+def test_project_load(config_with_project: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_project)
+    dbm.process_project_info(config_with_project.project_info_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM project_info;")
     assert result[0][0] == 4
 
-def test_discount(dbm_with_project_loaded):
-    result = dbm_with_project_loaded._exec_select_sql("SELECT COUNT(*) FROM discount;")
-    assert result[0][0] == 180
-
-def test_elec_load_shape(dbm_with_elec_load_shape_loaded):
-    result = dbm_with_elec_load_shape_loaded._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
+def test_elec_load_shape(config_with_elec_load_shape: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_elec_load_shape)
+    dbm.reset_elec_load_shape()
+    dbm.process_elec_load_shape(config_with_elec_load_shape.elec_load_shape_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
     assert result[0][0] == 665760
 
-def test_therms_profiles(dbm_with_therms_profiles_loaded):
-    result = dbm_with_therms_profiles_loaded._exec_select_sql("SELECT COUNT(*) FROM therms_profile;")
+def test_therms_profiles(config_with_therms_profiles: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_therms_profiles)
+    dbm.reset_therms_profiles()
+    dbm.process_therms_profile(config_with_therms_profiles.therms_profiles_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM therms_profile;")
     assert result[0][0] == 144
 
 # NOTE This test takes several minutes to run due to loading the data.
-def test_elec_avoided_costs(dbm_with_elec_avcosts_loaded):
-    result = dbm_with_elec_avcosts_loaded._exec_select_sql("SELECT COUNT(*) FROM elec_av_costs;")
+def test_elec_avoided_costs(config_with_elec_avcosts: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_elec_avcosts)
+    dbm.reset_elec_av_costs()
+    dbm.process_elec_av_costs(config_with_elec_avcosts.elec_av_costs_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_av_costs;")
     assert result[0][0] == 6167040
 
-def test_gas_avoided_costs(dbm_with_gas_avcosts_loaded):
-    result = dbm_with_gas_avcosts_loaded._exec_select_sql("SELECT COUNT(*) FROM gas_av_costs;")
+def test_gas_avoided_costs(config_with_gas_avcosts: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_gas_avcosts)
+    dbm.reset_gas_av_costs()
+    dbm.process_gas_av_costs(config_with_gas_avcosts.gas_av_costs_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM gas_av_costs;")
     assert result[0][0] == 1488

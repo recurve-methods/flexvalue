@@ -75,7 +75,8 @@ class FLEXValueConfig:
             gas_av_costs_file=run_info.get('gas_av_costs', None),
             project_info_file=run_info.get('project_info', None),
             output_file=run_info.get('output_file', None),
-            output_table=run_info.get('output_table', None),
+            electric_output_table=run_info.get('electric_output_table', None),
+            gas_output_table=run_info.get('gas_output_table', None)
             aggregation_columns=run_info.get("aggregation_columns", []),
             reset_elec_load_shape=run_info.get("reset_elec_load_shape", None),
             reset_elec_av_costs=run_info.get("reset_elec_av_costs", None),

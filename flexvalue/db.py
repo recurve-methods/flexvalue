@@ -455,13 +455,13 @@ class DBManager:
             "elec_addl_fields": elec_addl_fields,
             "gas_addl_fields": set(gas_addl_fields) - set(elec_addl_fields)
         }
-        if self.config.output_table:
+        if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
             table_name = self.config.output_table
             if mode == "electric":
                 table_name = self.config.electric_output_table
             elif mode == "gas":
                 table_name = self.config.gas_output_table
-            context['create_clause'] = f"DROP TABLE IF EXISTS {table_name};CREATE TABLE {table_name} AS ("
+            context['create_clause'] = f"DROP TABLE IF EXISTS {table_name}; CREATE TABLE {table_name} AS ("
 
         return context
 

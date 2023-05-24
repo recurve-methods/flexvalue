@@ -84,8 +84,8 @@ def addl_fields_sep_output():
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
         project_info_file="example_user_inputs_cz12_37.csv",
-        # TODO Do we need separate output tables?
-        output_table="afsepo_output_table",
+        electric_output_table="afsepo_output_table_electric",
+        gas_output_table="afsepo_output_table_gas",
         aggregation_columns=["project_id", "hour_of_year", "year"],
         elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
@@ -152,7 +152,8 @@ def no_addl_fields_sep_output():
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
         project_info_file="example_user_inputs_cz12_37.csv",
-        output_table="nafsepo_output_table",
+        electric_output_table="nafsepo_output_table_electric",
+        gas_output_table="nafsepo_output_table_gas",
         aggregation_columns=["project_id", "hour_of_year", "year"],
         elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
@@ -184,9 +185,9 @@ def agg_project_id_no_fields_same_output():
 # we will always be looking at `result[0][0]`
 def test_addl_fields_sep_output(addl_fields_sep_output):
     addl_fields_sep_output.run()
-    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM electric_afsepo_output_table")
+    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM afsepo_output_table_electric")
     assert result[0][0] == 3153600
-    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM gas_afsepo_output_table")
+    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM afsepo_output_table_gas")
     # sum(eul) of the projects = 380; since we have to agg by the addl_columns, we include month, so 380 * 12 = 4560
     assert result[0][0] == 4560
 
@@ -198,10 +199,10 @@ def test_addl_fields_same_output(addl_fields_same_output):
 
 def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
     no_addl_fields_sep_output.run()
-    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM electric_nafsepo_output_table")
+    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM nafsepo_output_table_electric")
     # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
     assert result[0][0] == 3153600
-    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM gas_nafsepo_output_table")
+    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM nafsepo_output_table_gas")
     # sum(eul) of the projects that we have therm profile data for == 380; we are aggregating at the year level, so this should be 380
     assert result[0][0] == 380
 

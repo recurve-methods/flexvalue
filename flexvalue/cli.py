@@ -131,7 +131,6 @@ def cli():
 )
 @click.option(
     "--aggregation-columns",
-    default=[],
     help="Comma-separated list of field names on which to aggregate the query."
 )
 @click.option(
@@ -177,22 +176,22 @@ def cli():
 @click.option(
     "--elec-components",
     help="Comma-separated list of electric avoided cost component field names",
-    is_flag=True
+    is_flag=False
 )
 @click.option(
     "--gas-components",
     help="Comma-separated list of electric avoided cost component field names",
-    is_flag=True
+    is_flag=False
 )
 @click.option(
     "--elec-addl-fields",
     help="Comma-separated list of additional fields from electric data to include in output",
-    is_flag=True
+    is_flag=False
 )
 @click.option(
     "--gas-addl-fields",
     help="Comma-separated list of additional fields from gas data to include in output",
-    is_flag=True
+    is_flag=False
 )
 def get_results(
     config_file,
@@ -262,15 +261,15 @@ def get_results(
             reset_elec_av_costs=reset_elec_av_costs,
             reset_therms_profiles=reset_therms_profiles,
             reset_gas_av_costs=reset_gas_av_costs,
-            aggregation_columns=aggregation_columns.split(",") if aggregation_columns else aggregation_columns,
+            aggregation_columns=aggregation_columns.split(",") if aggregation_columns else [],
             process_elec_load_shape=process_elec_load_shape,
             process_elec_av_costs=process_elec_av_costs,
             process_therms_profiles=process_therms_profiles,
             process_gas_av_costs=process_gas_av_costs,
-            elec_components=elec_components.split(",") if elec_components else elec_components,
-            gas_components=gas_components.split(",") if gas_components else gas_components,
-            elec_addl_fields=elec_addl_fields.split(",") if elec_addl_fields else elec_addl_fields,
-            gas_addl_fields=gas_addl_fields.split(",") if gas_addl_fields else gas_addl_fields,
+            elec_components=elec_components.split(",") if elec_components else [],
+            gas_components=gas_components.split(",") if gas_components else [],
+            elec_addl_fields=elec_addl_fields.split(",") if elec_addl_fields else [],
+            gas_addl_fields=gas_addl_fields.split(",") if gas_addl_fields else [],
         )
         fv_run.run()
     except FLEXValueException as e:

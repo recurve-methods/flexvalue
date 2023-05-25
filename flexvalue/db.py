@@ -1017,6 +1017,24 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
 
+    def process_metered_load_shape(self, metered_load_shapes_path: str, truncate=False):
+        """ Transforms data in the table specified by config.metered_load_shape_table, and loads it into `elec_load_shape`."""
+        self._prepare_table(
+            f"{self.config.source_dataset}.elec_load_shape",
+            "bq_create_elec_load_shape.sql",
+            truncate=truncate
+        )
+        template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
+        sql = template.render({
+            "project": self.config.project,
+            "dataset": self.config.source_dataset,
+            "utility": self.config.metered_load_shape_utility,
+            "metered_load_shape_table": self.config.metered_load_shape_table
+        })
+        logging.info(f'metered_load_shape sql = {sql}')
+        query_job = self.client.query(sql)
+        result = query_job.result()
+
     def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
         """ Transforms data in the table specified by config.therms_profile_table, and loads it into `therms_profile`."""
         self._prepare_table(

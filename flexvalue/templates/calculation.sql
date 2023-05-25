@@ -66,7 +66,7 @@ elec_calculations AS (
     , pcwdea.{{ addl_field }}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
-    JOIN {{ els_table}} elec_load_shape
+    JOIN {{ els_table }} elec_load_shape
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year

@@ -805,6 +805,54 @@ class PostgresqlManager(DBManager):
                 copy_write(cur, buf)
         self.connection.commit()
 
+    def process_metered_load_shape(self, metered_load_shape_path: str):
+        def copy_write(cur, rows):
+            with cur.copy(
+                "COPY elec_load_shape (utility, hour_of_year, load_shape_name, value) FROM STDIN"
+            ) as copy:
+                for row in rows:
+                    copy.write_row(row)
+        self._prepare_table(
+            "elec_load_shape",
+            "flexvalue/sql/create_elec_load_shape.sql",
+        )
+        cur = self.connection.cursor()
+        # if you're concerned about RAM change this to sane number
+        MAX_ROWS = sys.maxsize
+
+        buf = []
+        utility = self.config.metered_load_shape_utility
+        if not utility:
+            raise FLEXValueException("If loading a metered load shape file, you must also pass metered_load_shape_utility")
+
+        with open(metered_load_shape_path) as f:
+            # this probably escapes fine but a csv reader is a safer bet
+            columns = f.readline().split(",")
+            load_shape_names = [
+                c.strip()
+                for c in columns
+                if columns.index(c) > columns.index("hour_of_year")
+            ]
+
+            f.seek(0)
+            reader = csv.DictReader(f)
+            for r in reader:
+                for load_shape in load_shape_names:
+                    buf.append(
+                        (
+                            utility,
+                            int(r["hour_of_year"]),
+                            load_shape.upper(),
+                            float(r[load_shape]),
+                        )
+                    )
+                if len(buf) >= MAX_ROWS:
+                    copy_write(cur, buf)
+                    buf = []
+            else:
+                copy_write(cur, buf)
+        self.connection.commit()
+
     def _load_project_info_data(self, insert_text, project_info_dicts):
         """ insert_text isn't needed for postgresql """
         def copy_write(cur, rows):

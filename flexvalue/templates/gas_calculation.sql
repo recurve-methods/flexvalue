@@ -35,12 +35,10 @@ gas_calculations AS (
     {% for column in gas_aggregation_columns -%}
     , pcwdga.{{ column }}
     {% endfor -%}
-    , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount) as gas_savings
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
-    , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as first_year_net_therms_savings
+    , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as net_therms_savings_per_year
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
-    , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value)
     , therms_profile.value as therms_profile_value
     {% for component in gas_components -%}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{component}}) as {{component}}
@@ -62,9 +60,8 @@ gas_calculations AS (
 
 SELECT
 gas_calculations.project_id
-, SUM(gas_calculations.gas_savings) as gas_savings
 , SUM(gas_calculations.gas_benefits) as gas_benefits
-, SUM(gas_calculations.first_year_net_therms_savings) as first_year_net_therms_savings
+, SUM(gas_calculations.net_therms_savings_per_year) as net_therms_savings_per_year
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
 , MAX(gas_calculations.therms_profile_value) as therms_profile_value
 {% for field in gas_addl_fields -%}

@@ -44,7 +44,6 @@ elec_calculations AS (
     {% endfor -%}
     , pcwdea.datetime
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) AS non_discounted_savings
-    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount) AS electric_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.losses) AS losses
@@ -58,7 +57,7 @@ elec_calculations AS (
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.ghg_rebalancing) AS ghg_rebalancing
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.methane_leakage) AS methane_leakage
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.marginal_ghg) AS marginal_ghg
-    , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) / CAST(pcwdea.eul AS {{ float_type }}) as first_year_net_mwh_savings
+    , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) / CAST(pcwdea.eul AS {{ float_type }}) as net_mwh_savings_per_year
     , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) as project_lifecycle_mwh_savings
     , SUM(pcwdea.trc_costs) AS trc_costs
     , SUM(pcwdea.pac_costs) AS pac_costs
@@ -85,7 +84,7 @@ elec_calculations.project_id
 , SUM(elec_calculations.electric_benefits) as electric_benefits
 , SUM(elec_calculations.trc_costs) as trc_costs
 , SUM(elec_calculations.pac_costs) as pac_costs
-, SUM(elec_calculations.first_year_net_mwh_savings) as first_year_net_mwh_savings
+, SUM(elec_calculations.net_mwh_savings_per_year) as net_mwh_savings_per_year
 , SUM(elec_calculations.project_lifecycle_mwh_savings) as project_lifecycle_mwh_savings
 , SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
 , SUM(non_discounted_savings) as non_discounted_savings

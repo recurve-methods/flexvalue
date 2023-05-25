@@ -31,7 +31,7 @@ class FLEXValueConfig:
     therms_profiles_table: str = None
     gas_av_costs_table: str = None
     project_info_table: str = None
-    metered_load_shape_utility: str = None
+    metered_load_shape_table: str = None
     output_file: str = None
     output_table: str = None
     electric_output_table: str = None

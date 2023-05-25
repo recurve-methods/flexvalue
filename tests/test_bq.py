@@ -128,6 +128,29 @@ def agg_project_id_no_fields_same_output():
     )
 
 @pytest.fixture
+def metered_load_shape():
+    return FlexValueRun(
+        database_type="bigquery",
+        project="oeem-avdcosts-platform",
+        source_dataset="flexvalue_refactor_tables",
+        target_dataset="flexvalue_refactor_tables",
+        av_costs_dataset='oeem-avdcosts-platform.flexvalue_refactor_tables',
+        therms_profiles_table="ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
+        elec_av_costs_table="full_ca_avoided_costs_2020acc_copy",
+        elec_load_shape_table="ca_hourly_electric_load_shapes_horizontal_copy",
+        metered_load_shape_table="example_metered_load_shape",
+        metered_load_shape_utility="PGE",
+        reset_elec_load_shape=True,
+        process_elec_load_shape=True,
+        process_metered_load_shape=True,
+        project_info_table="example_user_inputs_38",
+        output_table="apinfso_output_table",
+        aggregation_columns=["project_id"],
+        separate_output_tables=False
+    )
+
+@pytest.fixture
 def real_data_calculations_aggregated():
     return FlexValueRun(
         database_type="bigquery",
@@ -168,6 +191,11 @@ def real_data_calculations_time_series():
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
     )
+
+def test_metered_load_shape(metered_load_shape):
+    metered_load_shape.run()
+    result = metered_load_shape.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.elec_load_shape")
+    assert result[0][0] == 665760 + 8760
 
 def test_addl_fields_sep_output(addl_fields_sep_output):
     addl_fields_sep_output.run()

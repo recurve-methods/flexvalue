@@ -71,6 +71,21 @@ def config_with_gas_avcosts(config: FLEXValueConfig):
     return config
 
 @pytest.fixture
+def config_with_metered_load_shape(config: FLEXValueConfig):
+    config.metered_load_shape_file = "example_metered_load_shape.csv"
+    config.metered_load_shape_utility = "PGE"
+    config.reset_elec_load_shapes = True
+    return config
+
+@pytest.fixture
+def config_with_both_load_shapes(config: FLEXValueConfig):
+    config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+    config.metered_load_shape_file = "example_metered_load_shape.csv"
+    config.metered_load_shape_utility = "PGE"
+    config.reset_elec_load_shapes = True
+    return config
+
+@pytest.fixture
 def addl_fields_sep_output():
     return FlexValueRun(
         database_type="postgresql",
@@ -229,6 +244,21 @@ def test_elec_load_shape(config_with_elec_load_shape: FLEXValueConfig):
     dbm.process_elec_load_shape(config_with_elec_load_shape.elec_load_shape_file)
     result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
     assert result[0][0] == 665760
+
+def test_metered_load_shape(config_with_metered_load_shape: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_metered_load_shape)
+    dbm.reset_elec_load_shape()
+    dbm.process_metered_load_shape(config_with_metered_load_shape.metered_load_shape_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
+    assert result[0][0] == 8760
+
+def test_both_load_shapes(config_with_both_load_shapes: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_both_load_shapes)
+    dbm.reset_elec_load_shape()
+    dbm.process_elec_load_shape(config_with_both_load_shapes.elec_load_shape_file)
+    dbm.process_metered_load_shape(config_with_both_load_shapes.metered_load_shape_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
+    assert result[0][0] == 665760 + 8760
 
 def test_therms_profiles(config_with_therms_profiles: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_therms_profiles)

@@ -1055,6 +1055,8 @@ class BigQueryManager(DBManager):
     def _get_calculation_sql_context(self, mode=""):
         elec_agg_columns = self._elec_aggregation_columns()
         gas_agg_columns = self._gas_aggregation_columns()
+        elec_addl_fields = self._elec_addl_fields(elec_agg_columns)
+        gas_addl_fields = self._gas_addl_fields(gas_agg_columns)
         context = {
             "project_info_table": f"`{self.config.source_dataset}.{self.config.project_info_table}`",
             "eac_table": f"`{self.config.av_costs_dataset}.{self.config.elec_av_costs_table}`",
@@ -1068,7 +1070,7 @@ class BigQueryManager(DBManager):
             "elec_components": self.config.elec_components,
             "gas_components": self.config.gas_components,
             "elec_addl_fields": self._elec_addl_fields(elec_agg_columns),
-            "gas_addl_fields": self._gas_addl_fields(gas_agg_columns),
+            "gas_addl_fields": set(gas_addl_fields) - set(elec_addl_fields)
         }
         if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
             table_name = f"{self.config.target_dataset}.{self.config.output_table}"

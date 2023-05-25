@@ -14,10 +14,8 @@ Submodules
 .. toctree::
 
    flexvalue.__version__
-   flexvalue.calculations
    flexvalue.cli
    flexvalue.db
-   flexvalue.examples
-   flexvalue.plots
+   flexvalue.config
 
 .. currentmodule:: flexvalue

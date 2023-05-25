@@ -41,6 +41,7 @@ class FLEXValueConfig:
     process_elec_av_costs: bool = False
     process_therms_profiles: bool = False
     process_gas_av_costs: bool = False
+    process_metered_load_shape: bool = False
     reset_elec_load_shape: bool = False
     reset_elec_av_costs: bool = False
     reset_therms_profiles: bool = False
@@ -92,6 +93,7 @@ class FLEXValueConfig:
             process_elec_av_costs=run_info.get("process_elec_av_costs", None),
             process_therms_profiles=run_info.get("process_therms_profiles", None),
             process_gas_av_costs=run_info.get("process_gas_av_costs", None),
+            process_metered_load_shape=run_info.get("process_metered_load_shape", None),
             elec_components=run_info.get("elec_components", []),
             gas_components=run_info.get("gas_components", []),
             separate_output_tables=run_info.get("separate_output_tables", None),

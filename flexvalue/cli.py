@@ -186,6 +186,11 @@ def cli():
     is_flag=True
 )
 @click.option(
+    "--process-metered-load-shape",
+    help="Process (load/transform) the metered load shape data.",
+    is_flag=True
+)
+@click.option(
     "--elec-components",
     help="Comma-separated list of electric avoided cost component field names",
     is_flag=False
@@ -218,6 +223,7 @@ def get_results(
     elec_load_shape_table,
     gas_av_costs_table,
     therms_profiles_table,
+    metered_load_shape_table,
     project_info_table,
     project,
     av_costs_dataset,
@@ -239,6 +245,7 @@ def get_results(
     process_elec_av_costs,
     process_therms_profiles,
     process_gas_av_costs,
+    process_metered_load_shape,
     elec_components,
     gas_components,
     elec_addl_fields,
@@ -257,6 +264,7 @@ def get_results(
             elec_load_shape_table=elec_load_shape_table,
             gas_av_costs_table=gas_av_costs_table,
             therms_profiles_table=therms_profiles_table,
+            metered_load_shape_table=metered_load_shape_table,
             project_info_table=project_info_table,
             project=project,
             av_costs_dataset=av_costs_dataset,
@@ -278,6 +286,7 @@ def get_results(
             process_elec_av_costs=process_elec_av_costs,
             process_therms_profiles=process_therms_profiles,
             process_gas_av_costs=process_gas_av_costs,
+            process_metered_load_shape=process_metered_load_shape,
             elec_components=elec_components.split(",") if elec_components else [],
             gas_components=gas_components.split(",") if gas_components else [],
             elec_addl_fields=elec_addl_fields.split(",") if elec_addl_fields else [],

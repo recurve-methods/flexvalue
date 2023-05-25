@@ -13,23 +13,18 @@
 Functions
 =========
 
-- :py:func:`get_db_connection`:
-  Get the db connection for a given year
+- :py:class:`DBManager`:
+  The base class for managing database interactions.
 
-- :py:func:`get_deer_load_shape`:
-  Returns all of the deer load shape 8760 load profiles
+- :py:class:`PostgresqlManager`:
+  Implementation of DBManager for PostgreSQL databases.
 
-- :py:func:`get_filtered_acc_elec`:
-  Returns the electricity avoided costs data
-
-- :py:func:`get_filtered_acc_gas`:
-  Returns gas avoided costs data
+- :py:class:`BigQueryManager`:
+  Implementation of DBManager for Google BigQuery databases.
 
 
-.. autofunction:: get_db_connection
+.. autoclass:: DBManager
 
-.. autofunction:: get_deer_load_shape
+.. autoclass:: PostgresqlManager(DBManager)
 
-.. autofunction:: get_filtered_acc_elec
-
-.. autofunction:: get_filtered_acc_gas
+.. autoclass:: BigQueryManager(DBManager)

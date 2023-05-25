@@ -38,7 +38,7 @@ def addl_fields_sep_output():
         project_info_table="example_user_inputs_38",
         output_table="afsepo_output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"],
         gas_addl_fields = ["total", "month", "quarter"],
@@ -60,7 +60,7 @@ def addl_fields_same_output():
         project_info_table="example_user_inputs_38",
         output_table="output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"],
         gas_addl_fields = ["total", "month", "quarter"],
@@ -82,7 +82,7 @@ def no_addl_fields_same_output():
         project_info_table="example_user_inputs_38",
         output_table="output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
     )
@@ -102,7 +102,7 @@ def no_addl_fields_sep_output():
         project_info_table="example_user_inputs_38",
         output_table="nafsepo_output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=True
     )
@@ -122,7 +122,7 @@ def agg_project_id_no_fields_same_output():
         project_info_table="example_user_inputs_38",
         output_table="apinfso_output_table",
         aggregation_columns=["project_id"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
     )
@@ -165,7 +165,7 @@ def real_data_calculations_aggregated():
         project_info_table="formatted_for_metered_deer_run_p2021",
         output_table="rdc_output_table",
         aggregation_columns=["project_id", ],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["admin_cost", "measure_cost", "incentive_cost"],
         # gas_addl_fields = ["total", "month", "quarter"],
@@ -187,7 +187,7 @@ def real_data_calculations_time_series():
         project_info_table="formatted_for_metered_deer_run_p2021",
         output_table="rdcts_output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
     )
@@ -208,7 +208,7 @@ def real_data_calculations_time_series_sep():
         electric_output_table="rdcts_output_table_electric",
         gas_output_table="rdcts_output_table_gas",
         aggregation_columns=["project_id", "hour_of_year", "year"],
-        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=True
     )
@@ -299,7 +299,6 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         'flexvalue_id': 'project_id',
         'year': 'elec_year',
         'hour_of_year': 'elec_hour_of_year',
-        'hourly_savings': 'electric_savings', # different
         'energy': 'energy',
         'losses': 'losses',
         'ancillary_services': 'ancillary_services',

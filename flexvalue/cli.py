@@ -82,6 +82,10 @@ def cli():
     help="Used when --database-type is bigquery. Specifies the table containing the project information."
 )
 @click.option(
+    "--metered-load-shape-table",
+    help="Used when --database-type is bigquery. Specifies the metered load shape table."
+)
+@click.option(
     "--project",
     help="Used when --database-type is bigquery. Specifies the google project."
 )
@@ -128,6 +132,14 @@ def cli():
 @click.option(
     "--therms-profiles-file",
     help="Filepath to the therms profiles file. Used when --database-type is not BigQuery to load this data into the database from a file."
+)
+@click.option(
+    "--metered-load-shape-file",
+    help="Filepath to the hourly metered load shape file. Used when --database-type is not BigQuery to load this data into the database from a file."
+)
+@click.option(
+    "--metered-load-shape-utility",
+    help="Utility to assign to the metered load shapes being used."
 )
 @click.option(
     "--aggregation-columns",

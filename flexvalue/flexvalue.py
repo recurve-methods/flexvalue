@@ -52,6 +52,10 @@ class FlexValueRun():
             self.db_manager.process_elec_load_shape(
                 self.config.elec_load_shape_file if self.config.elec_load_shape_file else self.config.elec_load_shape_table
             )
+        if self.config.process_metered_load_shape:
+            self.db_manager.process_metered_load_shape(
+                self.config.metered_load_shape_file if self.config.metered_load_shape_file else self.config.metered_load_shape_table
+            )
         if self.config.process_gas_av_costs:
             self.db_manager.process_gas_av_costs(
                 self.config.gas_av_costs_file if self.config.gas_av_costs_file else self.config.gas_av_costs_table

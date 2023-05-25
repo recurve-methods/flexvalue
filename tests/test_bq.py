@@ -192,6 +192,27 @@ def real_data_calculations_time_series():
         separate_output_tables=False
     )
 
+@pytest.fixture
+def real_data_calculations_time_series_sep():
+    return FlexValueRun(
+        database_type="bigquery",
+        project="oeem-avdcosts-platform",
+        source_dataset="flexvalue_refactor_tables",
+        target_dataset="flexvalue_refactor_tables",
+        av_costs_dataset='oeem-avdcosts-platform.flexvalue_refactor_tables',
+        elec_av_costs_table="full_ca_avoided_costs_2020acc_copy",
+        elec_load_shape_table="ca_hourly_electric_load_shapes_horizontal_copy",
+        therms_profiles_table="ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
+        project_info_table="formatted_for_metered_deer_run_p2021",
+        electric_output_table="rdcts_output_table_electric",
+        gas_output_table="rdcts_output_table_gas",
+        aggregation_columns=["project_id", "hour_of_year", "year"],
+        elec_components=["electric_savings", "energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
+        gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
+        separate_output_tables=True
+    )
+
 def test_metered_load_shape(metered_load_shape):
     metered_load_shape.run()
     result = metered_load_shape.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.elec_load_shape")
@@ -248,6 +269,12 @@ def test_real_data_calculations_aggregated(real_data_calculations_aggregated):
         correct_vals = results_dict[row[0]]
         for i, val in enumerate(row[1:]):
             assert math.isclose(val, correct_vals[i], rel_tol=0.005)
+
+def test_real_data_calculations_time_series_sep(real_data_calculations_time_series_sep):
+    real_data_calculations_time_series_sep.run()
+    elec_result = real_data_calculations_time_series_sep.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.rdcts_output_table_electric")
+    gas_result = real_data_calculations_time_series_sep.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.rdcts_output_table_gas")
+    print(f"elec_result = {elec_result[0][0]}; gas_result = {gas_result[0][0]}")
 
 def test_real_data_calculations_time_series(real_data_calculations_time_series):
     real_data_calculations_time_series.run()

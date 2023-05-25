@@ -256,7 +256,7 @@ def test_real_data_calculations_aggregated(real_data_calculations_aggregated):
     real_data_calculations_aggregated.run()
     result = real_data_calculations_aggregated.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.rdc_output_table")
     assert result[0][0] == 30
-    query_str = "SELECT project_id, SUM(elec_admin_cost), SUM(elec_measure_cost), SUM(elec_incentive_cost), SUM(electric_benefits) FROM flexvalue_refactor_tables.rdc_output_table WHERE project_id IN ({0}) GROUP BY project_id"
+    query_str = "SELECT project_id, SUM(admin_cost), SUM(measure_cost), SUM(incentive_cost), SUM(electric_benefits) FROM flexvalue_refactor_tables.rdc_output_table WHERE project_id IN ({0}) GROUP BY project_id"
     results_dict = {
         "MAR101323": [8583.76, 13193.17, 0.0, 55231.79],
         "MAR100695": [2368.87, 11619.835, 0.0, -13833.56],

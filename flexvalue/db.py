@@ -632,7 +632,7 @@ class PostgresqlManager(DBManager):
             "gas_av_costs",
             "flexvalue/sql/create_gas_av_cost.sql"
         )
-        MAX_ROWS = sys.maxsize
+        MAX_ROWS = 10000
         logging.info("IN PG VERSION OF LOAD GAS AV COSTS")
         try:
             cur = self.connection.cursor()
@@ -707,8 +707,7 @@ class PostgresqlManager(DBManager):
         )
 
         logging.debug("in pg version of load_elec_av_costs")
-        # if you're concerned about RAM change this to sane number
-        MAX_ROWS = sys.maxsize
+        MAX_ROWS = 10000
 
         try:
             cur = self.connection.cursor()
@@ -769,7 +768,7 @@ class PostgresqlManager(DBManager):
         )
         cur = self.connection.cursor()
         # if you're concerned about RAM change this to sane number
-        MAX_ROWS = sys.maxsize
+        MAX_ROWS = 10000
 
         buf = []
         with open(elec_load_shapes_path) as f:

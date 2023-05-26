@@ -229,8 +229,8 @@ def test_addl_fields_sep_output(addl_fields_sep_output):
 def test_addl_fields_same_output(addl_fields_same_output):
     addl_fields_same_output.run()
     result = addl_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.output_table")
-    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
-    assert result[0][0] == 3153600
+    # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
+    assert result[0][0] == 3285000
 
 def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
     no_addl_fields_sep_output.run()
@@ -244,13 +244,13 @@ def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
 def test_no_addl_fields_same_output(no_addl_fields_same_output):
     no_addl_fields_same_output.run()
     result = no_addl_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.output_table")
-    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
-    assert result[0][0] == 3153600
+    # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
+    assert result[0][0] == 3285000
 
 def test_agg_project_id_no_fields_same_output(agg_project_id_no_fields_same_output):
     agg_project_id_no_fields_same_output.run()
     result = agg_project_id_no_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.apinfso_output_table")
-    assert result[0][0] == 36 # 38 distinct projects minus 2 with no matching load shape
+    assert result[0][0] == 37 # 39 distinct projects minus 2 with no matching load shape
 
 def test_real_data_calculations_aggregated(real_data_calculations_aggregated):
     real_data_calculations_aggregated.run()

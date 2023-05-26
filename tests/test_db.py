@@ -73,7 +73,6 @@ def config_with_gas_avcosts(config: FLEXValueConfig):
 @pytest.fixture
 def config_with_metered_load_shape(config: FLEXValueConfig):
     config.metered_load_shape_file = "example_metered_load_shape.csv"
-    config.metered_load_shape_utility = "PGE"
     config.reset_elec_load_shapes = True
     return config
 
@@ -81,7 +80,6 @@ def config_with_metered_load_shape(config: FLEXValueConfig):
 def config_with_both_load_shapes(config: FLEXValueConfig):
     config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
     config.metered_load_shape_file = "example_metered_load_shape.csv"
-    config.metered_load_shape_utility = "PGE"
     config.reset_elec_load_shapes = True
     return config
 

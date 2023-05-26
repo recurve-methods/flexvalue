@@ -349,7 +349,6 @@ Here's an example of calling FLEXvalue directly from python::
         elec_av_costs_table="full_ca_avoided_costs_2020acc_copy",
         elec_load_shape_table="ca_hourly_electric_load_shapes_horizontal_copy",
         metered_load_shape_table="example_metered_load_shape",
-        metered_load_shape_utility="PGE",
         reset_elec_load_shape=True,
         process_elec_load_shape=True,
         process_metered_load_shape=True,

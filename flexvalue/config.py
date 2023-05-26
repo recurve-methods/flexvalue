@@ -25,7 +25,6 @@ class FLEXValueConfig:
     gas_av_costs_file: str = None
     project_info_file: str = None
     metered_load_shape_file: str = None
-    metered_load_shape_utility: str = None
     elec_av_costs_table: str = None
     elec_load_shape_table: str = None
     therms_profiles_table: str = None
@@ -80,7 +79,6 @@ class FLEXValueConfig:
             gas_av_costs_file=run_info.get('gas_av_costs', None),
             project_info_file=run_info.get('project_info', None),
             metered_load_shape_file=run_info.get('metered_load_shape_file', None),
-            metered_load_shape_utility=run_info.get('metered_load_shape_utility', None),
             output_file=run_info.get('output_file', None),
             electric_output_table=run_info.get('electric_output_table', None),
             gas_output_table=run_info.get('gas_output_table', None),

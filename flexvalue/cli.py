@@ -138,10 +138,6 @@ def cli():
     help="Filepath to the hourly metered load shape file. Used when --database-type is not BigQuery to load this data into the database from a file."
 )
 @click.option(
-    "--metered-load-shape-utility",
-    help="Utility to assign to the metered load shapes being used."
-)
-@click.option(
     "--aggregation-columns",
     help="Comma-separated list of field names on which to aggregate the query."
 )

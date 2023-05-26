@@ -823,10 +823,6 @@ class PostgresqlManager(DBManager):
         MAX_ROWS = sys.maxsize
 
         buf = []
-        utility = self.config.metered_load_shape_utility
-        if not utility:
-            raise FLEXValueException("If loading a metered load shape file, you must also pass metered_load_shape_utility")
-
         with open(metered_load_shape_path) as f:
             # this probably escapes fine but a csv reader is a safer bet
             columns = f.readline().split(",")

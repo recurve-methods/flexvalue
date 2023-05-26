@@ -806,6 +806,8 @@ class PostgresqlManager(DBManager):
         self.connection.commit()
 
     def process_metered_load_shape(self, metered_load_shape_path: str):
+        """ Note this has to be run after process_project_info, as it depends
+        on the utility for each project having been loaded"""
         def copy_write(cur, rows):
             with cur.copy(
                 "COPY elec_load_shape (utility, hour_of_year, load_shape_name, value) FROM STDIN"
@@ -1024,11 +1026,12 @@ class BigQueryManager(DBManager):
             "bq_create_elec_load_shape.sql",
             truncate=truncate
         )
+
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
         sql = template.render({
             "project": self.config.project,
             "dataset": self.config.source_dataset,
-            "utility": self.config.metered_load_shape_utility,
+            "project_info_table": self.config.project_info_table,
             "metered_load_shape_table": self.config.metered_load_shape_table
         })
         logging.info(f'metered_load_shape sql = {sql}')

@@ -1,37 +1,26 @@
 FLEXvalue™ 
 **************
 
-*DISCLAIMER*: We are currently in the process of incorporating and testing the 2021 ACC. Please continue to use 2020 or adjusted_acc_map (for the 2020 smoothed/scaled kicker adjusted ACC) until we provide further instruction.
-
 `Read The Docs Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/>`_
 
 `Read The Docs PDF Link <https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/_/downloads/en/latest/pdf/>`_
 
-`Github Link <https://github.com/recurve-methods/flexvalue>`_
+`Github Link <https://github.com/recurve-inc/flexvalue>`_
 
 .. image:: https://readthedocs.com/projects/recurve-analytics-inc-flexvalue/badge/?version=latest&token=03dc3e4930d430d47b5d1169ec38ad7df5d2bc70f69689d1e845b56596bcf590
     :target: https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/?badge=latest
     :alt: Documentation Status
 
-This library provides California aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. FLEXvalue uses the CPUC’s published avoided cost data to enable market actors across the state to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information. FLEXvalue currently computes Total Resource Cost (TRC) and Program Administrator Cost (PAC) test results. See the `California Standard Practice Manual <https://www.cpuc.ca.gov/uploadedFiles/CPUC_Public_Website/Content/Utilities_and_Industries/Energy_-_Electricity_and_Natural_Gas/CPUC_STANDARD_PRACTICE_MANUAL.pdf>`_ for more information on cost-effectiveness tests. 
+This library provides aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. Whereas the first version of FLEXvalue was limited to California, this version allows for user-provided avoided cost as well as load data. It defaults to using the CPUC’s published avoided cost data to enable market actors to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information. FLEXvalue currently computes Total Resource Cost (TRC) and Program Administrator Cost (PAC) test results. See the `California Standard Practice Manual <https://www.cpuc.ca.gov/uploadedFiles/CPUC_Public_Website/Content/Utilities_and_Industries/Energy_-_Electricity_and_Natural_Gas/CPUC_STANDARD_PRACTICE_MANUAL.pdf>`_ for more information on cost-effectiveness tests. 
 
-The gas and electric avoided cost data and the DEER load shapes that FLEXvalue draws from is stored in a SQLITE table, which can be downloaded as a SQLite file here: `(2020.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db>`_, `(adjusted_acc_map.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/adjusted_acc_map.db>`_, `(2021.db) <https://storage.googleapis.com/flexvalue-public-resources/db/v1/2021.db>`_. 
+FLEXvalue supports BigQuery and PostgreSQL as data stores. For more information, see :ref:`data-stores-label`.
 
-Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_2020_2021_compare.ipynb>`_ to see some preliminary results comparing the 2020 and 2021 avoided cost data.
-
-Use `this colab notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab.ipynb>`_ which allows you to run FLEXvalue directly. 
-
-Want to compare FLEXvalue results to the CET tool? `This notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_cet_scan_compare.ipynb>`_ allows you to directly compare results. 
-
-
-For users who would like to instead download .csv files or who would like to directly explore these data see this `notebook <https://colab.research.google.com/github/recurve-methods/flexvalue/blob/master/notebooks/colab_database_explorer.ipynb>`_.
-
-For those looking to learn more about how to use this library locally or via the python library, the following `tutorial <https://nbviewer.jupyter.org/github/recurve-methods/flexvalue/blob/main/notebooks/tutorial.ipynb>`_. 
+Information on usage can be found below in :ref:`usage-label`.
 
 Avoided Cost Data
 #################
 
-A separate series of pythons scripts were used to generate that sqlite file from a source XLSX file available through the `CPUC's website <https://www.cpuc.ca.gov/general.aspx?id=5267>`_. As of this writing (2022-02-28), the most recent update to the avoided cost data is adjusted_acc_map, which corresponds to the public filename of the SQLite file. 
+A separate series of python scripts were used to compile the avoided cost data from a source XLSX file available through the `CPUC's website <https://www.cpuc.ca.gov/general.aspx?id=5267>`_.
 
 deer_load_shapes
 ----------------
@@ -66,12 +55,103 @@ The gas avoided cost calculator is a macro-driven Excel file, so several data ex
 Inputs
 ######
 
-There is one required input that is referred to as the `user_inputs`, and another optional `metered_load_shape` input. These inputs are CSV files if using the command line, and pandas dataframes if directly calling from python. 
+Input structures
+================
+Input files are only used to populate tables in a local database. Input tables are used when BigQuery is the datastore. The input structures (i.e. columns) are the same, however, as discussed below. Note that when "headers" are mentioned those are only applicable to input files.
 
-user_inputs
------------
+**Project information:** A header row is not required for this file. The columns are:
+project_id, state,utility, region, mwh_savings, therms_savings, elec_load_shape, therms_profile, start_year, start_quarter, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost
+**Metered load shapes:** Headers are required for this file. Its columns are:
+utility, hour_of_year, followed by any number of load shapes, one per column.
 
-Recurve has prepared an example `user_inputs file <https://storage.googleapis.com/flexvalue-public-resources/examples/example_user_inputs_metered.csv>`_ that can be downloaded and run. 
+
+There required inputs are described below. These inputs can be CSV files or BigQuery tables (if running on BigQuery).
+
+Electric avoided costs
+----------------------
+
+The columns for the electric avoided cost data are as follows:
+
+    - **state**: The state in which the data is valid.
+    - **utility**: The utility for which the avoided costs apply.
+    - **region**: The region for which this load shape is valid. This has been used for climate zone data, for example; but the meaning of this is left to the purpose of the user.
+    - **datetime**: The date and time for this row.
+    - **year**: The year for this row
+    - **quarter**: The quarter (of the year) for this row.
+    - **month**: The month for this row.
+    - **hour_of_day**: The hour of day for this row.
+    - **hour_of_year**: The hour of year for this row. From 0 to 8759.
+    - **energy**: This column and all the following except "total" are the components of the avoided costs for this hour.
+    - **losses**:
+    - **ancillary_services**:
+    - **capacity**:
+    - **transmission**:
+    - **distribution**:
+    - **cap_and_trade**:
+    - **ghg_adder**:
+    - **ghg_rebalancing**:
+    - **methane_leakage**:
+    - **total**: This is the total avoided cost for this hour. It is the sum of the values in the component columns.
+    - **marginal_ghg**:
+    - **ghg_adder_rebalancing**:
+
+
+Gas Avoided Costs
+-----------------
+
+The columns for the gas avoided cost data are as follows:
+
+    - **state**: The state in which the data is valid.
+    - **utility**: The utility for which the avoided costs apply.
+    - **region**: The region for which this load shape is valid. This has been used for climate zone data, for example; but the meaning of this is left to the purpose of the user.
+    - **year**: The year for this row
+    - **quarter**: The quarter (of the year) for this row.
+    - **month**: The month for this row.
+    - **market**: This column and the following, except "total", are the components of the avoided costs for this hour.
+    - **t_d**:
+    - **environment**:
+    - **btm_methane**:
+    - **total**: This is the total avoided cost for this hour. It is the sum of the values in the component columns.
+    - **upstream_methane**:
+    - **marginal_ghg**:
+
+
+Electric Load Shapes
+--------------------
+
+The electric load shape data has a variable number of columns; after the fixed columns, there are N columns with each representing a given load shape. The load shape data always has exactly 8760 rows.
+
+    - **state**: The state for which the data is valid.
+    - **utility**: Which utility to use when joining with the project_info/user_input data for a given project.
+    - **region**: The region for which this load shape is valid. This has been used for climate zone data, for example; but the meaning of this is left to the purpose of the user.
+    - **quarter**: The quarter of the year for this row.
+    - **month**: The month for this row.
+    - **hour_of_day**: The hour of day (0 to 23) for this row.
+    - **hour_of_year**: The hour of the year (0 to 8759) for this row.
+    - **load_shape_1**: The header/name of this column is matched with the load shape name in the project_info/user_inputs data.
+    - **load_shape_2**: 
+    - ...:
+    - **load_shape_n**:
+
+
+Therms Profiles
+---------------
+
+
+    - **state**: The state for which the data is valid.
+    - **utility**: Which utility to use when joining with the project_info/user_input data for a given project.
+    - **region**: The region for which this load shape is valid. This has been used for climate zone data, for example; but the meaning of this is left to the purpose of the user.
+    - **quarter**: The quarter of the year for this row.
+    - **month**: The month for this row.
+    - **therms_profile_1**: The header/name of this columns is matched with the therms profile name in the project_info/user_inputs data.
+    - **therms_profile_2**: The header/name of this columns is matched with the therms profile name in the project_info/user_inputs data.
+    - **...**: 
+    - **therms_profile_n**: The header/name of this columns is matched with the therms profile name in the project_info/user_inputs data.
+    
+User Inputs (aka project_info)
+------------------------------
+
+Recurve has prepared an example `user_inputs file <https://storage.googleapis.com/flexvalue-public-resources/examples/example_user_inputs_metered.csv>`_ that can be downloaded and used. 
 
 The `user_inputs` CSV requires the following columns:
 
@@ -92,52 +172,13 @@ The `user_inputs` CSV requires the following columns:
     - **therms_savings**: The first year gas gross savings in Therms
     - **mwh_savings**: The first year electricity gross savings in MWh (used to scale the load shape savings data if using custom load shape)
 
-and looks like the following format:
 
-.. list-table:: user_inputs
-    :header-rows: 1
-
-    * - ID
-      - load_shape
-      - start_year
-      - start_quarter
-      - utility
-      - climate_zone
-      - ...
-    * - meter_id1
-      - meter_id1
-      - 2021
-      - 1
-      - PGE
-      - CZ1
-      - ...
-    * - meter_id2
-      - meter_id2
-      - 2021
-      - 1
-      - PGE
-      - CZ1
-      - ...
-    * - ...
-      - ...
-      - ...
-      - ...
-      - ...
-      - ...
-      - ...
-    * - meter_id_n
-      - meter_id_n
-      - 2021
-      - 1
-      - PGE
-      - CZ1
-      - ...
-
-metered_load_shape
-------------------
+Metered Load Shapes
+-------------------
 
 The `metered_load_shape` CSV requires the following columns:
 
+    - **utility**: FLEXvalue combines the project data and the load shape data using the load shape name and utility, so this must be provided. It must match the value from the project info.
     - **hour_of_year**: Hour of the year (should be one row for each of 0-8759)
     - **meter_id1**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id1
     - **meter_id2**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id2
@@ -145,39 +186,8 @@ The `metered_load_shape` CSV requires the following columns:
     - **meter_id_n**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id_n
 
 
-and looks like the following format:
-
-.. list-table:: metered_load_shape
-    :header-rows: 1
-
-    * - hour_of_year
-      - meter_id1
-      - meter_id2
-      - ...
-      - meter_id_n
-    * - 0
-      - .15
-      - .001
-      - ...
-      - .23
-    * - 1
-      - .15
-      - .001
-      - ...
-      - .23
-    * - ...
-      - ...
-      - ...
-      - ...
-      - ...
-    * - 8759
-      - 0.1
-      - 0.35
-      - 0.3
-      - 0.2
-
 Metered Load Shapes
-------
+-------------------
 If the user-defined load shape is normalized (the sum of values across all 8,760 hours is 1) then the user should input the annual MWh savings value in the user_inputs file. If the user-defined load shape is not normalized (the sum of values across all 8,760 hours equals the annual MWh savings) the user should enter 1 in for the corresponding MWh savings in the user_inputs file. 
 
 Installation from Source
@@ -193,9 +203,6 @@ Docker
   # for running the CLI commands
   ./flexvalue.sh --help
 
-  # for opening the tutorial
-  docker-compose up jupyter
-
 Local
 -----
 
@@ -206,34 +213,190 @@ Local
   # for running cli commands
   flexvalue --help
 
-  # tutorial (assuming you have jupyter installed)
-  jupyter notebooks/
-
-CLI Commands
-############
 
 If you are calling these commands using the repo code and docker, replace `flexvalue` with `./flexvalue.sh`.
 
-Before calculating any results, you will need to download the avoided cost data for a given version. By default, this downloads to a folder `$DATABASE_LOCATION/{version}.db`. If you do not set the environment variable `DATABASE_LOCATION`, it will default to `DATABASE_LOCATION=.`.
+.. _usage-label:
 
-.. code-block:: shell
+Usage
+######
+FLEXvalue can be run in one of three ways:
 
-    flexvalue download-avoided-costs-data-db --version 2020
+* from the command line, passing in command-line flags that specify the behavior.
+* from the command line, passing a command-line flag that points to a TOML config file, the contents of which specify the behavior.
+* as a python library. In this case you would create an instance of ``FLEXValueRun``, passing the configuration options as arguments to the constructor, then call the ``run()`` method.
 
-To get an example set of FLEXvalue™ results, run the following commands in order.
 
-.. code-block:: shell
+Command-line arguments
+----------------------
+FLEXValue uses the following command-line arguments. If ``--config-file`` is passed, the file it specifies is used for configuration and all other arguments are ignored.
 
-    flexvalue generate-example-inputs
-    flexvalue get-results --user-inputs-filepath example_user_inputs_deer.csv --report-filepath reports/example_report_deer.html
-    flexvalue get-results --user-inputs-filepath example_user_inputs_metered.csv  --metered-load-shape-filepath example_metered_load_shape.csv --report-filepath reports/example_report_metered.html
+* **--project-info-file**: Filepath to the project information file that is used to calculate results
+* **--database-type**: One of 'postgresql', 'bigquery', or 'sqlite'
+* **--host**: The host for the postgresql database to which you are connecting.
+* **--port**: The port for the postgresql database to which you are connecting.
+* **--user**: The user for the postgresql database to which you are connecting.
+* **--password**: The password for the postgresql database to which you are connecting.
+* **--database**: The database for the postgresql database to which you are connecting.
+* **--elec-av-costs-table**: Used when --database-type is bigquery. Specifies the electric avoided costs table.
+* **--elec-load-shape-table**: Used when --database-type is bigquery. Specifies the electric load shape table.
+* **--gas-av-costs-table**: Used when --database-type is bigquery. Specifies the gas avoided costs table.
+* **--therms-profiles-table**: Used when --database-type is bigquery. Specifies the therms profiles table.
+* **--project-info-table**: Used when --database-type is bigquery. Specifies the table containing the project information.
+* **--project**: Used when --database-type is bigquery. Specifies the google project.
+* **--av-costs-dataset**: Used when --database-type is bigquery. Specifies the dataset that is the source of the electric and gas avoided costs data. This dataset must also include the name of the Google project, like <google-project>.<av-costs-dataset>.
+* **--source-dataset**: Used when --database-type is bigquery. Specifies the dataset that is the source of the data.
+* **--target-dataset**: Used when --database-type is bigquery. Specifies the dataset that is the target of the data.
+* **--output-table**: The database table to write output to. This table gets overwritten (not appended to).
+* **--electric-output-table**: The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to).
+* **--gas-output-table**: The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to).
+* **--config-file**: Path to the toml configuration file.
+* **--elec-av-costs-file**: Filepath to the electric avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file.
+* **--gas-av-costs-file**: Filepath to the gas avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file.
+* **--elec-load-shape-file**: Filepath to the hourly electric load shape file. Used when --database-type is not BigQuery to load this data into the database from a file.
+* **--therms-profiles-file**: Filepath to the therms profiles file. Used when --database-type is not BigQuery to load this data into the database from a file.
+* **--aggregation-columns**: Comma-separated list of field names on which to aggregate the query.
+* **--reset-elec-load-shape**: Reset the data in the electric load shape table. This restores it to its contents prior to running FLEXvalue.,
+* **--reset-elec-av-costs**: Reset the data in the electric avoided costs table. This restores it to its contents prior to running FLEXvalue.,
+* **--reset-therms-profiles**: Reset the data in the therms profiles table. This restores it to its contents prior to running FLEXvalue.,
+* **--reset-gas-av-costs**: Reset the data in the gas avoided costs table. This restores it to its contents prior to running FLEXvalue.,
+* **--process-elec-load-shape**: Process (load/transform) the electric load shape data.,
+* **--process-elec-av-costs**: Process (load/transform) the electric avoided costs data.,
+* **--process-therms-profiles**: Process (load/transform) the therms profiles table.,
+* **--process-gas-av-costs**: Process (load/transform) the gas avoided costs data.,
+* **--elec-components**: Comma-separated list of electric avoided cost component field names,
+* **--gas-components**: Comma-separated list of electric avoided cost component field names,
+* **--elec-addl-fields**: Comma-separated list of additional fields from electric data to include in output,
+* **--gas-addl-fields**: Comma-separated list of additional fields from gas data to include in output.
 
-To help generate your user input file, use the following command to see what utilities, climate zones, and deer load shapes are available.
 
-.. code-block:: shell
+Config file
+-----------
+The config file uses the same arguments, but they look a litle different; hyphens are replaced with underscores, and the leading `--` is removed. The config file is in `TOML <https://toml.io/en/>`. Note that the [run] and [database] section headers are structural, not comments - the elements listed below those headers may not be in the other section or FLEXvalue will not run correctly (if at all). Basically, the database-related information (connection information, auth information) is in the [database] section and information related to the execution (whether to reset tables, whether to load files, the aggregation columns, etc.) are in the [run] section
 
-    flexvalue valid-utility-climate-zone-combos
-    flexvalue valid-deer-load-shapes
+
+Here is an example config.toml file if you are connecting to BigQuery::
+
+  [run]
+  output_table = "output_table"
+  process_elec_load_shape = false
+  process_elec_av_costs = false
+  process_therms_profiles = false
+  process_gas_av_costs = false
+  aggregation_columns = ["project_id", "hour_of_year", "year"]
+  reset_elec_load_shape = false
+  reset_elec_av_costs = false
+  reset_therms_profiles = false
+  reset_gas_av_costs = false
+  elec_components = ["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution"]
+  gas_components = ["market", "t_d", "environment", "btm_methane", "upstream_methane"]
+  separate_output_tables = True
+  electric_output_table = "hourly_electric_output"
+  gas_output_table = "hourly_gas_output"
+
+  [database]
+  #credentials = ""
+  database_type = "bigquery"
+  project = "oeem-avdcosts-platform"
+  dataset = "flexvalue_refactor_tables"
+  elec_av_costs_table = "full_ca_avoided_costs_2020acc_copy"
+  elec_load_shape_table = "ca_hourly_electric_load_shapes_horizontal_copy"
+  therms_profiles_table = "ca_monthly_therms_load_profiles_copy"
+  gas_av_costs_table = "full_ca_avoided_costs_2020acc_gas_copy"
+  project_info_table = "example_user_inputs_380"
+
+Here is an example config file if you are connecting to Postgresql::
+
+  [run]
+  project_info_file = "example_user_inputs.csv"
+  elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+  elec_av_costs_file = "full_ca_avoided_costs_2020acc.csv"
+  therms_profiles_file = "ca_monthly_therms_load_profiles.csv"
+  gas_av_costs_file = "full_ca_avoided_costs_2020acc_gas.csv"
+  output_table = "output_table"
+  process_elec_load_shape = false
+  process_elec_av_costs = false
+  process_therms_profiles = false
+  process_gas_av_costs = false
+  aggregation_columns = ["project_id", "hour_of_year", "year"]
+  reset_elec_load_shape = false
+  reset_elec_av_costs = false
+  reset_therms_profiles = false
+  reset_gas_av_costs = false
+  elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"]
+  gas_addl_fields = ["total", "month", "quarter"]
+
+  [database]
+  database_type = "postgresql"
+  host = "postgresql"
+  port = 5432
+  user = "postgres"
+  password = "mypassword"
+  database = "postgres"
+
+As a python library
+-------------------
+
+Here's an example of calling FLEXvalue directly from python::
+
+  flex_value_run = FlexValueRun(
+        database_type="bigquery",
+        project="my-google-project",
+        source_dataset="my_source_dataset",
+        target_dataset="my_target_dataset",
+        av_costs_dataset='my_avoided_cost_project.my_avoided_cost_dataset',
+        therms_profiles_table="ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
+        elec_av_costs_table="full_ca_avoided_costs_2020acc_copy",
+        elec_load_shape_table="ca_hourly_electric_load_shapes_horizontal_copy",
+        metered_load_shape_table="example_metered_load_shape",
+        metered_load_shape_utility="PGE",
+        reset_elec_load_shape=True,
+        process_elec_load_shape=True,
+        process_metered_load_shape=True,
+        project_info_table="example_project_info",
+        output_table="example_output_table",
+        aggregation_columns=["project_id"],
+        separate_output_tables=False
+    )
+  flex_value_run.run()
+
+
+If the "process_X" flag is set, FLEXvalue will prepare that data for use in its main calculation. The meaning of "prepare" in this case depends on which database type you are using; if you are using BigQuery, it will do the following:
+
+* Create new tables for the therms profiles and electric load shapes. These will then be populated from the relevant tables specified in the config
+* Update the gas avoided costs table by adding and subsequently populating a timestamp column.
+* The electric avoided cost table is not touched - this is a no-op, as the available avoided cost data is already in a format that FLEXvalue can use.
+
+If you are using a relational database, the tables will be created if they don't exist, and then populated based on the data in the input files. The input files are csv files and have the columns described below. Header rows are required for the electrical load shape and therms profiles files. FLEXvalue attempts to determine the presence of header rows and will skip one if found and not needed. Note that FLEXvalue will NOT look up columns by the values in the header row - it's strictly positional.
+
+.. _data-stores-label:
+
+Data stores
+###########
+
+When using PostgreSQL, you must provide the following information:
+
+* database_type - this must be set to "postgresql"
+* host
+* port
+* user
+* password
+* database
+
+The docker file included in this repository uses the default PostgreSQL 15.1 image. If you look in the docker-compose.yml file you can see the values to provide for those flags.
+
+When using Google BigQuery, you must provide the following information:
+
+* database_type - this must be set to "bigquery"
+* project - this is the Google project for your input data
+* source_dataset
+* target_dataset
+* av_costs_dataset
+
+You may use one dataset for all those listed above. You may not use the same table as both input and output in any context.
+
+Authentication is based on workload identity management.
 
 License
 #######

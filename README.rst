@@ -178,7 +178,6 @@ Metered Load Shapes
 
 The `metered_load_shape` CSV requires the following columns:
 
-    - **utility**: FLEXvalue combines the project data and the load shape data using the load shape name and utility, so this must be provided. It must match the value from the project info.
     - **hour_of_year**: Hour of the year (should be one row for each of 0-8759)
     - **meter_id1**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id1
     - **meter_id2**: the savings values (in MWh), with the column name as a reference in the `load_shape` column of the `user_inputs` table (if that measure/project/portfolio has an electricity savings profile associated with meter_id2

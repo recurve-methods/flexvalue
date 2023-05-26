@@ -91,7 +91,7 @@ def cli():
 )
 @click.option(
     "--av-costs-dataset",
-    help="Used when --database-type is bigquery. Specifies the dataset that is the source of the electric and gas avoided costs data. Used with --av-costs-project. If this dataset is in a different google project, include it in the dataset name, like <google-project>.<av-costs-dataset>."
+    help="Used when --database-type is bigquery. Specifies the dataset that is the source of the electric and gas avoided costs data. This dataset must also include the name of the Google project, like <google-project>.<av-costs-dataset>."
 )
 @click.option(
     "--source-dataset",

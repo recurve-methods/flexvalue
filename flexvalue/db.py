@@ -17,6 +17,7 @@
    limitations under the License.
 
 """
+from collections import defaultdict
 import sys
 import csv
 import logging
@@ -824,42 +825,56 @@ class PostgresqlManager(DBManager):
     def process_metered_load_shape(self, metered_load_shape_path: str):
         """ Note this has to be run after process_project_info, as it depends
         on the utility for each project having been loaded"""
+
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY elec_load_shape (utility, hour_of_year, load_shape_name, value) FROM STDIN"
+                "COPY elec_load_shape (hour_of_year, utility, load_shape_name, value) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
-        self._prepare_table(
-            "elec_load_shape",
-            "flexvalue/sql/create_elec_load_shape.sql",
-        )
-        cur = self.connection.cursor()
-        # if you're concerned about RAM change this to sane number
-        MAX_ROWS = sys.maxsize
 
-        buf = []
+        # get the list of load shape names we care about from project_info
+        metered_load_shape_query = "SELECT distinct utility, load_shape from project_info where load_shape not in (select distinct load_shape_name from elec_load_shape);"
+        load_shapes_utils = defaultdict(list)
+        with self.engine.begin() as conn:
+            result = conn.execute(text(metered_load_shape_query))
+            for row in result:
+                load_shapes_utils[row[1].upper()].append(row[0])
+
+        # get the load shapes in this file
         with open(metered_load_shape_path) as f:
             # this probably escapes fine but a csv reader is a safer bet
-            columns = f.readline().split(",")
-            load_shape_names = [
+            columns = [x.strip() for x in f.readline().split(",")]
+            metered_load_shapes = [
                 c.strip()
                 for c in columns
                 if columns.index(c) > columns.index("hour_of_year")
             ]
 
-            f.seek(0)
+        cur = self.connection.cursor()
+        MAX_ROWS = 10000
+
+        # TODO: test this with multiple utilities per load shape
+        # TODO: test this with multiple load shapes
+        buf = []
+        # This is so deeply nested because the project info could have more
+        # than one utility per a given metered load shape.
+        with open(metered_load_shape_path) as f:
             reader = csv.DictReader(f)
-            for r in reader:
-                for load_shape in load_shape_names:
-                    buf.append(
-                        (
-                            utility,
-                            int(r["hour_of_year"]),
+            for row in reader:
+                for load_shape in metered_load_shapes:
+                    try:
+                        utils = load_shapes_utils[load_shape.upper()]
+                    except KeyError:
+                        # If load shape not in load_shapes_utils, don't load it
+                        continue
+                    for util in utils:
+                        buf.append([
+                            int(row["hour_of_year"]),
+                            util.upper(),
                             load_shape.upper(),
-                            float(r[load_shape]),
-                        )
-                    )
+                            float(row[load_shape])
+                        ])
                 if len(buf) >= MAX_ROWS:
                     copy_write(cur, buf)
                     buf = []

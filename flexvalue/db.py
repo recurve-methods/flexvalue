@@ -319,6 +319,23 @@ class DBManager:
         if truncate:
             self._reset_table(table_name)
 
+    def _prepare_table_from_str(
+        self,
+        table_name: str,
+        create_table_sql: str,
+        index_filepaths=[],
+        truncate: bool = False,
+    ):
+        # if the table doesn't exist, create it and all related indexes
+        with self.engine.begin() as conn:
+            if not self._table_exists(table_name):
+                _ = conn.execute(text(create_table_sql))
+            for index_filepath in index_filepaths:
+                sql = self._file_to_string(index_filepath)
+                _ = conn.execute(text(sql))
+        if truncate:
+            self._reset_table(table_name)
+
     def _table_exists(self, table_name):
         inspection = inspect(self.engine)
         table_exists = inspection.has_table(table_name)

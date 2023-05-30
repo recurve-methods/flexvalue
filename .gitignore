@@ -14,3 +14,4 @@ build
 dist
 .envrc
 *.csv
+!tests/example_*.csv

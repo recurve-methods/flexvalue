@@ -862,8 +862,6 @@ class PostgresqlManager(DBManager):
         cur = self.connection.cursor()
         MAX_ROWS = 10000
 
-        # TODO: test this with multiple utilities per load shape
-        # TODO: test this with multiple load shapes
         buf = []
         # This is so deeply nested because the project info could have more
         # than one utility per a given metered load shape.

@@ -466,13 +466,21 @@ class DBManager:
             "therms_profile_table": "therms_profile",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
-            "elec_aggregation_columns": elec_agg_columns,
-            "gas_aggregation_columns": gas_agg_columns,
             "elec_components": self.config.elec_components,
             "gas_components": self.config.gas_components,
-            "elec_addl_fields": elec_addl_fields,
-            "gas_addl_fields": set(gas_addl_fields) - set(elec_addl_fields)
         }
+        if mode == "electric":
+            context["elec_aggregation_columns"] = elec_agg_columns
+            context['elec_addl_fields']  = elec_addl_fields
+        elif mode == "gas":
+            context["gas_aggregation_columns"] = gas_agg_columns
+            context['gas_addl_fields'] = gas_addl_fields
+        else:
+            context["elec_aggregation_columns"] = elec_agg_columns
+            context["gas_aggregation_columns"] = gas_agg_columns
+            context["elec_addl_fields"] = elec_addl_fields
+            context["gas_addl_fields"] = set(gas_addl_fields) - set(elec_addl_fields)
+
         if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
             table_name = self.config.output_table
             if mode == "electric":
@@ -1095,13 +1103,21 @@ class BigQueryManager(DBManager):
             "therms_profile_table": f"`{self.config.source_dataset}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
-            "elec_aggregation_columns": elec_agg_columns,
-            "gas_aggregation_columns": gas_agg_columns,
             "elec_components": self.config.elec_components,
             "gas_components": self.config.gas_components,
-            "elec_addl_fields": self._elec_addl_fields(elec_agg_columns),
-            "gas_addl_fields": set(gas_addl_fields) - set(elec_addl_fields)
         }
+        if mode == "electric":
+            context["elec_aggregation_columns"] = elec_agg_columns
+            context['elec_addl_fields']  = elec_addl_fields
+        elif mode == "gas":
+            context["gas_aggregation_columns"] = gas_agg_columns
+            context['gas_addl_fields'] = gas_addl_fields
+        else:
+            context["elec_aggregation_columns"] = elec_agg_columns
+            context["gas_aggregation_columns"] = gas_agg_columns
+            context["elec_addl_fields"] = elec_addl_fields
+            context["gas_addl_fields"] = set(gas_addl_fields) - set(elec_addl_fields)
+
         if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
             table_name = f"{self.config.target_dataset}.{self.config.output_table}"
             if mode == "electric":

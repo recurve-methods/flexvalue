@@ -72,14 +72,23 @@ def config_with_gas_avcosts(config: FLEXValueConfig):
 
 @pytest.fixture
 def config_with_metered_load_shape(config: FLEXValueConfig):
-    config.metered_load_shape_file = "example_metered_load_shape.csv"
+    config.metered_load_shape_file = "tests/example_metered_load_shape.csv"
+    config.project_info_file = "tests/example_user_inputs.csv"
+    config.reset_elec_load_shapes = True
+    return config
+
+@pytest.fixture
+def config_with_two_metered_load_shapes(config: FLEXValueConfig):
+    config.metered_load_shape_file = "tests/example_two_metered_load_shapes.csv"
+    config.project_info_file = "tests/example_user_inputs_two_metered.csv"
     config.reset_elec_load_shapes = True
     return config
 
 @pytest.fixture
 def config_with_both_load_shapes(config: FLEXValueConfig):
+    config.project_info_file = "tests/example_user_inputs.csv"
     config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
-    config.metered_load_shape_file = "example_metered_load_shape.csv"
+    config.metered_load_shape_file = "tests/example_metered_load_shape.csv"
     config.reset_elec_load_shapes = True
     return config
 
@@ -96,7 +105,7 @@ def addl_fields_sep_output():
         elec_load_shape_table="elec_load_shape",
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
-        project_info_file="example_user_inputs_cz12_37.csv",
+        project_info_file="tests/example_user_inputs_cz12_37.csv",
         electric_output_table="afsepo_output_table_electric",
         gas_output_table="afsepo_output_table_gas",
         aggregation_columns=["project_id", "hour_of_year", "year"],
@@ -120,7 +129,7 @@ def addl_fields_same_output():
         elec_load_shape_table="elec_load_shape",
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
-        project_info_file="example_user_inputs_cz12_37.csv",
+        project_info_file="tests/example_user_inputs_cz12_37.csv",
         output_table="output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
@@ -143,7 +152,7 @@ def no_addl_fields_same_output():
         elec_load_shape_table="elec_load_shape",
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
-        project_info_file="example_user_inputs_cz12_37.csv",
+        project_info_file="tests/example_user_inputs_cz12_37.csv",
         output_table="output_table",
         aggregation_columns=["project_id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
@@ -164,7 +173,7 @@ def no_addl_fields_sep_output():
         elec_load_shape_table="elec_load_shape",
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
-        project_info_file="example_user_inputs_cz12_37.csv",
+        project_info_file="tests/example_user_inputs_cz12_37.csv",
         electric_output_table="nafsepo_output_table_electric",
         gas_output_table="nafsepo_output_table_gas",
         aggregation_columns=["project_id", "hour_of_year", "year"],
@@ -186,7 +195,7 @@ def agg_project_id_no_fields_same_output():
         elec_load_shape_table="elec_load_shape",
         therms_profiles_table="therms_profile",
         gas_av_costs_table="gas_av_costs",
-        project_info_file="example_user_inputs_cz12_37.csv",
+        project_info_file="tests/example_user_inputs_cz12_37.csv",
         output_table="apinfso_output_table",
         aggregation_columns=["project_id"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
@@ -234,7 +243,7 @@ def test_project_load(config_with_project: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_project)
     dbm.process_project_info(config_with_project.project_info_file)
     result = dbm._exec_select_sql("SELECT COUNT(*) FROM project_info;")
-    assert result[0][0] == 4
+    assert result[0][0] == 5
 
 def test_elec_load_shape(config_with_elec_load_shape: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_elec_load_shape)
@@ -246,17 +255,27 @@ def test_elec_load_shape(config_with_elec_load_shape: FLEXValueConfig):
 def test_metered_load_shape(config_with_metered_load_shape: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_metered_load_shape)
     dbm.reset_elec_load_shape()
+    dbm.process_project_info(config_with_metered_load_shape.project_info_file)
     dbm.process_metered_load_shape(config_with_metered_load_shape.metered_load_shape_file)
     result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
-    assert result[0][0] == 8760
+    assert result[0][0] == 8760 * 2
+
+def test_two_metered_load_shapes(config_with_two_metered_load_shapes: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_two_metered_load_shapes)
+    dbm.reset_elec_load_shape()
+    dbm.process_project_info(config_with_two_metered_load_shapes.project_info_file)
+    dbm.process_metered_load_shape(config_with_two_metered_load_shapes.metered_load_shape_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
+    assert result[0][0] == 8760 * 2
 
 def test_both_load_shapes(config_with_both_load_shapes: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_both_load_shapes)
     dbm.reset_elec_load_shape()
     dbm.process_elec_load_shape(config_with_both_load_shapes.elec_load_shape_file)
+    dbm.process_project_info(config_with_both_load_shapes.project_info_file)
     dbm.process_metered_load_shape(config_with_both_load_shapes.metered_load_shape_file)
     result = dbm._exec_select_sql("SELECT COUNT(*) FROM elec_load_shape;")
-    assert result[0][0] == 665760 + 8760
+    assert result[0][0] == 665760 + (8760 * 2)
 
 def test_therms_profiles(config_with_therms_profiles: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_therms_profiles)

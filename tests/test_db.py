@@ -43,7 +43,17 @@ def config():
 
 @pytest.fixture
 def config_with_project(config: FLEXValueConfig):
-    config.project_info_file = "example_user_inputs.csv"
+    config.project_info_file = "tests/example_user_inputs.csv"
+    return config
+
+@pytest.fixture
+def config_with_no_header_project(config: FLEXValueConfig):
+    config.project_info_file = "tests/example_user_inputs_no_header.csv"
+    return config
+
+@pytest.fixture
+def config_with_more_projects(config: FLEXValueConfig):
+    config.project_info_file = "tests/example_user_inputs_380.csv"
     return config
 
 @pytest.fixture
@@ -244,6 +254,18 @@ def test_project_load(config_with_project: FLEXValueConfig):
     dbm.process_project_info(config_with_project.project_info_file)
     result = dbm._exec_select_sql("SELECT COUNT(*) FROM project_info;")
     assert result[0][0] == 5
+
+def test_project_load_no_header(config_with_no_header_project: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_no_header_project)
+    dbm.process_project_info(config_with_no_header_project.project_info_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM project_info;")
+    assert result[0][0] == 5
+
+def test_project_load_more_projects(config_with_more_projects: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(config_with_more_projects)
+    dbm.process_project_info(config_with_more_projects.project_info_file)
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM project_info;")
+    assert result[0][0] == 380
 
 def test_elec_load_shape(config_with_elec_load_shape: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_elec_load_shape)

@@ -18,6 +18,7 @@
 
 """
 
+import math
 import pytest
 from flexvalue.db import DBManager
 from flexvalue.config import FLEXValueConfig
@@ -100,6 +101,14 @@ def config_with_both_load_shapes(config: FLEXValueConfig):
     config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
     config.metered_load_shape_file = "tests/example_metered_load_shape.csv"
     config.reset_elec_load_shapes = True
+    return config
+
+@pytest.fixture
+def basic_calc_config(config: FLEXValueConfig):
+    config.project_info_file = "tests/example_user_inputs.csv"
+    config.separate_output_tables = False
+    config.aggregation_columns = ["project_id"]
+    config.output_table = "basic_calc_test_output"
     return config
 
 @pytest.fixture
@@ -320,3 +329,19 @@ def test_gas_avoided_costs(config_with_gas_avcosts: FLEXValueConfig):
     dbm.process_gas_av_costs(config_with_gas_avcosts.gas_av_costs_file)
     result = dbm._exec_select_sql("SELECT COUNT(*) FROM gas_av_costs;")
     assert result[0][0] == 1488
+
+def test_basic_calculations(basic_calc_config: FLEXValueConfig):
+    dbm = DBManager.get_db_manager(basic_calc_config)
+    dbm.process_project_info(basic_calc_config.project_info_file)
+    dbm.run()
+    result = dbm._exec_select_sql("SELECT COUNT(*) FROM basic_calc_test_output;")
+    assert result[0][0] == 4
+    expected_results = {
+        'heat_pump': -626.2409452335787,
+        'deer_id_2': 301.3736100226564,
+        'deer_id_0': 1073.8288624740367,
+        'deer_id_1': 13278.400865620453
+    }
+    result = dbm._exec_select_sql("SELECT project_id, SUM(electric_benefits) from basic_calc_test_output GROUP BY project_id;")
+    for row in result:
+        assert math.isclose(expected_results[row[0]], row[1])

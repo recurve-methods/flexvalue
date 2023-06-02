@@ -122,11 +122,16 @@ gas_calculations AS (
 
 SELECT
 elec_calculations.project_id
-, SUM(elec_calculations.electric_benefits + gas_calculations.gas_benefits) / MAX(elec_calculations.trc_costs) as trc_ratio
-, SUM(elec_calculations.electric_benefits + gas_calculations.gas_benefits) / MAX(elec_calculations.pac_costs) as pac_ratio
+{% if database_type == "postgresql" -%}
+, IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, "inf", "-inf"), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
+, IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, "inf", "-inf"), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
+{% else -%}
+, IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
+, IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
+{% endif -%}
 , SUM(elec_calculations.electric_benefits) as electric_benefits
 , SUM(gas_calculations.gas_benefits) as gas_benefits
-, SUM(elec_calculations.electric_benefits + gas_calculations.gas_benefits) as total_benefits
+, SUM(elec_calculations.electric_benefits) + SUM(gas_calculations.gas_benefits) as total_benefits
 , MAX(elec_calculations.trc_costs) as trc_costs
 , MAX(elec_calculations.pac_costs) as pac_costs
 , SUM(elec_calculations.net_mwh_savings_per_year) as net_mwh_savings_per_year
@@ -135,7 +140,7 @@ elec_calculations.project_id
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
 , SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
-, SUM(elec_calculations.elec_avoided_ghg + gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_total_ghg_savings
+, SUM(elec_calculations.elec_avoided_ghg) + SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_total_ghg_savings
 {% for column in elec_aggregation_columns -%}
 , elec_calculations.{{ column }} as elec_{{ column }}
 {% endfor -%}

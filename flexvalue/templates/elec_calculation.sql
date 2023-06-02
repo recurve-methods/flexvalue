@@ -79,8 +79,13 @@ elec_calculations AS (
 
 SELECT
 elec_calculations.project_id
-, SUM(elec_calculations.electric_benefits / elec_calculations.trc_costs) as trc_ratio
-, SUM(elec_calculations.electric_benefits / elec_calculations.pac_costs) as pac_ratio
+{% if database_type == "postgresql" -%}
+, IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, "inf", "-inf"), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
+, IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, "inf", "-inf"), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
+{% else -%}
+, IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
+, IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
+{% endif -%}
 , SUM(elec_calculations.electric_benefits) as electric_benefits
 , SUM(elec_calculations.trc_costs) as trc_costs
 , SUM(elec_calculations.pac_costs) as pac_costs

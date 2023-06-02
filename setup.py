@@ -46,7 +46,7 @@ INSTALL_REQUIRES = [
     "numpy<1.23.0",
     "psycopg[binary]==3.1.8",
     "google-cloud-bigquery==3.6.0",
-    "db-dtypes==1.1.1"
+    "db-dtypes>=1.0.5"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

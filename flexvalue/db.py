@@ -1149,34 +1149,8 @@ class BigQueryManager(DBManager):
         for row in result:
             yield row.values()
 
-    def _get_project_info_data(self):
-        template = self.template_env.get_template("get_project_info.sql")
-        sql = template.render({
-            'dataset': self.config.source_dataset,
-            'project_info_table': self.config.project_info_table
-        })
-        logging.debug(f"project_info sql = {sql}")
-        query_job = self.client.query(sql)
-        result = query_job.result()
-        project_info_data = []
-        for row in result:
-            start_year = row.start_year
-            eul = row.eul
-            month = self._quarter_to_month(row.start_quarter)
-            project_info_data.append({
-                "project_id":row.project_id,
-                "start_year": start_year,
-                "start_quarter": row.start_quarter,
-                "month": month,
-                "eul": eul,
-                "discount_rate": row.discount_rate,
-                "start_date": f"{start_year}-{month}-01",
-                "end_date": f"{start_year + eul}-{month}-01"
-            })
-        return project_info_data
-
     def process_project_info(self, project_info_path: str):
-        project_info = self._get_project_info_data()
+        pass
 
     def reset_elec_av_costs(self):
         # The elec avoided costs table doesn't get changed; the super()'s

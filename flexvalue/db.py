@@ -1185,9 +1185,13 @@ class BigQueryManager(DBManager):
 
     def _reset_table(self, table_name):
         truncate_prefix = self._get_truncate_prefix()
-        sql = f"{truncate_prefix} {table_name} WHERE TRUE;"
-        query_job = self.client.query(sql)
-        result = query_job.result()
+        try:
+            sql = f"{truncate_prefix} {table_name} WHERE TRUE;"
+            query_job = self.client.query(sql)
+            result = query_job.result()
+        except NotFound as e:
+            # If the table doesn't exist yet, it will be created later
+            pass
 
     def _exec_select_sql(self, sql: str):
         # This is just here to support testing

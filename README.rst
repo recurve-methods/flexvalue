@@ -215,6 +215,8 @@ Local
 
 If you are calling these commands using the repo code and docker, replace `flexvalue` with `./flexvalue.sh`.
 
+**Note** The requirements currently use `psycopg2-binary`. This will work with Docker, but if you want to use FLEXvalue with PostgreSQL locally outside of Docker, you will need to build psycopg2 from source. For more information, including instructions, please see `this page <https://www.psycopg.org/docs/install.html#psycopg-vs-psycopg-binary>`in the psycopg documentation.
+
 .. _usage-label:
 
 Usage

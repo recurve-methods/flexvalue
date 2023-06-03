@@ -517,7 +517,7 @@ class DBManager:
         return fields
 
     def _gas_addl_fields(self, gas_agg_columns):
-        fields = set(self.config.gas_addl_fields) - set(gas_agg_columns)
+        fields = set(self.config.gas_addl_fields) - set(gas_agg_columns) - set(["total"])
         logging.debug(f"gas_addl_fields = {self.config.gas_addl_fields}\ngas_agg_columns = {gas_agg_columns}\nset diff = {fields}")
         return fields
 

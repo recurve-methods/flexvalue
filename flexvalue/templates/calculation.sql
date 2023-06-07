@@ -56,10 +56,10 @@ elec_calculations AS (
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.ghg_rebalancing) AS ghg_rebalancing
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.methane_leakage) AS methane_leakage
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.marginal_ghg) AS marginal_ghg
-    , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) / CAST(pcwdea.eul AS {{ float_type }}) as net_mwh_savings_per_year
+    , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) / CAST(pcwdea.eul AS {{ float_type }}) as annual_net_mwh_savings
     , MAX(pcwdea.trc_costs) AS trc_costs
     , MAX(pcwdea.pac_costs) AS pac_costs
-    , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) as project_lifecycle_mwh_savings
+    , SUM(pcwdea.units * pcwdea.mwh_savings * pcwdea.ntg * elec_load_shape.value) as lifecycle_net_mwh_savings
     , SUM(pcwdea.marginal_ghg * pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as elec_avoided_ghg
     {% for addl_field in elec_addl_fields -%}
     , pcwdea.{{ addl_field }}
@@ -100,7 +100,7 @@ gas_calculations AS (
     , pcwdga.{{ column }}
     {% endfor -%}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
-    , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as net_therms_savings_per_year
+    , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as annual_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     {% for comp in gas_components -%}
@@ -134,9 +134,9 @@ elec_calculations.project_id
 , SUM(elec_calculations.electric_benefits) + SUM(gas_calculations.gas_benefits) as total_benefits
 , MAX(elec_calculations.trc_costs) as trc_costs
 , MAX(elec_calculations.pac_costs) as pac_costs
-, SUM(elec_calculations.net_mwh_savings_per_year) as net_mwh_savings_per_year
-, SUM(elec_calculations.project_lifecycle_mwh_savings) as project_lifecycle_mwh_savings
-, SUM(gas_calculations.net_therms_savings_per_year) as net_therms_savings_per_year
+, SUM(elec_calculations.annual_net_mwh_savings) as annual_net_mwh_savings
+, SUM(elec_calculations.lifecycle_net_mwh_savings) as lifecycle_net_mwh_savings
+, SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
 , SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings

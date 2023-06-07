@@ -24,6 +24,7 @@ project_costs_with_discounted_elec_av AS (
         elec_av_costs.methane_leakage, elec_av_costs.total, elec_av_costs.marginal_ghg,
         elec_av_costs.ghg_adder_rebalancing,
         1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter) AS discount
+        , ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter + 1 as eul_quarter
     FROM project_costs
     JOIN {{ eac_table }} elec_av_costs
         ON elec_av_costs.utility = project_costs.utility

@@ -115,16 +115,26 @@ gas_calculations AS (
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.project_id, pcwdga.eul, pcwdga.datetime
+    GROUP BY pcwdga.id, pcwdga.eul, pcwdga.datetime
     {% for field in gas_addl_fields %}, pcwdga.{{field}} {% endfor %}
     {%- for column in gas_aggregation_columns %}, pcwdga.{{ column }}{% endfor -%}
  )
 
 SELECT
-elec_calculations.project_id
+elec_calculations.id
 {% if database_type == "postgresql" -%}
-, IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, "inf", "-inf"), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
-, IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, "inf", "-inf"), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
+, CASE
+    WHEN MAX(elec_calculations.trc_costs) = 0 AND SUM(elec_calculations.electric_benefits) > 0 then FLOAT 'inf'
+    WHEN MAX(elec_calculations.trc_costs) = 0 AND SUM(elec_calculations.electric_benefits) < 0 then FLOAT '-inf'
+    WHEN MAX(elec_calculations.trc_costs) = 0 AND SUM(elec_calculations.electric_benefits) = 0 then 0.0
+    ELSE SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)
+  END as trc_ratio
+, CASE
+    WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) > 0 then FLOAT 'inf'
+    WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) < 0 then FLOAT '-inf'
+    WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) = 0 then 0.0
+    ELSE SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)
+  END as pac_ratio
 {% else -%}
 , IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
 , IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
@@ -153,7 +163,6 @@ elec_calculations.project_id
 {% for addl_field in gas_addl_fields -%}
 , gas_calculations.{{ addl_field }}
 {% endfor -%}
--- , elec_calculations.total * elec_calculations.discount as av_csts_levelized
 {% for comp in elec_components -%}
 , SUM(elec_calculations.{{comp}}) as {{ comp }}
 {% endfor -%}

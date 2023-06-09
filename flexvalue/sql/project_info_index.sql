@@ -1,1 +1,1 @@
-CREATE INDEX IF NOT EXISTS project_info_index ON project_info(project_id);
+CREATE INDEX IF NOT EXISTS project_info_index ON project_info(id);

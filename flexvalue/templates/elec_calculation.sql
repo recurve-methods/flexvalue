@@ -39,7 +39,7 @@ project_costs_with_discounted_elec_av AS (
 ),
 elec_calculations AS (
     SELECT
-    pcwdea.project_id
+    pcwdea.id
     {% for column in elec_aggregation_columns -%}
     , pcwdea.{{ column }}
     {% endfor -%}
@@ -71,7 +71,7 @@ elec_calculations AS (
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
-    GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
+    GROUP BY pcwdea.id, pcwdea.eul, pcwdea.datetime
     {% for field in elec_addl_fields if not field == "datetime" -%}
     , pcwdea.{{field}}
     {% endfor -%}
@@ -114,7 +114,7 @@ elec_calculations.id
 {% endfor -%}
 FROM
 elec_calculations
-GROUP BY elec_calculations.project_id
+GROUP BY elec_calculations.id
 {% for column in elec_aggregation_columns -%}
 , elec_calculations.{{ column }}
 {% endfor -%}

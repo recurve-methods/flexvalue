@@ -38,7 +38,7 @@ project_costs_with_discounted_elec_av AS (
 ),
 elec_calculations AS (
     SELECT
-    pcwdea.project_id
+    pcwdea.id
     {% for column in elec_aggregation_columns -%}
     , pcwdea.{{ column }}
     {% endfor -%}
@@ -69,7 +69,7 @@ elec_calculations AS (
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
-    GROUP BY pcwdea.project_id, pcwdea.eul, pcwdea.datetime
+    GROUP BY pcwdea.id, pcwdea.eul, pcwdea.datetime
     {% for field in elec_addl_fields %}, pcwdea.{{ field }}{% endfor -%}
     {%- for column in elec_aggregation_columns -%}, pcwdea.{{ column }}{% endfor -%}
 )
@@ -95,7 +95,7 @@ elec_calculations AS (
             {% endif -%}
 ),
 gas_calculations AS (
-    SELECT pcwdga.project_id
+    SELECT pcwdga.id
     {% for column in gas_aggregation_columns -%}
     , pcwdga.{{ column }}
     {% endfor -%}
@@ -171,8 +171,8 @@ elec_calculations.id
 {% endfor -%}
 FROM
 elec_calculations
-LEFT JOIN gas_calculations ON elec_calculations.project_id = gas_calculations.project_id AND elec_calculations.datetime = gas_calculations.datetime
-GROUP BY elec_calculations.project_id
+LEFT JOIN gas_calculations ON elec_calculations.id = gas_calculations.id AND elec_calculations.datetime = gas_calculations.datetime
+GROUP BY elec_calculations.id
 {% for column in elec_aggregation_columns -%}
   , elec_calculations.{{ column }}
 {% endfor -%}

@@ -32,7 +32,7 @@ WITH project_costs AS (
             {% endif %}
 ),
 gas_calculations AS (
-    SELECT pcwdga.project_id
+    SELECT pcwdga.id
     , pcwdga.total
     {% for column in gas_aggregation_columns -%}
     , pcwdga.{{ column }}
@@ -53,7 +53,7 @@ gas_calculations AS (
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.project_id, pcwdga.eul, pcwdga.total, therms_profile.value
+    GROUP BY pcwdga.id, pcwdga.eul, pcwdga.total, therms_profile.value
     {% for field in gas_addl_fields -%}
     , pcwdga.{{ field }}
     {% endfor -%}
@@ -61,7 +61,7 @@ gas_calculations AS (
 )
 
 SELECT
-gas_calculations.project_id
+gas_calculations.id
 , SUM(gas_calculations.gas_benefits) as gas_benefits
 , AVG(gas_calculations.total) as total
 , SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
@@ -79,7 +79,7 @@ gas_calculations.project_id
 FROM
   gas_calculations
 GROUP BY
-  gas_calculations.project_id
+  gas_calculations.id
 {% for column in gas_aggregation_columns -%}
 , gas_calculations.{{ column }}
 {% endfor -%}

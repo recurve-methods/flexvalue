@@ -59,25 +59,25 @@ def config_with_more_projects(config: FLEXValueConfig):
 
 @pytest.fixture
 def config_with_elec_load_shape(config: FLEXValueConfig):
-    config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+    config.elec_load_shape_file = "tests/ca_hourly_electric_load_shapes.csv"
     config.reset_elec_load_shapes = True
     return config
 
 @pytest.fixture
 def config_with_therms_profiles(config: FLEXValueConfig):
-    config.therms_profiles_file = "ca_monthly_therms_load_profiles.csv"
+    config.therms_profiles_file = "tests/ca_monthly_therms_load_profiles.csv"
     config.reset_therms_profiles
     return config
 
 @pytest.fixture
 def config_with_elec_avcosts(config: FLEXValueConfig):
-    config.elec_av_costs_file = "full_ca_avoided_costs_2020acc.csv"
+    config.elec_av_costs_file = "tests/full_ca_avoided_costs_2020acc.csv"
     config.reset_elec_av_costs = True
     return config
 
 @pytest.fixture
 def config_with_gas_avcosts(config: FLEXValueConfig):
-    config.gas_av_costs_file = "full_ca_avoided_costs_2020acc_gas.csv"
+    config.gas_av_costs_file = "tests/full_ca_avoided_costs_2020acc_gas.csv"
     config.reset_gas_av_costs = True
     return config
 
@@ -98,7 +98,7 @@ def config_with_two_metered_load_shapes(config: FLEXValueConfig):
 @pytest.fixture
 def config_with_both_load_shapes(config: FLEXValueConfig):
     config.project_info_file = "tests/example_user_inputs.csv"
-    config.elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+    config.elec_load_shape_file = "tests/ca_hourly_electric_load_shapes.csv"
     config.metered_load_shape_file = "tests/example_metered_load_shape.csv"
     config.reset_elec_load_shapes = True
     return config
@@ -107,7 +107,7 @@ def config_with_both_load_shapes(config: FLEXValueConfig):
 def basic_calc_config(config: FLEXValueConfig):
     config.project_info_file = "tests/example_user_inputs.csv"
     config.separate_output_tables = False
-    config.aggregation_columns = ["project_id"]
+    config.aggregation_columns = ["id"]
     config.output_table = "basic_calc_test_output"
     return config
 
@@ -127,7 +127,7 @@ def addl_fields_sep_output():
         project_info_file="tests/example_user_inputs_cz12_37.csv",
         electric_output_table="afsepo_output_table_electric",
         gas_output_table="afsepo_output_table_gas",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"],
@@ -150,7 +150,7 @@ def addl_fields_same_output():
         gas_av_costs_table="gas_av_costs",
         project_info_file="tests/example_user_inputs_cz12_37.csv",
         output_table="output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"],
@@ -173,7 +173,7 @@ def no_addl_fields_same_output():
         gas_av_costs_table="gas_av_costs",
         project_info_file="tests/example_user_inputs_cz12_37.csv",
         output_table="output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
@@ -195,14 +195,14 @@ def no_addl_fields_sep_output():
         project_info_file="tests/example_user_inputs_cz12_37.csv",
         electric_output_table="nafsepo_output_table_electric",
         gas_output_table="nafsepo_output_table_gas",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=True
     )
 
 @pytest.fixture
-def agg_project_id_no_fields_same_output():
+def agg_id_no_fields_same_output():
     return FlexValueRun(
         database_type="postgresql",
         host=TEST_HOST,
@@ -216,47 +216,11 @@ def agg_project_id_no_fields_same_output():
         gas_av_costs_table="gas_av_costs",
         project_info_file="tests/example_user_inputs_cz12_37.csv",
         output_table="apinfso_output_table",
-        aggregation_columns=["project_id"],
+        aggregation_columns=["id"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
     )
-
-# _exec_select_sql returns a list of tuples, so for SELECT COUNT(*) queries
-# we will always be looking at `result[0][0]`
-def test_addl_fields_sep_output(addl_fields_sep_output):
-    addl_fields_sep_output.run()
-    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM afsepo_output_table_electric")
-    assert result[0][0] == 3153600
-    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM afsepo_output_table_gas")
-    # sum(eul) of the projects = 380; since we have to agg by the addl_columns, we include month, so 380 * 12 = 4560
-    assert result[0][0] == 4560
-
-def test_addl_fields_same_output(addl_fields_same_output):
-    addl_fields_same_output.run()
-    result = addl_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM output_table")
-    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
-    assert result[0][0] == 3153600
-
-def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
-    no_addl_fields_sep_output.run()
-    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM nafsepo_output_table_electric")
-    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
-    assert result[0][0] == 3153600
-    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM nafsepo_output_table_gas")
-    # sum(eul) of the projects that we have therm profile data for == 380; we are aggregating at the year level, so this should be 380
-    assert result[0][0] == 380
-
-def test_no_addl_fields_same_output(no_addl_fields_same_output):
-    no_addl_fields_same_output.run()
-    result = no_addl_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM output_table")
-    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
-    assert result[0][0] == 3153600
-
-def test_agg_project_id_no_fields_same_output(agg_project_id_no_fields_same_output):
-    agg_project_id_no_fields_same_output.run()
-    result = agg_project_id_no_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM apinfso_output_table")
-    assert result[0][0] == 36 # 38 distinct projects minus 2 with no matching load shape
 
 def test_project_load(config_with_project: FLEXValueConfig):
     dbm = DBManager.get_db_manager(config_with_project)
@@ -342,6 +306,42 @@ def test_basic_calculations(basic_calc_config: FLEXValueConfig):
         'deer_id_0': 1073.8288624740367,
         'deer_id_1': 13278.400865620453
     }
-    result = dbm._exec_select_sql("SELECT project_id, SUM(electric_benefits) from basic_calc_test_output GROUP BY project_id;")
+    result = dbm._exec_select_sql("SELECT id, SUM(electric_benefits) from basic_calc_test_output GROUP BY id;")
     for row in result:
         assert math.isclose(expected_results[row[0]], row[1])
+
+# _exec_select_sql returns a list of tuples, so for SELECT COUNT(*) queries
+# we will always be looking at `result[0][0]`
+def test_addl_fields_sep_output(addl_fields_sep_output):
+    addl_fields_sep_output.run()
+    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM afsepo_output_table_electric")
+    assert result[0][0] == 3153600
+    result = addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM afsepo_output_table_gas")
+    # sum(eul) of the projects = 380; since we have to agg by the addl_columns, we include month, so 380 * 12 = 4560
+    assert result[0][0] == 4560
+
+def test_addl_fields_same_output(addl_fields_same_output):
+    addl_fields_same_output.run()
+    result = addl_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM output_table")
+    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
+    assert result[0][0] == 3153600
+
+def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
+    no_addl_fields_sep_output.run()
+    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM nafsepo_output_table_electric")
+    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
+    assert result[0][0] == 3153600
+    result = no_addl_fields_sep_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM nafsepo_output_table_gas")
+    # sum(eul) of the projects that we have therm profile data for == 380; we are aggregating at the year level, so this should be 380
+    assert result[0][0] == 380
+
+def test_no_addl_fields_same_output(no_addl_fields_same_output):
+    no_addl_fields_same_output.run()
+    result = no_addl_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM output_table")
+    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
+    assert result[0][0] == 3153600
+
+def test_agg_id_no_fields_same_output(agg_id_no_fields_same_output):
+    agg_id_no_fields_same_output.run()
+    result = agg_id_no_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM apinfso_output_table")
+    assert result[0][0] == 36 # 38 distinct projects minus 2 with no matching load shape

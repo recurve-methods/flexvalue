@@ -45,7 +45,7 @@ __all__ = (
 )
 
 PROJECT_INFO_FIELDS = [
-    "project_id",
+    "id",
     "state",
     "utility",
     "region",
@@ -892,12 +892,12 @@ class PostgresqlManager(DBManager):
         """ insert_text isn't needed for postgresql """
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY project_info (project_id, state, utility, region, mwh_savings, therms_savings, load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
+                "COPY project_info (id, state, utility, region, mwh_savings, therms_savings, load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
         rows = [
-            (x["project_id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
+            (x["id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
             for x in project_info_dicts
         ]
         cursor = self.connection.cursor()

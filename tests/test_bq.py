@@ -37,7 +37,7 @@ def addl_fields_sep_output():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="example_user_inputs_38",
         output_table="afsepo_output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"],
@@ -59,7 +59,7 @@ def addl_fields_same_output():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="example_user_inputs_38",
         output_table="output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"],
@@ -81,7 +81,7 @@ def no_addl_fields_same_output():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="example_user_inputs_38",
         output_table="output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
@@ -101,14 +101,14 @@ def no_addl_fields_sep_output():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="example_user_inputs_38",
         output_table="nafsepo_output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=True
     )
 
 @pytest.fixture
-def agg_project_id_no_fields_same_output():
+def agg_id_no_fields_same_output():
     return FlexValueRun(
         database_type="bigquery",
         project="oeem-avdcosts-platform",
@@ -121,7 +121,7 @@ def agg_project_id_no_fields_same_output():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="example_user_inputs_38",
         output_table="apinfso_output_table",
-        aggregation_columns=["project_id"],
+        aggregation_columns=["id"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
@@ -145,7 +145,7 @@ def metered_load_shape():
         process_metered_load_shape=True,
         project_info_table="example_user_inputs_38",
         output_table="apinfso_output_table",
-        aggregation_columns=["project_id"],
+        aggregation_columns=["id"],
         separate_output_tables=False
     )
 
@@ -163,7 +163,7 @@ def real_data_calculations_aggregated():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="formatted_for_metered_deer_run_p2021",
         output_table="rdc_output_table",
-        aggregation_columns=["project_id", ],
+        aggregation_columns=["id", ],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         elec_addl_fields = ["admin_cost", "measure_cost", "incentive_cost"],
@@ -185,7 +185,7 @@ def real_data_calculations_time_series():
         gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
         project_info_table="formatted_for_metered_deer_run_p2021",
         output_table="rdcts_output_table",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=False
@@ -206,7 +206,7 @@ def real_data_calculations_time_series_sep():
         project_info_table="formatted_for_metered_deer_run_p2021",
         electric_output_table="rdcts_output_table_electric",
         gas_output_table="rdcts_output_table_gas",
-        aggregation_columns=["project_id", "hour_of_year", "year"],
+        aggregation_columns=["id", "hour_of_year", "year"],
         elec_components=["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"],
         gas_components=["market", "t_d", "environment", "btm_methane", "upstream_methane"],
         separate_output_tables=True
@@ -246,16 +246,16 @@ def test_no_addl_fields_same_output(no_addl_fields_same_output):
     # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
     assert result[0][0] == 3285000
 
-def test_agg_project_id_no_fields_same_output(agg_project_id_no_fields_same_output):
-    agg_project_id_no_fields_same_output.run()
-    result = agg_project_id_no_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.apinfso_output_table")
+def test_agg_id_no_fields_same_output(agg_id_no_fields_same_output):
+    agg_id_no_fields_same_output.run()
+    result = agg_id_no_fields_same_output.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.apinfso_output_table")
     assert result[0][0] == 37 # 39 distinct projects minus 2 with no matching load shape
 
 def test_real_data_calculations_aggregated(real_data_calculations_aggregated):
     real_data_calculations_aggregated.run()
     result = real_data_calculations_aggregated.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.rdc_output_table")
     assert result[0][0] == 30
-    query_str = "SELECT project_id, SUM(admin_cost), SUM(measure_cost), SUM(incentive_cost), SUM(electric_benefits) FROM flexvalue_refactor_tables.rdc_output_table WHERE project_id IN ({0}) GROUP BY project_id"
+    query_str = "SELECT id, SUM(admin_cost), SUM(measure_cost), SUM(incentive_cost), SUM(electric_benefits) FROM flexvalue_refactor_tables.rdc_output_table WHERE id IN ({0}) GROUP BY id"
     results_dict = {
         "MAR101323": [8583.76, 13193.17, 0.0, 55231.79],
         "MAR100695": [2368.87, 11619.835, 0.0, -13833.56],
@@ -279,7 +279,7 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
     real_data_calculations_time_series.run()
     result = real_data_calculations_time_series.db_manager._exec_select_sql("SELECT COUNT(*) FROM flexvalue_refactor_tables.rdcts_output_table")
     assert result[0][0] == 30 * 12 * 8760 # num projects * EUL * hours per year
-    query_str = "SELECT project_id, SUM(electric_benefits), MAX(trc_costs), MAX(pac_costs), SUM(elec_avoided_ghg), SUM(lifecycle_gas_ghg_savings) FROM flexvalue_refactor_tables.rdcts_output_table WHERE project_id IN ({0}) GROUP BY project_id"
+    query_str = "SELECT id, SUM(electric_benefits), MAX(trc_costs), MAX(pac_costs), SUM(elec_avoided_ghg), SUM(lifecycle_gas_ghg_savings) FROM flexvalue_refactor_tables.rdcts_output_table WHERE id IN ({0}) GROUP BY id"
     results_dict = {
         "MAR101323": [55231.79, 20881.76, 8583.76, 191.286 / 1000.0, 0],
         "MAR100695": [-13833.56, 13200.29, 2368.87, -46.548 / 1000.0 , 0],
@@ -295,7 +295,7 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
     # Now cherry-pick some hourly calculations and compare them also
     # Maps the column names from FV1:FV2
     column_mapping = {
-        'flexvalue_id': 'project_id',
+        'flexvalue_id': 'id',
         'year': 'elec_year',
         'hour_of_year': 'elec_hour_of_year',
         'energy': 'energy',
@@ -307,7 +307,7 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         'cap_and_trade': 'cap_and_trade',
         'ghg_adder_rebalancing': 'ghg_adder_rebalancing',
     }
-    query_str = "SELECT {columns} FROM {table_name} WHERE project_id IN ({projects}) ORDER BY project_id, elec_year, elec_hour_of_year"
+    query_str = "SELECT {columns} FROM {table_name} WHERE id IN ({projects}) ORDER BY id, elec_year, elec_hour_of_year"
     results_dict = {
         "MAR101323": [0.41806757266493833, 0.013389025632615839, 0.0015681452798683364 / 1000.0],
         "MAR100695": [-0.0994271147418045, -0.000387365436068152, -0.000387365436068152 / 1000.0],

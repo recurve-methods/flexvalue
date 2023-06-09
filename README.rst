@@ -60,7 +60,7 @@ Input structures
 Input files are only used to populate tables in a local database. Input tables are used when BigQuery is the datastore. The input structures (i.e. columns) are the same, however, as discussed below. Note that when "headers" are mentioned those are only applicable to input files.
 
 **Project information:** A header row is not required for this file. The columns are:
-project_id, state,utility, region, mwh_savings, therms_savings, elec_load_shape, therms_profile, start_year, start_quarter, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost
+id, state,utility, region, mwh_savings, therms_savings, elec_load_shape, therms_profile, start_year, start_quarter, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost
 **Metered load shapes:** Headers are required for this file. Its columns are:
 utility, hour_of_year, followed by any number of load shapes, one per column.
 
@@ -284,7 +284,7 @@ Here is an example config.toml file if you are connecting to BigQuery::
   process_elec_av_costs = false
   process_therms_profiles = false
   process_gas_av_costs = false
-  aggregation_columns = ["project_id", "hour_of_year", "year"]
+  aggregation_columns = ["id", "hour_of_year", "year"]
   reset_elec_load_shape = false
   reset_elec_av_costs = false
   reset_therms_profiles = false
@@ -319,7 +319,7 @@ Here is an example config file if you are connecting to Postgresql::
   process_elec_av_costs = false
   process_therms_profiles = false
   process_gas_av_costs = false
-  aggregation_columns = ["project_id", "hour_of_year", "year"]
+  aggregation_columns = ["id", "hour_of_year", "year"]
   reset_elec_load_shape = false
   reset_elec_av_costs = false
   reset_therms_profiles = false
@@ -356,7 +356,7 @@ Here's an example of calling FLEXvalue directly from python::
         process_metered_load_shape=True,
         project_info_table="example_project_info",
         output_table="example_output_table",
-        aggregation_columns=["project_id"],
+        aggregation_columns=["id"],
         separate_output_tables=False
     )
   flex_value_run.run()

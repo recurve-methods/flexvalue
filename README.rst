@@ -239,18 +239,15 @@ FLEXValue uses the following command-line arguments. If ``--config-file`` is pas
 * **--user**: The user for the postgresql database to which you are connecting.
 * **--password**: The password for the postgresql database to which you are connecting.
 * **--database**: The database for the postgresql database to which you are connecting.
-* **--elec-av-costs-table**: Used when --database-type is bigquery. Specifies the electric avoided costs table.
-* **--elec-load-shape-table**: Used when --database-type is bigquery. Specifies the electric load shape table.
-* **--gas-av-costs-table**: Used when --database-type is bigquery. Specifies the gas avoided costs table.
-* **--therms-profiles-table**: Used when --database-type is bigquery. Specifies the therms profiles table.
-* **--project-info-table**: Used when --database-type is bigquery. Specifies the table containing the project information.
+* **--elec-av-costs-table**: Used when --database-type is bigquery. Specifies the electric avoided costs table. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
+* **--elec-load-shape-table**: Used when --database-type is bigquery. Specifies the electric load shape table. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
+* **--gas-av-costs-table**: Used when --database-type is bigquery. Specifies the gas avoided costs table. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
+* **--therms-profiles-table**: Used when --database-type is bigquery. Specifies the therms profiles table. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
+* **--project-info-table**: Used when --database-type is bigquery. Specifies the table containing the project information. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
 * **--project**: Used when --database-type is bigquery. Specifies the google project.
-* **--av-costs-dataset**: Used when --database-type is bigquery. Specifies the dataset that is the source of the electric and gas avoided costs data. This dataset must also include the name of the Google project, like <google-project>.<av-costs-dataset>.
-* **--source-dataset**: Used when --database-type is bigquery. Specifies the dataset that is the source of the data.
-* **--target-dataset**: Used when --database-type is bigquery. Specifies the dataset that is the target of the data.
-* **--output-table**: The database table to write output to. This table gets overwritten (not appended to).
-* **--electric-output-table**: The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to).
-* **--gas-output-table**: The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to).
+* **--output-table**: The database table to write output to. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
+* **--electric-output-table**: The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
+* **--gas-output-table**: The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).
 * **--config-file**: Path to the toml configuration file.
 * **--elec-av-costs-file**: Filepath to the electric avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file.
 * **--gas-av-costs-file**: Filepath to the gas avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file.
@@ -292,19 +289,18 @@ Here is an example config.toml file if you are connecting to BigQuery::
   elec_components = ["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution"]
   gas_components = ["market", "t_d", "environment", "btm_methane", "upstream_methane"]
   separate_output_tables = True
-  electric_output_table = "hourly_electric_output"
-  gas_output_table = "hourly_gas_output"
+  electric_output_table = "example_dataset.hourly_electric_output"
+  gas_output_table = "example_dataset.hourly_gas_output"
 
   [database]
   #credentials = ""
   database_type = "bigquery"
   project = "oeem-avdcosts-platform"
-  dataset = "flexvalue_refactor_tables"
-  elec_av_costs_table = "full_ca_avoided_costs_2020acc_copy"
-  elec_load_shape_table = "ca_hourly_electric_load_shapes_horizontal_copy"
-  therms_profiles_table = "ca_monthly_therms_load_profiles_copy"
-  gas_av_costs_table = "full_ca_avoided_costs_2020acc_gas_copy"
-  project_info_table = "example_user_inputs_380"
+  elec_av_costs_table = "example_dataset.full_ca_avoided_costs_2020acc_copy"
+  elec_load_shape_table = "example_dataset.ca_hourly_electric_load_shapes_horizontal_copy"
+  therms_profiles_table = "example_dataset.ca_monthly_therms_load_profiles_copy"
+  gas_av_costs_table = "example_dataset.full_ca_avoided_costs_2020acc_gas_copy"
+  project_info_table = "example_dataset.example_user_inputs_380"
 
 Here is an example config file if you are connecting to Postgresql::
 
@@ -343,14 +339,11 @@ Here's an example of calling FLEXvalue directly from python::
   flex_value_run = FlexValueRun(
         database_type="bigquery",
         project="my-google-project",
-        source_dataset="my_source_dataset",
-        target_dataset="my_target_dataset",
-        av_costs_dataset='my_avoided_cost_project.my_avoided_cost_dataset',
-        therms_profiles_table="ca_monthly_therms_load_profiles_copy",
-        gas_av_costs_table="full_ca_avoided_costs_2020acc_gas_copy",
-        elec_av_costs_table="full_ca_avoided_costs_2020acc_copy",
-        elec_load_shape_table="ca_hourly_electric_load_shapes_horizontal_copy",
-        metered_load_shape_table="example_metered_load_shape",
+        therms_profiles_table="my_target_dataset.ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="my_avoided_cost_project.my_avoided_cost_dataset.full_ca_avoided_costs_2020acc_gas_copy",
+        elec_av_costs_table="my_avoided_cost_project.my_avoided_cost_dataset.full_ca_avoided_costs_2020acc_copy",
+        elec_load_shape_table="my_target_dataset.ca_hourly_electric_load_shapes_horizontal_copy",
+        metered_load_shape_table="my_source_dataset.example_metered_load_shape",
         reset_elec_load_shape=True,
         process_elec_load_shape=True,
         process_metered_load_shape=True,
@@ -390,11 +383,8 @@ When using Google BigQuery, you must provide the following information:
 
 * database_type - this must be set to "bigquery"
 * project - this is the Google project for your input data
-* source_dataset
-* target_dataset
-* av_costs_dataset
 
-You may use one dataset for all those listed above. You may not use the same table as both input and output in any context.
+All parameters for tables (e.g. project_info_table, output_table) must include the dataset in the table name. If the dataset is in a different project than the one specified by the ``project`` parameter, you must include that in the table name as well.
 
 Authentication is based on workload identity management.
 

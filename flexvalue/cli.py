@@ -63,55 +63,43 @@ def cli():
 )
 @click.option(
     "--elec-av-costs-table",
-    help="Used when --database-type is bigquery. Specifies the electric avoided costs table."
+    help="Used when --database-type is bigquery. Specifies the electric avoided costs table. Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--elec-load-shape-table",
-    help="Used when --database-type is bigquery. Specifies the electric load shape table."
+    help="Used when --database-type is bigquery. Specifies the electric load shape table. Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--gas-av-costs-table",
-    help="Used when --database-type is bigquery. Specifies the gas avoided costs table."
+    help="Used when --database-type is bigquery. Specifies the gas avoided costs table. Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--therms-profiles-table",
-    help="Used when --database-type is bigquery. Specifies the therms profiles table."
+    help="Used when --database-type is bigquery. Specifies the therms profiles table. Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--project-info-table",
-    help="Used when --database-type is bigquery. Specifies the table containing the project information."
+    help="Used when --database-type is bigquery. Specifies the table containing the project information. Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--metered-load-shape-table",
-    help="Used when --database-type is bigquery. Specifies the metered load shape table."
+    help="Used when --database-type is bigquery. Specifies the metered load shape table. Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--project",
     help="Used when --database-type is bigquery. Specifies the google project."
 )
 @click.option(
-    "--av-costs-dataset",
-    help="Used when --database-type is bigquery. Specifies the dataset that is the source of the electric and gas avoided costs data. This dataset must also include the name of the Google project, like <google-project>.<av-costs-dataset>."
-)
-@click.option(
-    "--source-dataset",
-    help="Used when --database-type is bigquery. Specifies the dataset that is the source of the data."
-)
-@click.option(
-    "--target-dataset",
-    help="Used when --database-type is bigquery. Specifies the dataset that is the target of the data."
-)
-@click.option(
     "--output-table",
-    help="The database table to write output to. This table gets overwritten (not appended to)."
+    help="The database table to write output to. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--electric-output-table",
-    help="The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to)."
+    help="The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--gas-output-table",
-    help="The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to)."
+    help="The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--config-file",
@@ -222,9 +210,6 @@ def get_results(
     metered_load_shape_table,
     project_info_table,
     project,
-    av_costs_dataset,
-    source_dataset,
-    target_dataset,
     output_table,
     electric_output_table,
     gas_output_table,
@@ -264,9 +249,6 @@ def get_results(
             metered_load_shape_table=metered_load_shape_table,
             project_info_table=project_info_table,
             project=project,
-            av_costs_dataset=av_costs_dataset,
-            source_dataset=source_dataset,
-            target_dataset=target_dataset,
             output_table=output_table,
             electric_output_table=electric_output_table,
             gas_output_table=gas_output_table,

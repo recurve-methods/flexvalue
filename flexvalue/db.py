@@ -930,15 +930,22 @@ class BigQueryManager(DBManager):
             loader=PackageLoader("flexvalue"), autoescape=select_autoescape()
         )
         self.config = fv_config
-        self.table_names = []
-        for x in [self.config.elec_av_costs_table,
-                self.config.gas_av_costs_table]:
-            self.table_names.append(f"{self.config.av_costs_dataset}.{x}")
-        for x in [self.config.elec_load_shape_table,
-                self.config.therms_profiles_table,
-                self.config.project_info_table]:
-            self.table_names.append(f"{self.config.source_dataset}.{x}")
+        self.table_names = [
+            self.config.elec_av_costs_table,
+            self.config.gas_av_costs_table,
+            self.config.elec_load_shape_table,
+            self.config.therms_profiles_table,
+            self.config.project_info_table
+        ]
         self.client = bigquery.Client(project=self.config.project)
+
+    def _get_target_dataset(self):
+        # Use an output table because we know those have write permissions
+        if self.config.separate_output_tables:
+            # both are required, so just pick one:
+            return ".".join(self.config.electric_output_table.split(".")[:-1])
+        else:
+            return ".".join(self.config.output_table.split(".")[:-1])
 
     def _test_connection(self):
         logging.debug('in bigquerymanager._test_connection')
@@ -1006,9 +1013,8 @@ class BigQueryManager(DBManager):
         will be used to join on in later calculations.
         """
         logging.debug("In bq process_gas_av_costs")
-        table_name = f"{self.config.av_costs_dataset}.{self.config.gas_av_costs_table}"
-        self._ensure_datetime_column(table_name)
-        sql = f'UPDATE {table_name} gac SET datetime = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
+        self._ensure_datetime_column(self.config.gas_av_costs_table)
+        sql = f'UPDATE {self.config.gas_av_costs_table} gac SET datetime = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
         query_job = self.client.query(sql)
         result = query_job.result()
 
@@ -1037,16 +1043,18 @@ class BigQueryManager(DBManager):
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
         """ Transforms data in the table specified by config.elec_load_shape_table, and loads it into `elec_load_shape`."""
+        dataset = self._get_target_dataset()
         self._prepare_table(
-            f"{self.config.source_dataset}.elec_load_shape",
+            f"{dataset}.elec_load_shape",
             "bq_create_elec_load_shape.sql",
             truncate=True
         )
         template = self.template_env.get_template("bq_populate_elec_load_shape.sql")
         sql = template.render({
             "project": self.config.project,
-            "dataset": self.config.source_dataset,
-            "elec_load_shape_table": self.config.elec_load_shape_table
+            "dataset": dataset,
+            "elec_load_shape_table": self.config.elec_load_shape_table,
+            "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(".")[-1]
         })
         logging.info(f'elec_load_shape sql = {sql}')
         query_job = self.client.query(sql)
@@ -1054,8 +1062,9 @@ class BigQueryManager(DBManager):
 
     def process_metered_load_shape(self, metered_load_shapes_path: str, truncate=False):
         """ Transforms data in the table specified by config.metered_load_shape_table, and loads it into `elec_load_shape`."""
+        dataset = self._get_target_dataset()
         self._prepare_table(
-            f"{self.config.source_dataset}.elec_load_shape",
+            f"{dataset}.elec_load_shape",
             "bq_create_elec_load_shape.sql",
             truncate=truncate
         )
@@ -1063,9 +1072,10 @@ class BigQueryManager(DBManager):
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
         sql = template.render({
             "project": self.config.project,
-            "dataset": self.config.source_dataset,
+            "dataset": dataset,
             "project_info_table": self.config.project_info_table,
-            "metered_load_shape_table": self.config.metered_load_shape_table
+            "metered_load_shape_table": self.config.metered_load_shape_table,
+            "metered_load_shape_table_only_name": self.config.metered_load_shape_table.split(".")[-1]
         })
         logging.info(f'metered_load_shape sql = {sql}')
         query_job = self.client.query(sql)
@@ -1073,16 +1083,18 @@ class BigQueryManager(DBManager):
 
     def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
         """ Transforms data in the table specified by config.therms_profile_table, and loads it into `therms_profile`."""
+        dataset = self._get_target_dataset()
         self._prepare_table(
-            f"{self.config.source_dataset}.therms_profile",
+            f"{dataset}.therms_profile",
             "bq_create_therms_profile.sql",
             truncate=truncate,
         )
         template = self.template_env.get_template("bq_populate_therms_profile.sql")
         sql = template.render({
             "project": self.config.project,
-            "dataset": self.config.source_dataset,
-            "therms_profiles_table": self.config.therms_profiles_table
+            "dataset": dataset,
+            "therms_profiles_table": self.config.therms_profiles_table,
+            "therms_profiles_table_only_name": self.config.therms_profiles_table.split(".")[-1]
         })
         logging.debug(f'therms_profile sql = {sql}')
         query_job = self.client.query(sql)
@@ -1093,12 +1105,13 @@ class BigQueryManager(DBManager):
         gas_agg_columns = self._gas_aggregation_columns()
         elec_addl_fields = self._elec_addl_fields(elec_agg_columns)
         gas_addl_fields = self._gas_addl_fields(gas_agg_columns)
+        #TODO double-check this: should the av_costs tables be treated the same as the load shapes?
         context = {
-            "project_info_table": f"`{self.config.source_dataset}.{self.config.project_info_table}`",
-            "eac_table": f"`{self.config.av_costs_dataset}.{self.config.elec_av_costs_table}`",
-            "els_table": f"`{self.config.source_dataset}.elec_load_shape`",
-            "gac_table": f"`{self.config.av_costs_dataset}.{self.config.gas_av_costs_table}`",
-            "therms_profile_table": f"`{self.config.source_dataset}.therms_profile`",
+            "project_info_table": self.config.project_info_table,
+            "eac_table": self.config.elec_av_costs_table,
+            "els_table": f"`{self._get_target_dataset()}.elec_load_shape`",
+            "gac_table": self.config.gas_av_costs_table,
+            "therms_profile_table": f"`{self._get_target_dataset()}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
             "elec_components": self.config.elec_components,
@@ -1117,11 +1130,11 @@ class BigQueryManager(DBManager):
             context["gas_addl_fields"] = set(gas_addl_fields) - set(elec_addl_fields)
 
         if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
-            table_name = f"{self.config.target_dataset}.{self.config.output_table}"
+            table_name = self.config.output_table
             if mode == "electric":
-                table_name = f"{self.config.target_dataset}.{self.config.electric_output_table}"
+                table_name = self.config.electric_output_table
             elif mode == "gas":
-                table_name = f"{self.config.target_dataset}.{self.config.gas_output_table}"
+                table_name = self.config.gas_output_table
             context["create_clause"] = f"CREATE OR REPLACE TABLE {table_name} AS ("
         return context
 
@@ -1137,18 +1150,6 @@ class BigQueryManager(DBManager):
                 for row in result:
                     print(",".join([f"{x}" for x in row.values()]))
 
-    def _get_original_elec_load_shape(self):
-        """ Generator to fetch existing electric load shape data from BigQuery. """
-        template = self.template_env.get_template("get_elec_load_shape.sql")
-        sql = template.render({
-            'dataset': self.config.source_dataset,
-            'elec_load_shape_table': self.config.elec_load_shape_table
-        })
-        query_job = self.client.query(sql)
-        result = query_job.result()
-        for row in result:
-            yield row.values()
-
     def process_project_info(self, project_info_path: str):
         pass
 
@@ -1159,7 +1160,7 @@ class BigQueryManager(DBManager):
 
     def reset_gas_av_costs(self):
         # FLEXvalue adds and populates the `datetime` column, so remove it:
-        sql = f"ALTER TABLE {self.config.av_costs_dataset}.{self.config.gas_av_costs_table} DROP COLUMN datetime;"
+        sql = f"ALTER TABLE {self.config.gas_av_costs_table} DROP COLUMN datetime;"
         query_job = self.client.query(sql)
         try:
             result = query_job.result()
@@ -1169,19 +1170,11 @@ class BigQueryManager(DBManager):
 
     def reset_elec_load_shape(self):
         logging.debug("Resetting elec load shape")
-        self._reset_table(f"{self.config.source_dataset}.elec_load_shape")
-
-    def reset_elec_av_costs(self):
-        logging.debug("Resetting elec_av_costs")
-        self._reset_table(f"{self.config.av_costs_dataset}.elec_av_costs")
+        self._reset_table(f"{self._get_target_dataset()}.elec_load_shape")
 
     def reset_therms_profiles(self):
         logging.debug("Resetting therms_profile")
-        self._reset_table(f"{self.config.source_dataset}.therms_profile")
-
-    def reset_gas_av_costs(self):
-        logging.debug("Resetting gas avoided costs")
-        self._reset_table(f"{self.config.av_costs_dataset}.gas_av_costs")
+        self._reset_table(f"{self._get_target_dataset()}.therms_profile")
 
     def _reset_table(self, table_name):
         truncate_prefix = self._get_truncate_prefix()

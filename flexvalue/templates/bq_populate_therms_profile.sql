@@ -1,4 +1,4 @@
-FOR therms_profile IN (select column_name from `{{ project }}.{{ dataset }}`.INFORMATION_SCHEMA.COLUMNS
+FOR therms_profile IN (select column_name from `{{ dataset }}`.INFORMATION_SCHEMA.COLUMNS
   WHERE table_name="{{ therms_profiles_table_only_name }}"
   AND column_name not in ("state", "utility", "region", "quarter", "month"))
 DO

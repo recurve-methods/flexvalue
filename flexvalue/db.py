@@ -1051,7 +1051,6 @@ class BigQueryManager(DBManager):
         )
         template = self.template_env.get_template("bq_populate_elec_load_shape.sql")
         sql = template.render({
-            "project": self.config.project,
             "dataset": dataset,
             "elec_load_shape_table": self.config.elec_load_shape_table,
             "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(".")[-1]
@@ -1071,7 +1070,6 @@ class BigQueryManager(DBManager):
 
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
         sql = template.render({
-            "project": self.config.project,
             "dataset": dataset,
             "project_info_table": self.config.project_info_table,
             "metered_load_shape_table": self.config.metered_load_shape_table,
@@ -1091,7 +1089,6 @@ class BigQueryManager(DBManager):
         )
         template = self.template_env.get_template("bq_populate_therms_profile.sql")
         sql = template.render({
-            "project": self.config.project,
             "dataset": dataset,
             "therms_profiles_table": self.config.therms_profiles_table,
             "therms_profiles_table_only_name": self.config.therms_profiles_table.split(".")[-1]

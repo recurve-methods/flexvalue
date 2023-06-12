@@ -1,4 +1,4 @@
-FOR load_shape IN (select column_name from `{{ project }}.{{ dataset }}`.INFORMATION_SCHEMA.COLUMNS
+FOR load_shape IN (select column_name from `{{ dataset }}`.INFORMATION_SCHEMA.COLUMNS
   WHERE table_name="{{ elec_load_shape_table_name_only }}"
   AND column_name NOT IN ("state", "utility", "region", "quarter", "month", "hour_of_day", "hour_of_year"))
 DO

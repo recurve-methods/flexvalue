@@ -2,7 +2,7 @@ FOR row in (
   select distinct load_shape, utility
   FROM `{{ project_info_table }}`
   where upper(load_shape) in (
-    select upper(column_name) from `{{ project }}.{{ dataset }}`.INFORMATION_SCHEMA.COLUMNS
+    select upper(column_name) from `{{ dataset }}`.INFORMATION_SCHEMA.COLUMNS
     WHERE table_name="{{ metered_load_shape_table_only_name }}"
     AND column_name NOT IN ("state", "utility", "region", "quarter", "month", "hour_of_day", "hour_of_year")
   )

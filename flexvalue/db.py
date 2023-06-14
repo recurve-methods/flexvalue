@@ -111,7 +111,9 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "ghg_adder_rebalancing",
 ]
 
-logging.basicConfig(stream=sys.stderr, format="%(levelname)s:%(message)s", level=logging.INFO)
+logging.basicConfig(
+    stream=sys.stderr, format="%(levelname)s:%(message)s", level=logging.INFO
+)
 
 # This is the number of bytes to read when determining whether a csv file has
 # a header. 4096 was determined empirically; I don't recommend reading fewer
@@ -124,13 +126,15 @@ INSERT_ROW_COUNT = 100000
 # Number of rows to insert into BigQuery at once
 BIG_QUERY_CHUNK_SIZE = 10000
 
-class DBManager:
 
+class DBManager:
     @staticmethod
     def get_db_manager(fv_config: FLEXValueConfig):
-        """ Factory for the correct instance of DBManager child class."""
+        """Factory for the correct instance of DBManager child class."""
         if not fv_config.database_type or fv_config.database_type not in SUPPORTED_DBS:
-            raise FLEXValueException(f"You must specify a database_type in your config file.\nThe valid choices are {SUPPORTED_DBS}")
+            raise FLEXValueException(
+                f"You must specify a database_type in your config file.\nThe valid choices are {SUPPORTED_DBS}"
+            )
         if fv_config.database_type == "sqlite":
             return SqliteManager(fv_config)
         elif fv_config.database_type == "postgresql":
@@ -138,11 +142,15 @@ class DBManager:
         elif fv_config.database_type == "bigquery":
             return BigQueryManager(fv_config)
         else:
-            raise FLEXValueException(f"Unsupported database_type. Please choose one of {SUPPORTED_DBS}")
+            raise FLEXValueException(
+                f"Unsupported database_type. Please choose one of {SUPPORTED_DBS}"
+            )
 
     def __init__(self, fv_config: FLEXValueConfig) -> None:
         self.template_env = Environment(
-            loader=PackageLoader("flexvalue"), autoescape=select_autoescape(), trim_blocks=True
+            loader=PackageLoader("flexvalue"),
+            autoescape=select_autoescape(),
+            trim_blocks=True,
         )
         self.config = fv_config
         self.engine = self._get_db_engine(fv_config)
@@ -152,11 +160,9 @@ class DBManager:
         # Nobody should be calling the method in the base class
         return ""
 
-    def _get_db_engine(
-        self, config: FLEXValueConfig
-    ) -> Engine:
+    def _get_db_engine(self, config: FLEXValueConfig) -> Engine:
         conn_str = self._get_db_connection_string(config)
-        logging.debug(f'conn_str ={conn_str}')
+        logging.debug(f"conn_str ={conn_str}")
         engine = create_engine(conn_str)
         logging.debug(f"dialect = {engine.dialect.name}")
         return engine
@@ -193,7 +199,7 @@ class DBManager:
                         "hour_of_day": rows[row][5],
                         "hour_of_year": rows[row][6],
                         "load_shape_name": rows[0][col].upper(),
-                        "value": rows[row][col]
+                        "value": rows[row][col],
                     }
                 )
         insert_text = self._file_to_string(
@@ -206,7 +212,7 @@ class DBManager:
         self._prepare_table(
             "elec_av_costs",
             "flexvalue/sql/create_elec_av_cost.sql",
-            #index_filepaths=["flexvalue/sql/elec_av_costs_index.sql"],
+            # index_filepaths=["flexvalue/sql/elec_av_costs_index.sql"],
             truncate=truncate,
         )
         logging.debug("about to load elec av costs")
@@ -218,7 +224,7 @@ class DBManager:
             dict_processor=self._eac_dict_mapper,
         )
 
-    def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
+    def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
         """Loads the therms profiles csv file. This file has 5 fixed columns and then
         a variable number of columns after that, each of which represents a therms
         profile. This method parses that file to construct a SQL INSERT statement, then
@@ -300,7 +306,9 @@ class DBManager:
             pass
 
     def _get_truncate_prefix(self):
-        raise FLEXValueException("You need to implement _get_truncate_prefix for your database manager.")
+        raise FLEXValueException(
+            "You need to implement _get_truncate_prefix for your database manager."
+        )
 
     def _prepare_table(
         self,
@@ -411,20 +419,24 @@ class DBManager:
             )
         if self.config.separate_output_tables:
             sql = self._get_calculation_sql(mode="electric")
-            logging.info(f'electric sql =\n{sql}')
+            logging.info(f"electric sql =\n{sql}")
             self._run_calc(sql)
             sql = self._get_calculation_sql(mode="gas")
-            logging.info(f'gas sql =\n{sql}')
+            logging.info(f"gas sql =\n{sql}")
             self._run_calc(sql)
         else:
             sql = self._get_calculation_sql()
-            logging.info(f'sql =\n{sql}')
+            logging.info(f"sql =\n{sql}")
             self._run_calc(sql)
 
     def _run_calc(self, sql):
         with self.engine.begin() as conn:
             result = conn.execute(text(sql))
-            if not self.config.output_table and not self.config.electric_output_table and not self.config.gas_output_table:
+            if (
+                not self.config.output_table
+                and not self.config.electric_output_table
+                and not self.config.gas_output_table
+            ):
                 if self.config.output_file:
                     with open(self.config.output_file, "w") as outfile:
                         outfile.write(", ".join(result.keys()) + "\n")
@@ -471,54 +483,76 @@ class DBManager:
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns
-            context['elec_addl_fields']  = elec_addl_fields
+            context["elec_addl_fields"] = elec_addl_fields
         elif mode == "gas":
             context["gas_aggregation_columns"] = gas_agg_columns
-            context['gas_addl_fields'] = gas_addl_fields
+            context["gas_addl_fields"] = gas_addl_fields
         else:
             context["elec_aggregation_columns"] = elec_agg_columns
             context["gas_aggregation_columns"] = gas_agg_columns
             context["elec_addl_fields"] = elec_addl_fields
             context["gas_addl_fields"] = set(gas_addl_fields) - set(elec_addl_fields)
 
-        if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
+        if (
+            self.config.output_table
+            or self.config.electric_output_table
+            or self.config.gas_output_table
+        ):
             table_name = self.config.output_table
             if mode == "electric":
                 table_name = self.config.electric_output_table
             elif mode == "gas":
                 table_name = self.config.gas_output_table
-            context['create_clause'] = f"DROP TABLE IF EXISTS {table_name}; CREATE TABLE {table_name} AS ("
+            context[
+                "create_clause"
+            ] = f"DROP TABLE IF EXISTS {table_name}; CREATE TABLE {table_name} AS ("
 
         return context
 
     def _elec_aggregation_columns(self):
-        ELECTRIC_AGG_COLUMNS = set([
-            "hour_of_year",
-            "year",
-            "region",
-            "month",
-            "quarter",
-            "hour_of_day",
-            "datetime"
-        ])
-        aggregation_columns = set(self.config.aggregation_columns) & ELECTRIC_AGG_COLUMNS
+        ELECTRIC_AGG_COLUMNS = set(
+            [
+                "hour_of_year",
+                "year",
+                "region",
+                "month",
+                "quarter",
+                "hour_of_day",
+                "datetime",
+            ]
+        )
+        aggregation_columns = (
+            set(self.config.aggregation_columns) & ELECTRIC_AGG_COLUMNS
+        )
         return aggregation_columns
 
     def _gas_aggregation_columns(self):
-        GAS_AGG_COLUMNS = set([
-             "region", "year", "month", "quarter", "datetime",
-        ])
+        GAS_AGG_COLUMNS = set(
+            [
+                "region",
+                "year",
+                "month",
+                "quarter",
+                "datetime",
+            ]
+        )
         aggregation_columns = set(self.config.aggregation_columns) & GAS_AGG_COLUMNS
         return aggregation_columns
 
     def _elec_addl_fields(self, elec_agg_columns):
         fields = set(self.config.elec_addl_fields) - set(elec_agg_columns)
-        logging.debug(f"elec_addl_fields = {self.config.elec_addl_fields}\nelec_agg_columns = {elec_agg_columns}\nset diff = {fields}")
+        logging.debug(
+            f"elec_addl_fields = {self.config.elec_addl_fields}\nelec_agg_columns = {elec_agg_columns}\nset diff = {fields}"
+        )
         return fields
 
     def _gas_addl_fields(self, gas_agg_columns):
-        fields = set(self.config.gas_addl_fields) - set(gas_agg_columns) - set(["total"])
-        logging.debug(f"gas_addl_fields = {self.config.gas_addl_fields}\ngas_agg_columns = {gas_agg_columns}\nset diff = {fields}")
+        fields = (
+            set(self.config.gas_addl_fields) - set(gas_agg_columns) - set(["total"])
+        )
+        logging.debug(
+            f"gas_addl_fields = {self.config.gas_addl_fields}\ngas_agg_columns = {gas_agg_columns}\nset diff = {fields}"
+        )
         return fields
 
     def _csv_file_to_dicts(
@@ -597,7 +631,6 @@ class DBManager:
                 else:  # this is for/else
                     conn.execute(text(insert_text), buffer)
 
-
     def _exec_select_sql(self, sql: str):
         """Returns a list of tuples that have been copied from the sqlalchemy result."""
         # This is just here to support testing
@@ -607,6 +640,7 @@ class DBManager:
             ret = [x for x in result]
         return ret
 
+
 class PostgresqlManager(DBManager):
     def __init__(self, fv_config: FLEXValueConfig) -> None:
         super().__init__(fv_config)
@@ -615,27 +649,26 @@ class PostgresqlManager(DBManager):
             host=self.config.host,
             port=self.config.port,
             user=self.config.user,
-            password=self.config.password
+            password=self.config.password,
         )
         logging.debug(f"connection = {self.connection}")
 
     def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
-            user = config.user
-            password = config.password
-            host = config.host
-            port = config.port
-            database = config.database
-            conn_str = (
-                f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
-            )
-            return conn_str
+        user = config.user
+        password = config.password
+        host = config.host
+        port = config.port
+        database = config.database
+        conn_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+        return conn_str
 
     def _get_truncate_prefix(self):
         return "TRUNCATE TABLE"
 
     def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
         def copy_write(cur, rows):
-            with cur.copy("""COPY gas_av_costs (
+            with cur.copy(
+                """COPY gas_av_costs (
                     state,
                     utility,
                     region,
@@ -654,10 +687,8 @@ class PostgresqlManager(DBManager):
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
-        self._prepare_table(
-            "gas_av_costs",
-            "flexvalue/sql/create_gas_av_cost.sql"
-        )
+
+        self._prepare_table("gas_av_costs", "flexvalue/sql/create_gas_av_cost.sql")
         MAX_ROWS = 10000
         logging.info("IN PG VERSION OF LOAD GAS AV COSTS")
         try:
@@ -666,7 +697,14 @@ class PostgresqlManager(DBManager):
             with open(gas_av_costs_path) as f:
                 reader = csv.DictReader(f)
                 for i, r in enumerate(reader):
-                    dt = datetime(year=int(r["year"]), month=int(r["month"]), day=1, hour=0, minute=0, second=0)
+                    dt = datetime(
+                        year=int(r["year"]),
+                        month=int(r["month"]),
+                        day=1,
+                        hour=0,
+                        minute=0,
+                        second=0,
+                    )
                     gac_timestamp = dt.strftime("%Y-%m-%d %H:%M:%S %Z")
                     buf.append(
                         [
@@ -683,7 +721,7 @@ class PostgresqlManager(DBManager):
                             float(r["btm_methane"]),
                             float(r["total"]),
                             float(r["upstream_methane"]),
-                            float(r["marginal_ghg"])
+                            float(r["marginal_ghg"]),
                         ]
                     )
                     if len(buf) == MAX_ROWS:
@@ -831,7 +869,7 @@ class PostgresqlManager(DBManager):
         self.connection.commit()
 
     def process_metered_load_shape(self, metered_load_shape_path: str):
-        """ Note this has to be run after process_project_info, as it depends
+        """Note this has to be run after process_project_info, as it depends
         on the utility for each project having been loaded"""
 
         def copy_write(cur, rows):
@@ -875,12 +913,14 @@ class PostgresqlManager(DBManager):
                         # If load shape not in load_shapes_utils, don't load it
                         continue
                     for util in utils:
-                        buf.append([
-                            int(row["hour_of_year"]),
-                            util.upper(),
-                            load_shape.upper(),
-                            float(row[load_shape])
-                        ])
+                        buf.append(
+                            [
+                                int(row["hour_of_year"]),
+                                util.upper(),
+                                load_shape.upper(),
+                                float(row[load_shape]),
+                            ]
+                        )
                 if len(buf) >= MAX_ROWS:
                     copy_write(cur, buf)
                     buf = []
@@ -889,15 +929,37 @@ class PostgresqlManager(DBManager):
         self.connection.commit()
 
     def _load_project_info_data(self, insert_text, project_info_dicts):
-        """ insert_text isn't needed for postgresql """
+        """insert_text isn't needed for postgresql"""
+
         def copy_write(cur, rows):
             with cur.copy(
                 "COPY project_info (id, state, utility, region, mwh_savings, therms_savings, load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
+
         rows = [
-            (x["id"], x["state"], x["utility"], x["region"], x["mwh_savings"], x["therms_savings"], x["load_shape"], x["therms_profile"], x["start_year"], x["start_quarter"], x["start_date"], x["end_date"], x["units"], x["eul"], x["ntg"], x["discount_rate"], x["admin_cost"], x["measure_cost"], x["incentive_cost"])
+            (
+                x["id"],
+                x["state"],
+                x["utility"],
+                x["region"],
+                x["mwh_savings"],
+                x["therms_savings"],
+                x["load_shape"],
+                x["therms_profile"],
+                x["start_year"],
+                x["start_quarter"],
+                x["start_date"],
+                x["end_date"],
+                x["units"],
+                x["eul"],
+                x["ntg"],
+                x["discount_rate"],
+                x["admin_cost"],
+                x["measure_cost"],
+                x["incentive_cost"],
+            )
             for x in project_info_dicts
         ]
         cursor = self.connection.cursor()
@@ -914,7 +976,7 @@ class SqliteManager(DBManager):
         self.config = fv_config
 
     def _get_truncate_prefix(self):
-        """ sqlite doesn't support TRUNCATE"""
+        """sqlite doesn't support TRUNCATE"""
         return "DELETE FROM"
 
     def _get_db_connection_string(self, config: FLEXValueConfig) -> str:
@@ -935,7 +997,7 @@ class BigQueryManager(DBManager):
             self.config.gas_av_costs_table,
             self.config.elec_load_shape_table,
             self.config.therms_profiles_table,
-            self.config.project_info_table
+            self.config.project_info_table,
         ]
         self.client = bigquery.Client(project=self.config.project)
 
@@ -948,7 +1010,7 @@ class BigQueryManager(DBManager):
             return ".".join(self.config.output_table.split(".")[:-1])
 
     def _test_connection(self):
-        logging.debug('in bigquerymanager._test_connection')
+        logging.debug("in bigquerymanager._test_connection")
         query = """select count(*) from flexvalue_refactor_tables.example_user_inputs"""
         query_job = self.client.query(query)
         rows = query_job.result()
@@ -981,18 +1043,26 @@ class BigQueryManager(DBManager):
             sql = f"SELECT COUNT(*) FROM {table_name}"
             query_job = self.client.query(sql)  # API request
             result = query_job.result()
-            for row in result: # there will be only one, but we have to iterate
+            for row in result:  # there will be only one, but we have to iterate
                 if row.get("count") == 0:
                     empty_tables.append(table_name)
         return empty_tables
 
-    def _prepare_table(self, table_name: str, sql_filepath: str, index_filepaths=[], truncate: bool = False):
-        """ table_name: includes the dataset for the table 
+    def _prepare_table(
+        self,
+        table_name: str,
+        sql_filepath: str,
+        index_filepaths=[],
+        truncate: bool = False,
+    ):
+        """table_name: includes the dataset for the table
         sql_filepath: the path to the template that will be rendered to produce the preparation sql
         truncate: if True, all data will be removed from the table; the table will not be dropped
         """
         if not self._table_exists(table_name):
-            dataset = ".".join(table_name.split(".")[:-1])  # get everything before last '.'
+            dataset = ".".join(
+                table_name.split(".")[:-1]
+            )  # get everything before last '.'
             template = self.template_env.get_template(sql_filepath)
             sql = template.render({"dataset": dataset})
             logging.debug(f"create sql = \n{sql}")
@@ -1009,29 +1079,29 @@ class BigQueryManager(DBManager):
         pass
 
     def process_gas_av_costs(self, gas_av_costs_path: str, truncate=False):
-        """ Add a datetime column if none exists, and populate it. It
+        """Add a datetime column if none exists, and populate it. It
         will be used to join on in later calculations.
         """
         logging.debug("In bq process_gas_av_costs")
         self._ensure_datetime_column(self.config.gas_av_costs_table)
-        sql = f'UPDATE {self.config.gas_av_costs_table} gac SET datetime = (TIMESTAMP(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
+        sql = f'UPDATE {self.config.gas_av_costs_table} gac SET datetime = (DATETIME(FORMAT("%d-%d-01 00:00:00", gac.year, gac.month))) WHERE TRUE;'
         query_job = self.client.query(sql)
         result = query_job.result()
 
     def _ensure_datetime_column(self, table_name):
-        """ Ensure that the table with name `table_name` has a column
-        named `datetime`, of type `TIMESTAMP`.
+        """Ensure that the table with name `table_name` has a column
+        named `datetime`, of type `DATETIME`.
         """
         table = self.client.get_table(table_name)
         has_datetime = False
         for column in table.schema:
-            if column.name == 'datetime' and column.field_type == "TIMESTAMP":
+            if column.name == "datetime" and column.field_type == "DATETIME":
                 has_datetime = True
                 break
         if not has_datetime:
             original_schema = table.schema
             new_schema = original_schema[:]  # Creates a copy of the schema.
-            new_schema.append(bigquery.SchemaField("datetime", "TIMESTAMP"))
+            new_schema.append(bigquery.SchemaField("datetime", "DATETIME"))
 
             table.schema = new_schema
             table = self.client.update_table(table, ["schema"])  # Make an API request.
@@ -1039,48 +1109,60 @@ class BigQueryManager(DBManager):
             if len(table.schema) == len(original_schema) + 1 == len(new_schema):
                 print("A new column has been added.")
             else:
-                raise FLEXValueException(f"Unable to add a datetime column to {table_name}; can't process gas avoided costs.")
+                raise FLEXValueException(
+                    f"Unable to add a datetime column to {table_name}; can't process gas avoided costs."
+                )
 
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
-        """ Transforms data in the table specified by config.elec_load_shape_table, and loads it into `elec_load_shape`."""
+        """Transforms data in the table specified by config.elec_load_shape_table, and loads it into `elec_load_shape`."""
         dataset = self._get_target_dataset()
         self._prepare_table(
-            f"{dataset}.elec_load_shape",
-            "bq_create_elec_load_shape.sql",
-            truncate=True
+            f"{dataset}.elec_load_shape", "bq_create_elec_load_shape.sql", truncate=True
         )
         template = self.template_env.get_template("bq_populate_elec_load_shape.sql")
-        sql = template.render({
-            "dataset": dataset,
-            "elec_load_shape_table": self.config.elec_load_shape_table,
-            "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(".")[-1]
-        })
-        logging.info(f'elec_load_shape sql = {sql}')
+        sql = template.render(
+            {
+                "dataset": dataset,
+                "elec_load_shape_table": self.config.elec_load_shape_table,
+                "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(
+                    "."
+                )[
+                    -1
+                ],
+            }
+        )
+        logging.info(f"elec_load_shape sql = {sql}")
         query_job = self.client.query(sql)
         result = query_job.result()
 
     def process_metered_load_shape(self, metered_load_shapes_path: str, truncate=False):
-        """ Transforms data in the table specified by config.metered_load_shape_table, and loads it into `elec_load_shape`."""
+        """Transforms data in the table specified by config.metered_load_shape_table, and loads it into `elec_load_shape`."""
         dataset = self._get_target_dataset()
         self._prepare_table(
             f"{dataset}.elec_load_shape",
             "bq_create_elec_load_shape.sql",
-            truncate=truncate
+            truncate=truncate,
         )
 
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
-        sql = template.render({
-            "dataset": dataset,
-            "project_info_table": self.config.project_info_table,
-            "metered_load_shape_table": self.config.metered_load_shape_table,
-            "metered_load_shape_table_only_name": self.config.metered_load_shape_table.split(".")[-1]
-        })
-        logging.info(f'metered_load_shape sql = {sql}')
+        sql = template.render(
+            {
+                "dataset": dataset,
+                "project_info_table": self.config.project_info_table,
+                "metered_load_shape_table": self.config.metered_load_shape_table,
+                "metered_load_shape_table_only_name": self.config.metered_load_shape_table.split(
+                    "."
+                )[
+                    -1
+                ],
+            }
+        )
+        logging.info(f"metered_load_shape sql = {sql}")
         query_job = self.client.query(sql)
         result = query_job.result()
 
-    def process_therms_profile(self, therms_profiles_path: str, truncate: bool=False):
-        """ Transforms data in the table specified by config.therms_profile_table, and loads it into `therms_profile`."""
+    def process_therms_profile(self, therms_profiles_path: str, truncate: bool = False):
+        """Transforms data in the table specified by config.therms_profile_table, and loads it into `therms_profile`."""
         dataset = self._get_target_dataset()
         self._prepare_table(
             f"{dataset}.therms_profile",
@@ -1088,12 +1170,18 @@ class BigQueryManager(DBManager):
             truncate=truncate,
         )
         template = self.template_env.get_template("bq_populate_therms_profile.sql")
-        sql = template.render({
-            "dataset": dataset,
-            "therms_profiles_table": self.config.therms_profiles_table,
-            "therms_profiles_table_only_name": self.config.therms_profiles_table.split(".")[-1]
-        })
-        logging.debug(f'therms_profile sql = {sql}')
+        sql = template.render(
+            {
+                "dataset": dataset,
+                "therms_profiles_table": self.config.therms_profiles_table,
+                "therms_profiles_table_only_name": self.config.therms_profiles_table.split(
+                    "."
+                )[
+                    -1
+                ],
+            }
+        )
+        logging.debug(f"therms_profile sql = {sql}")
         query_job = self.client.query(sql)
         result = query_job.result()
 
@@ -1102,7 +1190,7 @@ class BigQueryManager(DBManager):
         gas_agg_columns = self._gas_aggregation_columns()
         elec_addl_fields = self._elec_addl_fields(elec_agg_columns)
         gas_addl_fields = self._gas_addl_fields(gas_agg_columns)
-        #TODO double-check this: should the av_costs tables be treated the same as the load shapes?
+        # TODO double-check this: should the av_costs tables be treated the same as the load shapes?
         context = {
             "project_info_table": self.config.project_info_table,
             "eac_table": self.config.elec_av_costs_table,
@@ -1116,17 +1204,21 @@ class BigQueryManager(DBManager):
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns
-            context['elec_addl_fields']  = elec_addl_fields
+            context["elec_addl_fields"] = elec_addl_fields
         elif mode == "gas":
             context["gas_aggregation_columns"] = gas_agg_columns
-            context['gas_addl_fields'] = gas_addl_fields
+            context["gas_addl_fields"] = gas_addl_fields
         else:
             context["elec_aggregation_columns"] = elec_agg_columns
             context["gas_aggregation_columns"] = gas_agg_columns
             context["elec_addl_fields"] = elec_addl_fields
             context["gas_addl_fields"] = set(gas_addl_fields) - set(elec_addl_fields)
 
-        if self.config.output_table or self.config.electric_output_table or self.config.gas_output_table:
+        if (
+            self.config.output_table
+            or self.config.electric_output_table
+            or self.config.gas_output_table
+        ):
             table_name = self.config.output_table
             if mode == "electric":
                 table_name = self.config.electric_output_table
@@ -1138,7 +1230,11 @@ class BigQueryManager(DBManager):
     def _run_calc(self, sql):
         query_job = self.client.query(sql)
         result = query_job.result()
-        if not self.config.output_table and not self.config.electric_output_table and not self.config.gas_output_table:
+        if (
+            not self.config.output_table
+            and not self.config.electric_output_table
+            and not self.config.gas_output_table
+        ):
             if self.config.output_file:
                 with open(self.config.output_file, "w") as outfile:
                     for row in result:

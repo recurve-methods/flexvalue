@@ -3,7 +3,7 @@ CREATE TABLE elec_av_costs (
     state TEXT,
     utility TEXT,
     region TEXT,
-    datetime DATETIME,
+    datetime TIMESTAMP,
     year INTEGER,
     quarter INTEGER,
     month INTEGER,

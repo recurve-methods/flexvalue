@@ -1120,17 +1120,16 @@ class BigQueryManager(DBManager):
             f"{dataset}.elec_load_shape", "bq_create_elec_load_shape.sql", truncate=True
         )
         template = self.template_env.get_template("bq_populate_elec_load_shape.sql")
+        # Black ruins readability here, disable
+        # fmt: off
         sql = template.render(
             {
                 "dataset": dataset,
                 "elec_load_shape_table": self.config.elec_load_shape_table,
-                "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(
-                    "."
-                )[
-                    -1
-                ],
+                "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(".")[-1],
             }
         )
+        # fmt: on
         logging.info(f"elec_load_shape sql = {sql}")
         query_job = self.client.query(sql)
         result = query_job.result()
@@ -1145,18 +1144,17 @@ class BigQueryManager(DBManager):
         )
 
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
+        # Black ruins readability here, disable
+        # fmt: off
         sql = template.render(
             {
                 "dataset": dataset,
                 "project_info_table": self.config.project_info_table,
                 "metered_load_shape_table": self.config.metered_load_shape_table,
-                "metered_load_shape_table_only_name": self.config.metered_load_shape_table.split(
-                    "."
-                )[
-                    -1
-                ],
+                "metered_load_shape_table_only_name": self.config.metered_load_shape_table.split(".")[-1],
             }
         )
+        # fmt: on
         logging.info(f"metered_load_shape sql = {sql}")
         query_job = self.client.query(sql)
         result = query_job.result()
@@ -1170,17 +1168,16 @@ class BigQueryManager(DBManager):
             truncate=truncate,
         )
         template = self.template_env.get_template("bq_populate_therms_profile.sql")
+        # Black ruins readability here, disable
+        # fmt: off
         sql = template.render(
             {
                 "dataset": dataset,
                 "therms_profiles_table": self.config.therms_profiles_table,
-                "therms_profiles_table_only_name": self.config.therms_profiles_table.split(
-                    "."
-                )[
-                    -1
-                ],
+                "therms_profiles_table_only_name": self.config.therms_profiles_table.split(".")[-1],
             }
         )
+        # fmt: on
         logging.debug(f"therms_profile sql = {sql}")
         query_job = self.client.query(sql)
         result = query_job.result()

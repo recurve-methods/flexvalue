@@ -200,7 +200,7 @@ Be advised that outputting a single table with electric and gas values aggregate
 
 In addition, some outputs may repeat at certain granularities. For example, **trc_costs** will repeat for every row, so summing this column will not deliver the desired result with an aggregation on hour_of_year.
 
-Below are the outputs that can be expected for each table. If you have other input columns that you would like to pass through to the outputs, you can designate these column names in the **elec_addl_fields** and the **gas_addl_fields** variables.
+Below are the outputs that can be expected for each table. If you have other input columns that you would like to pass through to the outputs, you can designate these column names in the **elec_addl_fields** and the **gas_addl_fields** variables. Additional avoided cost components can also be displayed in outputs if the column names are passed into the **elec_components** and **gas_components** variables, respectively.
 
 Single Combined Table Outputs
 --------------------

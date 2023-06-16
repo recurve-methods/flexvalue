@@ -39,6 +39,7 @@ project_costs_with_discounted_elec_av AS (
 elec_calculations AS (
     SELECT
     pcwdea.id
+    , elec_load_shape.load_shape_name
     {% for column in elec_aggregation_columns -%}
     , pcwdea.{{ column }}
     {% endfor -%}
@@ -69,7 +70,7 @@ elec_calculations AS (
         ON UPPER(elec_load_shape.load_shape_name) = UPPER(pcwdea.load_shape)
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
-    GROUP BY pcwdea.id, pcwdea.eul, pcwdea.datetime
+    GROUP BY pcwdea.id, pcwdea.eul, pcwdea.datetime, elec_load_shape.load_shape_name
     {% for field in elec_addl_fields %}, pcwdea.{{ field }}{% endfor -%}
     {%- for column in elec_aggregation_columns -%}, pcwdea.{{ column }}{% endfor -%}
 )
@@ -96,6 +97,9 @@ elec_calculations AS (
 ),
 gas_calculations AS (
     SELECT pcwdga.id
+    , therms_profile.profile_name
+    , MAX(pcwdga.trc_costs) as trc_costs
+    , MAX(pcwdga.pac_costs) as pac_costs
     {% for column in gas_aggregation_columns -%}
     , pcwdga.{{ column }}
     {% endfor -%}
@@ -115,42 +119,78 @@ gas_calculations AS (
         ON UPPER(pcwdga.therms_profile) = UPPER(therms_profile.profile_name)
             AND therms_profile.utility = pcwdga.utility
             AND therms_profile.month = pcwdga.month
-    GROUP BY pcwdga.id, pcwdga.eul, pcwdga.datetime
+    GROUP BY pcwdga.id, pcwdga.eul, pcwdga.datetime, therms_profile.profile_name
     {% for field in gas_addl_fields %}, pcwdga.{{field}} {% endfor %}
     {%- for column in gas_aggregation_columns %}, pcwdga.{{ column }}{% endfor -%}
  )
 
 SELECT
-elec_calculations.id
 {% if database_type == "postgresql" -%}
+CASE
+    WHEN elec_calculations.load_shape_name is NULL
+        THEN gas_calculations.id
+    ELSE elec_calculations.id
+END AS id
 , CASE
-    WHEN MAX(elec_calculations.trc_costs) = 0 AND SUM(elec_calculations.electric_benefits) > 0 then FLOAT 'inf'
-    WHEN MAX(elec_calculations.trc_costs) = 0 AND SUM(elec_calculations.electric_benefits) < 0 then FLOAT '-inf'
-    WHEN MAX(elec_calculations.trc_costs) = 0 AND SUM(elec_calculations.electric_benefits) = 0 then 0.0
-    ELSE SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)
+    WHEN MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs)) = 0 
+    AND SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) > 0 
+        THEN FLOAT 'inf'
+    WHEN MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs)) = 0 
+    AND SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) < 0 
+        THEN FLOAT '-inf'
+    WHEN MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs)) = 0 
+    AND SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) = 0 
+        THEN 0.0
+    ELSE SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) / MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs))
   END as trc_ratio
 , CASE
-    WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) > 0 then FLOAT 'inf'
-    WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) < 0 then FLOAT '-inf'
-    WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) = 0 then 0.0
-    ELSE SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)
+    WHEN MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs)) = 0 
+    AND SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) > 0 
+        THEN FLOAT 'inf'
+    WHEN MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs)) = 0 
+    AND SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) < 0 
+        THEN FLOAT '-inf'
+    WHEN MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs)) = 0 
+    AND SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) = 0 
+        THEN 0.0
+    ELSE SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) / MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs))
   END as pac_ratio
 {% else -%}
-, IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
-, IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
+if(
+    elec_calculations.load_shape_name is NULL,
+    gas_calculations.id,
+    elec_calculations.id
+) as id
+, IF(
+    MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs)) = 0, 
+    IF(
+        SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) > 0, 
+        cast("inf" as FLOAT64), 
+        cast("-inf" as FLOAT64)
+    ), 
+    SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) / MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs))
+  ) as trc_ratio
+, IF(
+    MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs)) = 0, 
+    IF(
+        SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) > 0, 
+        cast("inf" as FLOAT64), 
+        cast("-inf" as FLOAT64)), 
+    SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) / MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs))
+  ) as pac_ratio
 {% endif -%}
 , SUM(elec_calculations.electric_benefits) as electric_benefits
 , SUM(gas_calculations.gas_benefits) as gas_benefits
-, SUM(elec_calculations.electric_benefits) + SUM(gas_calculations.gas_benefits) as total_benefits
-, MAX(elec_calculations.trc_costs) as trc_costs
-, MAX(elec_calculations.pac_costs) as pac_costs
+, SUM(COALESCE(elec_calculations.electric_benefits, 0)) + SUM(COALESCE(gas_calculations.gas_benefits, 0)) as total_benefits
+, MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs)) as trc_costs
+, MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs)) as pac_costs
 , SUM(elec_calculations.annual_net_mwh_savings) as annual_net_mwh_savings
 , SUM(elec_calculations.lifecycle_net_mwh_savings) as lifecycle_net_mwh_savings
 , SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
 , SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
-, SUM(elec_calculations.elec_avoided_ghg) + SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_total_ghg_savings
+, SUM(COALESCE(elec_calculations.elec_avoided_ghg, 0)) + SUM(COALESCE(gas_calculations.lifecycle_gas_ghg_savings, 0)) as lifecycle_total_ghg_savings
 {% for column in elec_aggregation_columns -%}
 , elec_calculations.{{ column }} as elec_{{ column }}
 {% endfor -%}
@@ -170,9 +210,22 @@ elec_calculations.id
 , SUM(gas_calculations.{{comp}}) as {{ comp }}
 {% endfor -%}
 FROM
-elec_calculations
-LEFT JOIN gas_calculations ON elec_calculations.id = gas_calculations.id AND elec_calculations.datetime = gas_calculations.datetime
-GROUP BY elec_calculations.id
+    elec_calculations
+FULL JOIN 
+    gas_calculations 
+    ON elec_calculations.id = gas_calculations.id 
+    AND elec_calculations.datetime = gas_calculations.datetime
+GROUP BY 
+
+{% if database_type == "bigquery" -%}
+id
+{% else -%}
+CASE
+    WHEN elec_calculations.load_shape_name is NULL
+        THEN gas_calculations.id
+    ELSE elec_calculations.id
+END
+{% endif -%}
 {% for column in elec_aggregation_columns -%}
   , elec_calculations.{{ column }}
 {% endfor -%}

@@ -189,6 +189,57 @@ Metered Load Shapes
 -------------------
 If the user-defined load shape is normalized (the sum of values across all 8,760 hours is 1) then the user should input the annual MWh savings value in the user_inputs file. If the user-defined load shape is not normalized (the sum of values across all 8,760 hours equals the annual MWh savings) the user should enter 1 in for the corresponding MWh savings in the user_inputs file. 
 
+Outputs
+#######
+
+FLEXvalue outputs will include a single table if the **separate_output_tables** variable is set to False. Otherwise, FLEXvalue will output two tables.
+
+The number of rows will depend on the column names passed into the **aggregation_columns** variable. For example, if a user passes "id" into the aggregation_columns variable, the user would expect a row for each project id. However, if the user passes in ["id", "year"], then the user should expect a row for every id and year permutation (in other words, the number of ids * number of years). In this example, the number of years would be dictated by the eul for each project.
+
+Be advised that outputting a single table with electric and gas values aggregated to a time granularity that isn't shared by both meter types (for example, hour_of_year when gas data is only available at a monthly granularity) may result in surprising behavior, so be sure to examine the outputs. 
+
+In addition, some outputs may repeat at certain granularities. For example, **trc_costs** will repeat for every row, so summing this column will not deliver the desired result with an aggregation on hour_of_year.
+
+Below are the outputs that can be expected for each table. If you have other input columns that you would like to pass through to the outputs, you can designate these column names in the **elec_addl_fields** and the **gas_addl_fields** variables. Additional avoided cost components can also be displayed in outputs if the column names are passed into the **elec_components** and **gas_components** variables, respectively.
+
+Single Combined Table Outputs
+--------------------
+    - **id**: The id from the inputs.
+    - **trc_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total trc costs for a given id.
+    - **pac_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total pac costs for a given id.
+    - **electric_benefits**: The sum of electric benefits (at a given level of aggregation).
+    - **gas_benefits**: The sum of gas benefits (at a given level of aggregation).
+    - **total_benefits**: The sum of total benefits (at a given level of aggregation).
+    - **trc_costs**: The trc costs for a given id.
+    - **pac_costs**: The pac costs for a given id.
+    - **annual_net_mwh_savings**: The annual net (post net-to-gross) electric savings for a given id, in mWh.
+    - **lifecycle_net_mwh_savings**: The lifecycle net (post net-to-gross) electric savings for a given id, in mWh.
+    - **annual_net_therms_savings**: The annual net (post net-to-gross) gas savings for a given id, in therms.
+    - **lifecycle_net_therms_savings**: The lifecycle net (post net-to-gross) gas savings for a given id, in therms.
+    - **elec_avoided_ghg**: The lifecycle electric ghg savings (post net-to_gross) for a given id, in metric tons.
+    - **lifecycle_gas_ghg_savings**: The lifecycle gas ghg savings (post net-to_gross) for a given id, in metric tons.
+
+Electric Table Outputs
+--------------------
+    - **id**: The id from the inputs.
+    - **trc_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total trc costs for a given id.
+    - **pac_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total pac costs for a given id.
+    - **electric_benefits**: The sum of electric benefits (at a given level of aggregation).
+    - **trc_costs**: The trc costs for a given id.
+    - **pac_costs**: The pac costs for a given id.
+    - **annual_net_mwh_savings**: The annual net (post net-to-gross) electric savings for a given id, in mWh.
+    - **lifecycle_net_mwh_savings**: The lifecycle net (post net-to-gross) electric savings for a given id, in mWh.
+    - **elec_avoided_ghg**: The lifecycle electric ghg savings (post net-to_gross) for a given id, in metric tons.
+  
+Gas Table Outputs
+--------------------
+    - **id**: The id from the inputs.
+    - **gas_benefits**: The sum of gas benefits (at a given level of aggregation).
+    - **annual_net_therms_savings**: The annual net (post net-to-gross) gas savings for a given id, in therms.
+    - **lifecycle_net_therms_savings**: The lifecycle net (post net-to-gross) gas savings for a given id, in therms.
+    - **lifecycle_gas_ghg_savings**: The lifecycle gas ghg savings (post net-to_gross) for a given id, in metric tons.
+    
+
 Installation from Source
 ########################
 

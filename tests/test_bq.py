@@ -394,7 +394,10 @@ def test_addl_fields_same_output(addl_fields_same_output):
         "SELECT COUNT(*) FROM flexvalue_refactor_tables.output_table"
     )
     # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
-    assert result[0][0] == 3285000
+    # We also need to include project ids 138 and 139 that have an electric load shape that doesn't match the load shape database
+    # These projects do match on the gas profile, so we expect 20 more rows (from a 15 and 5 year gas eul)
+    # These leaves the total expected number of rows at 3285000 + 20 = 3285020
+    assert result[0][0] == 3285020
 
 
 def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
@@ -417,7 +420,10 @@ def test_no_addl_fields_same_output(no_addl_fields_same_output):
         "SELECT COUNT(*) FROM flexvalue_refactor_tables.output_table"
     )
     # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
-    assert result[0][0] == 3285000
+    # We also need to include project ids 138 and 139 that have an electric load shape that doesn't match the load shape database
+    # These projects do match on the gas profile, so we expect 20 more rows (from a 15 and 5 year gas eul)
+    # These leaves the total expected number of rows at 3285000 + 20 = 3285020
+    assert result[0][0] == 3285020
 
 
 def test_agg_id_no_fields_same_output(agg_id_no_fields_same_output):
@@ -426,8 +432,8 @@ def test_agg_id_no_fields_same_output(agg_id_no_fields_same_output):
         "SELECT COUNT(*) FROM flexvalue_refactor_tables.apinfso_output_table"
     )
     assert (
-        result[0][0] == 37
-    )  # 39 distinct projects minus 2 with no matching load shape
+        result[0][0] == 39
+    )  # 39 distinct projects even with 2 projects with no matching loadshape (because they match on the gas loadshape)
 
 
 def test_real_data_calculations_aggregated(real_data_calculations_aggregated):

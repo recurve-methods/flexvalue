@@ -44,7 +44,6 @@ elec_calculations AS (
     , pcwdea.{{ column }}
     {% endfor -%}
     , pcwdea.datetime
-    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) AS non_discounted_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.total) AS electric_benefits
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.energy) AS energy
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.losses) AS losses
@@ -60,9 +59,9 @@ elec_calculations AS (
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.discount * pcwdea.marginal_ghg) AS marginal_ghg
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) / CAST(pcwdea.eul AS {{ float_type }}) as annual_net_mwh_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as lifecycle_net_mwh_savings
-    , SUM(pcwdea.trc_costs) AS trc_costs
-    , SUM(pcwdea.pac_costs) AS pac_costs
-    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as elec_avoided_ghg
+    , MAX(pcwdea.trc_costs) AS trc_costs
+    , MAX(pcwdea.pac_costs) AS pac_costs
+    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as lifecycle_elec_ghg_savings
     {% for field in elec_addl_fields if not field == "datetime" -%}
     , pcwdea.{{field}}
     {% endfor -%}
@@ -92,17 +91,17 @@ elec_calculations.id
     WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) < 0 then FLOAT '-inf'
     WHEN MAX(elec_calculations.pac_costs) = 0 AND SUM(elec_calculations.electric_benefits) = 0 then 0.0
     ELSE SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)
-  END as pac_ratio{% else -%}
+  END as pac_ratio
+{% else -%}
 , IF (MAX(elec_calculations.trc_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.trc_costs)) as trc_ratio
 , IF (MAX(elec_calculations.pac_costs) = 0, IF(SUM(elec_calculations.electric_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(elec_calculations.electric_benefits) / MAX(elec_calculations.pac_costs)) as pac_ratio
 {% endif -%}
 , SUM(elec_calculations.electric_benefits) as electric_benefits
-, SUM(elec_calculations.trc_costs) as trc_costs
-, SUM(elec_calculations.pac_costs) as pac_costs
+, MAX(elec_calculations.trc_costs) as trc_costs
+, MAX(elec_calculations.pac_costs) as pac_costs
 , SUM(elec_calculations.annual_net_mwh_savings) as annual_net_mwh_savings
 , SUM(elec_calculations.lifecycle_net_mwh_savings) as lifecycle_net_mwh_savings
-, SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
-, SUM(non_discounted_savings) as non_discounted_savings
+, SUM(elec_calculations.lifecycle_elec_ghg_savings) as lifecycle_elec_ghg_savings
 {% for field in elec_addl_fields -%}
 , elec_calculations.{{field}}
 {% endfor -%}

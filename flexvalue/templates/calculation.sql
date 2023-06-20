@@ -61,7 +61,7 @@ elec_calculations AS (
     , MAX(pcwdea.trc_costs) AS trc_costs
     , MAX(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as lifecycle_net_mwh_savings
-    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as elec_avoided_ghg
+    , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as lifecycle_elec_ghg_savings
     {% for addl_field in elec_addl_fields -%}
     , pcwdea.{{ addl_field }}
     {% endfor -%}
@@ -188,9 +188,9 @@ if(
 , SUM(elec_calculations.lifecycle_net_mwh_savings) as lifecycle_net_mwh_savings
 , SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
-, SUM(elec_calculations.elec_avoided_ghg) as elec_avoided_ghg
+, SUM(elec_calculations.lifecycle_elec_ghg_savings) as lifecycle_elec_ghg_savings
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
-, SUM(COALESCE(elec_calculations.elec_avoided_ghg, 0)) + SUM(COALESCE(gas_calculations.lifecycle_gas_ghg_savings, 0)) as lifecycle_total_ghg_savings
+, SUM(COALESCE(elec_calculations.lifecycle_elec_ghg_savings, 0)) + SUM(COALESCE(gas_calculations.lifecycle_gas_ghg_savings, 0)) as lifecycle_total_ghg_savings
 {% for column in elec_aggregation_columns -%}
 , elec_calculations.{{ column }} as elec_{{ column }}
 {% endfor -%}

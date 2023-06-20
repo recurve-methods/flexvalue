@@ -42,6 +42,8 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
     , therms_profile.value as therms_profile_value
+    , MAX(pcwdga.trc_costs) AS trc_costs
+    , MAX(pcwdga.pac_costs) AS pac_costs
     {% for component in gas_components -%}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{component}}) as {{component}}
     {% endfor -%}
@@ -62,11 +64,30 @@ gas_calculations AS (
 
 SELECT
 gas_calculations.id
+{% if database_type == "postgresql" -%}
+, CASE
+    WHEN MAX(gas_calculations.trc_costs) = 0 AND SUM(gas_calculations.gas_benefits) > 0 then FLOAT 'inf'
+    WHEN MAX(gas_calculations.trc_costs) = 0 AND SUM(gas_calculations.gas_benefits) < 0 then FLOAT '-inf'
+    WHEN MAX(gas_calculations.trc_costs) = 0 AND SUM(gas_calculations.gas_benefits) = 0 then 0.0
+    ELSE SUM(gas_calculations.gas_benefits) / MAX(gas_calculations.trc_costs)
+  END as trc_ratio
+, CASE
+    WHEN MAX(gas_calculations.pac_costs) = 0 AND SUM(gas_calculations.gas_benefits) > 0 then FLOAT 'inf'
+    WHEN MAX(gas_calculations.pac_costs) = 0 AND SUM(gas_calculations.gas_benefits) < 0 then FLOAT '-inf'
+    WHEN MAX(gas_calculations.pac_costs) = 0 AND SUM(gas_calculations.gas_benefits) = 0 then 0.0
+    ELSE SUM(gas_calculations.gas_benefits) / MAX(gas_calculations.pac_costs)
+  END as pac_ratio
+{% else -%}
+, IF (MAX(gas_calculations.trc_costs) = 0, IF(SUM(gas_calculations.gas_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(gas_calculations.gas_benefits) / MAX(gas_calculations.trc_costs)) as trc_ratio
+, IF (MAX(gas_calculations.pac_costs) = 0, IF(SUM(gas_calculations.gas_benefits) > 0, cast("inf" as {{ float_type }}), cast("-inf" as {{ float_type }})), SUM(gas_calculations.gas_benefits) / MAX(gas_calculations.pac_costs)) as pac_ratio
+{% endif -%}
 , SUM(gas_calculations.gas_benefits) as gas_benefits
-, AVG(gas_calculations.total) as total
+, MAX(gas_calculations.trc_costs) as trc_costs
+, MAX(gas_calculations.pac_costs) as pac_costs
 , SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
 , SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
 , MAX(gas_calculations.therms_profile_value) as therms_profile_value
+, SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
 {% for field in gas_addl_fields -%}
 , gas_calculations.{{ field }}
 {% endfor -%}

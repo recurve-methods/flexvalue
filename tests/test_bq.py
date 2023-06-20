@@ -474,7 +474,7 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         "SELECT COUNT(*) FROM flexvalue_refactor_tables.rdcts_output_table"
     )
     assert result[0][0] == 30 * 12 * 8760  # num projects * EUL * hours per year
-    query_str = "SELECT id, SUM(electric_benefits), MAX(trc_costs), MAX(pac_costs), SUM(elec_avoided_ghg), SUM(lifecycle_gas_ghg_savings) FROM flexvalue_refactor_tables.rdcts_output_table WHERE id IN ({0}) GROUP BY id"
+    query_str = "SELECT id, SUM(electric_benefits), MAX(trc_costs), MAX(pac_costs), SUM(lifecycle_elec_ghg_savings), SUM(lifecycle_gas_ghg_savings) FROM flexvalue_refactor_tables.rdcts_output_table WHERE id IN ({0}) GROUP BY id"
     results_dict = {
         "MAR101323": [55231.79, 20881.76, 8583.76, 191.286 / 1000.0, 0],
         "MAR100695": [-13833.56, 13200.29, 2368.87, -46.548 / 1000.0, 0],

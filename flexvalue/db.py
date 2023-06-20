@@ -1124,7 +1124,8 @@ class BigQueryManager(DBManager):
         # fmt: off
         sql = template.render(
             {
-                "dataset": dataset,
+                "target_dataset": dataset,
+                "source_dataset": ".".join(self.config.elec_load_shape_table.split(".")[:-1]),
                 "elec_load_shape_table": self.config.elec_load_shape_table,
                 "elec_load_shape_table_name_only": self.config.elec_load_shape_table.split(".")[-1],
             }
@@ -1148,7 +1149,8 @@ class BigQueryManager(DBManager):
         # fmt: off
         sql = template.render(
             {
-                "dataset": dataset,
+                "source_dataset": ".".join(self.config.metered_load_shape_table.split(".")[:-1]),
+                "target_dataset": dataset,
                 "project_info_table": self.config.project_info_table,
                 "metered_load_shape_table": self.config.metered_load_shape_table,
                 "metered_load_shape_table_only_name": self.config.metered_load_shape_table.split(".")[-1],
@@ -1172,7 +1174,8 @@ class BigQueryManager(DBManager):
         # fmt: off
         sql = template.render(
             {
-                "dataset": dataset,
+                "source_dataset": ".".join(self.config.therms_profiles_table.split(".")[:-1]),
+                "target_dataset": dataset,
                 "therms_profiles_table": self.config.therms_profiles_table,
                 "therms_profiles_table_only_name": self.config.therms_profiles_table.split(".")[-1],
             }

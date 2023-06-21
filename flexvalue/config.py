@@ -7,6 +7,7 @@ from typing import List
 class FLEXValueException(Exception):
     pass
 
+
 @dataclass
 class FLEXValueConfig:
     database_type: str
@@ -51,31 +52,31 @@ class FLEXValueConfig:
     @staticmethod
     def from_file(config_file):
         data = toml.load(config_file)
-        db = data.get('database', dict())
-        run_info = data.get('run', dict())
+        db = data.get("database", dict())
+        run_info = data.get("run", dict())
         return FLEXValueConfig(
-            database_type=db.get('database_type', None),
-            host=db.get('host', None),
-            port=db.get('port', None),
-            user=db.get('user', None),
-            password=db.get('password', None),
-            database=db.get('database', None),
-            project=db.get('project', None),
+            database_type=db.get("database_type", None),
+            host=db.get("host", None),
+            port=db.get("port", None),
+            user=db.get("user", None),
+            password=db.get("password", None),
+            database=db.get("database", None),
+            project=db.get("project", None),
             elec_av_costs_table=db.get("elec_av_costs_table", None),
             elec_load_shape_table=db.get("elec_load_shape_table", None),
             therms_profiles_table=db.get("therms_profiles_table", None),
             gas_av_costs_table=db.get("gas_av_costs_table", None),
             metered_load_shape_table=db.get("metered_load_shape_table", None),
             project_info_table=db.get("project_info_table", None),
-            elec_load_shape_file=run_info.get('elec_load_shape', None),
-            elec_av_costs_file=run_info.get('elec_av_costs', None),
-            therms_profiles_file=run_info.get('therms_profiles', None),
-            gas_av_costs_file=run_info.get('gas_av_costs', None),
-            project_info_file=run_info.get('project_info', None),
-            metered_load_shape_file=run_info.get('metered_load_shape_file', None),
-            output_file=run_info.get('output_file', None),
-            electric_output_table=run_info.get('electric_output_table', None),
-            gas_output_table=run_info.get('gas_output_table', None),
+            elec_load_shape_file=run_info.get("elec_load_shape", None),
+            elec_av_costs_file=run_info.get("elec_av_costs", None),
+            therms_profiles_file=run_info.get("therms_profiles", None),
+            gas_av_costs_file=run_info.get("gas_av_costs", None),
+            project_info_file=run_info.get("project_info", None),
+            metered_load_shape_file=run_info.get("metered_load_shape_file", None),
+            output_file=run_info.get("output_file", None),
+            electric_output_table=run_info.get("electric_output_table", None),
+            gas_output_table=run_info.get("gas_output_table", None),
             aggregation_columns=run_info.get("aggregation_columns", []),
             reset_elec_load_shape=run_info.get("reset_elec_load_shape", None),
             reset_elec_av_costs=run_info.get("reset_elec_av_costs", None),

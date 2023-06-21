@@ -91,18 +91,43 @@ class FLEXValueConfig:
             gas_components=run_info.get("gas_components", []),
             separate_output_tables=run_info.get("separate_output_tables", None),
             elec_addl_fields=run_info.get("elec_addl_fields", []),
-            gas_addl_fields=run_info.get("gas_addl_fields", [])
+            gas_addl_fields=run_info.get("gas_addl_fields", []),
         )
 
     def validate(self):
         if not self.database_type:
             return
         if self.database_type == "postgresql":
-            if not any([self.database_type, self.host, self.port, self.user, self.password, self.database]):
-                raise FLEXValueException("When using postgresql, you must provide at least of the following values in the config file: host, port, user, password.")
+            if not any(
+                [
+                    self.database_type,
+                    self.host,
+                    self.port,
+                    self.user,
+                    self.password,
+                    self.database,
+                ]
+            ):
+                raise FLEXValueException(
+                    "When using postgresql, you must provide at least of the following values in the config file: host, port, user, password."
+                )
         if self.database_type == "bigquery":
-            if not all([self.project, self.dataset]):
-                raise FLEXValueException("When using bigquery, you must provide all of the following values in the config file: project, dataset.")
+            if not all(
+                [
+                    self.project,
+                    self.project_info_table,
+                    self.elec_load_shape_table,
+                    self.therms_profiles_table,
+                    self.elec_av_costs_table,
+                    self.gas_av_costs_table
+                ]
+            ):
+                raise FLEXValueException(
+                    "When using bigquery, you must provide all of the following values in the config file: project, project_info_table, elec_load_shape_table, therms_profiles_table, elec_av_costs_table, gas_av_costs_table."
+                )
+            if self.separate_output_tables == True:
+                if not self.electric_output_table or not self.gas_output_table:
+                    raise FLEXValueException("When you specify separate_output_tables, you must specify both electric_output_table and gas_output_table.")
 
     def float_type(self):
         if self.database_type == "bigquery":

@@ -33,6 +33,7 @@ class FlexValueRun():
             self.config = FLEXValueConfig.from_file(config_file)
         except TypeError:
             self.config = FLEXValueConfig(**kwargs)
+        self.config.validate()
         self.db_manager = DBManager.get_db_manager(self.config)
         # if resetting any tables, do those before we load:
         if self.config.reset_elec_load_shape:

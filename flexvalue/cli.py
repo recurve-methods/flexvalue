@@ -94,12 +94,17 @@ def cli():
     help="The database table to write output to. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
+    "--separate-output-tables",
+    help="Create two output tables, one for electric benefits and one for gas.",
+    is_flag=True
+)
+@click.option(
     "--electric-output-table",
-    help="The database table to write electric output to, when separate_output=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
+    help="The database table to write electric output to, when --separate-output-tables=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--gas-output-table",
-    help="The database table to write gas output to, when separate_output=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
+    help="The database table to write gas output to, when --separate-output-tables=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument)."
 )
 @click.option(
     "--config-file",
@@ -213,6 +218,7 @@ def get_results(
     output_table,
     electric_output_table,
     gas_output_table,
+    separate_output_tables,
     elec_av_costs_file,
     gas_av_costs_file,
     elec_load_shape_file,
@@ -250,6 +256,7 @@ def get_results(
             project_info_table=project_info_table,
             project=project,
             output_table=output_table,
+            separate_output_tables=separate_output_tables,
             electric_output_table=electric_output_table,
             gas_output_table=gas_output_table,
             elec_av_costs_file=elec_av_costs_file,

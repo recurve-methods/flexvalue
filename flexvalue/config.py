@@ -7,6 +7,7 @@ from typing import List
 class FLEXValueException(Exception):
     pass
 
+
 @dataclass
 class FLEXValueConfig:
     database_type: str
@@ -51,31 +52,31 @@ class FLEXValueConfig:
     @staticmethod
     def from_file(config_file):
         data = toml.load(config_file)
-        db = data.get('database', dict())
-        run_info = data.get('run', dict())
+        db = data.get("database", dict())
+        run_info = data.get("run", dict())
         return FLEXValueConfig(
-            database_type=db.get('database_type', None),
-            host=db.get('host', None),
-            port=db.get('port', None),
-            user=db.get('user', None),
-            password=db.get('password', None),
-            database=db.get('database', None),
-            project=db.get('project', None),
+            database_type=db.get("database_type", None),
+            host=db.get("host", None),
+            port=db.get("port", None),
+            user=db.get("user", None),
+            password=db.get("password", None),
+            database=db.get("database", None),
+            project=db.get("project", None),
             elec_av_costs_table=db.get("elec_av_costs_table", None),
             elec_load_shape_table=db.get("elec_load_shape_table", None),
             therms_profiles_table=db.get("therms_profiles_table", None),
             gas_av_costs_table=db.get("gas_av_costs_table", None),
             metered_load_shape_table=db.get("metered_load_shape_table", None),
             project_info_table=db.get("project_info_table", None),
-            elec_load_shape_file=run_info.get('elec_load_shape', None),
-            elec_av_costs_file=run_info.get('elec_av_costs', None),
-            therms_profiles_file=run_info.get('therms_profiles', None),
-            gas_av_costs_file=run_info.get('gas_av_costs', None),
-            project_info_file=run_info.get('project_info', None),
-            metered_load_shape_file=run_info.get('metered_load_shape_file', None),
-            output_file=run_info.get('output_file', None),
-            electric_output_table=run_info.get('electric_output_table', None),
-            gas_output_table=run_info.get('gas_output_table', None),
+            elec_load_shape_file=run_info.get("elec_load_shape", None),
+            elec_av_costs_file=run_info.get("elec_av_costs", None),
+            therms_profiles_file=run_info.get("therms_profiles", None),
+            gas_av_costs_file=run_info.get("gas_av_costs", None),
+            project_info_file=run_info.get("project_info", None),
+            metered_load_shape_file=run_info.get("metered_load_shape_file", None),
+            output_file=run_info.get("output_file", None),
+            electric_output_table=run_info.get("electric_output_table", None),
+            gas_output_table=run_info.get("gas_output_table", None),
             aggregation_columns=run_info.get("aggregation_columns", []),
             reset_elec_load_shape=run_info.get("reset_elec_load_shape", None),
             reset_elec_av_costs=run_info.get("reset_elec_av_costs", None),
@@ -90,18 +91,43 @@ class FLEXValueConfig:
             gas_components=run_info.get("gas_components", []),
             separate_output_tables=run_info.get("separate_output_tables", None),
             elec_addl_fields=run_info.get("elec_addl_fields", []),
-            gas_addl_fields=run_info.get("gas_addl_fields", [])
+            gas_addl_fields=run_info.get("gas_addl_fields", []),
         )
 
     def validate(self):
         if not self.database_type:
             return
         if self.database_type == "postgresql":
-            if not any([self.database_type, self.host, self.port, self.user, self.password, self.database]):
-                raise FLEXValueException("When using postgresql, you must provide at least of the following values in the config file: host, port, user, password.")
+            if not any(
+                [
+                    self.database_type,
+                    self.host,
+                    self.port,
+                    self.user,
+                    self.password,
+                    self.database,
+                ]
+            ):
+                raise FLEXValueException(
+                    "When using postgresql, you must provide at least of the following values in the config file: host, port, user, password."
+                )
         if self.database_type == "bigquery":
-            if not all([self.project, self.dataset]):
-                raise FLEXValueException("When using bigquery, you must provide all of the following values in the config file: project, dataset.")
+            if not all(
+                [
+                    self.project,
+                    self.project_info_table,
+                    self.elec_load_shape_table,
+                    self.therms_profiles_table,
+                    self.elec_av_costs_table,
+                    self.gas_av_costs_table
+                ]
+            ):
+                raise FLEXValueException(
+                    "When using bigquery, you must provide all of the following values in the config file: project, project_info_table, elec_load_shape_table, therms_profiles_table, elec_av_costs_table, gas_av_costs_table."
+                )
+            if self.separate_output_tables == True:
+                if not self.electric_output_table or not self.gas_output_table:
+                    raise FLEXValueException("When you specify separate_output_tables, you must specify both electric_output_table and gas_output_table.")
 
     def float_type(self):
         if self.database_type == "bigquery":

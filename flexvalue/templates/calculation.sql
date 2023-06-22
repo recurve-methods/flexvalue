@@ -179,17 +179,17 @@ if(
     SUM(COALESCE(elec_calculations.electric_benefits, gas_calculations.gas_benefits)) / MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs))
   ) as pac_ratio
 {% endif -%}
-, SUM(elec_calculations.electric_benefits) as electric_benefits
-, SUM(gas_calculations.gas_benefits) as gas_benefits
+, COALESCE(SUM(elec_calculations.electric_benefits), 0) as electric_benefits
+, COALESCE(SUM(gas_calculations.gas_benefits), 0) as gas_benefits
 , SUM(COALESCE(elec_calculations.electric_benefits, 0)) + SUM(COALESCE(gas_calculations.gas_benefits, 0)) as total_benefits
 , MAX(COALESCE(elec_calculations.trc_costs, gas_calculations.trc_costs)) as trc_costs
 , MAX(COALESCE(elec_calculations.pac_costs, gas_calculations.pac_costs)) as pac_costs
-, SUM(elec_calculations.annual_net_mwh_savings) as annual_net_mwh_savings
-, SUM(elec_calculations.lifecycle_net_mwh_savings) as lifecycle_net_mwh_savings
-, SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
-, SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
-, SUM(elec_calculations.lifecycle_elec_ghg_savings) as lifecycle_elec_ghg_savings
-, SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
+, COALESCE(SUM(elec_calculations.annual_net_mwh_savings), 0) as annual_net_mwh_savings
+, COALESCE(SUM(elec_calculations.lifecycle_net_mwh_savings), 0) as lifecycle_net_mwh_savings
+, COALESCE(SUM(gas_calculations.annual_net_therms_savings), 0) as annual_net_therms_savings
+, COALESCE(SUM(gas_calculations.lifecyle_net_therms_savings), 0) as lifecyle_net_therms_savings
+, COALESCE(SUM(elec_calculations.lifecycle_elec_ghg_savings), 0) as lifecycle_elec_ghg_savings
+, COALESCE(SUM(gas_calculations.lifecycle_gas_ghg_savings), 0) as lifecycle_gas_ghg_savings
 , SUM(COALESCE(elec_calculations.lifecycle_elec_ghg_savings, 0)) + SUM(COALESCE(gas_calculations.lifecycle_gas_ghg_savings, 0)) as lifecycle_total_ghg_savings
 {% for column in elec_aggregation_columns -%}
 , elec_calculations.{{ column }} as elec_{{ column }}
@@ -204,10 +204,10 @@ if(
 , gas_calculations.{{ addl_field }}
 {% endfor -%}
 {% for comp in elec_components -%}
-, SUM(elec_calculations.{{comp}}) as {{ comp }}
+, COALESCE(SUM(elec_calculations.{{comp}}), 0) as {{ comp }}
 {% endfor -%}
 {% for comp in gas_components -%}
-, SUM(gas_calculations.{{comp}}) as {{ comp }}
+, COALESCE(SUM(gas_calculations.{{comp}}), 0) as {{ comp }}
 {% endfor -%}
 FROM
     elec_calculations

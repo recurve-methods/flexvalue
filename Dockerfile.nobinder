@@ -3,6 +3,7 @@ FROM python:3.9.1
 RUN apt-get update\
     && apt-get install -y --no-install-recommends graphviz
 
+RUN apt-get install -y sqlite3
 RUN pip install --upgrade pip==21.0.1
 
 COPY requirements.txt ./
@@ -14,4 +15,4 @@ COPY flexvalue/ /app/flexvalue/
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-RUN cd /usr/local/lib/ && python /app/setup.py develop
+RUN cd /usr/local/lib/ && python -m pip install -e /app

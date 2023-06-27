@@ -1,0 +1,1 @@
+select state, utility, region, quarter, month, summer, annual, winter FROM {{ dataset }}.{{ therms_profiles_table }};

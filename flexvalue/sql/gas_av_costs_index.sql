@@ -1,0 +1,2 @@
+--CREATE INDEX IF NOT EXISTS gas_av_cost_index ON gas_av_costs (region, utility, state, year, quarter, month, total);
+CREATE INDEX IF NOT EXISTS gas_av_cost_index ON gas_av_costs (utility, state, quarter, month, total);

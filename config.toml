@@ -1,0 +1,41 @@
+[run]
+project_info_file = "example_user_inputs.csv"
+#elec_load_shape_file = "ca_hourly_electric_load_shapes.csv"
+#elec_av_costs_file = "full_ca_avoided_costs_2020acc.csv"
+#therms_profiles_file = "ca_monthly_therms_load_profiles.csv"
+# gas_av_costs_file = "full_ca_avoided_costs_2020acc_gas.csv"
+output_file = "output.csv"
+# output_table = "output_table"
+process_elec_load_shape = false
+process_elec_av_costs = false
+process_therms_profiles = false
+process_gas_av_costs = false
+aggregation_columns = ["id"]#, "hour_of_year", "year"]
+reset_elec_load_shape = false
+reset_elec_av_costs = false
+reset_therms_profiles = false
+reset_gas_av_costs = false
+elec_components = ["energy", "losses", "ancillary_services", "capacity", "transmission", "distribution", "cap_and_trade", "ghg_adder_rebalancing", "ghg_adder", "ghg_rebalancing", "methane_leakage", "marginal_ghg"]
+gas_components = ["market", "t_d", "environment", "btm_methane", "upstream_methane"]
+# elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"]
+# gas_addl_fields = ["total", "month", "quarter"]
+separate_output_tables = false
+
+[database]
+# database_type = "postgresql"
+# host = "postgresql"
+# port = 5432
+# user = "postgres"
+# password = "example"
+# database = "postgres"
+
+# Example for bigquery
+#credentials = ""
+database_type = "bigquery"
+project = "oeem-avdcosts-platform"
+
+elec_av_costs_table = "oeem-avdcosts-platform.flexvalue_refactor_tables.full_ca_avoided_costs_2020acc_copy"
+elec_load_shape_table = "flexvalue_refactor_tables.ca_hourly_electric_load_shapes_horizontal_copy"
+therms_profiles_table = "flexvalue_refactor_tables.ca_monthly_therms_load_profiles_copy"
+gas_av_costs_table = "oeem-avdcosts-platform.flexvalue_refactor_tables.full_ca_avoided_costs_2020acc_gas_copy"
+project_info_table = "flexvalue_refactor_tables.example_user_inputs"

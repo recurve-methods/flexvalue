@@ -22,7 +22,6 @@
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pip install twine
 
-import io
 import os
 import sys
 from shutil import rmtree
@@ -30,18 +29,24 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 NAME = "flexvalue"
+
+# TODO: fix psycopg-binary; use correct dependency for distributing
 INSTALL_REQUIRES = [
     "click==8.0.3",
+    "toml==0.10.2",
     "pandas==1.3.4",
     "statsmodels==0.13.1",
     "scipy==1.7.2",
     "seaborn==0.11.2",
-    "sqlalchemy<1.4.0",
+    "sqlalchemy==2.0",
     "nbformat==5.1.3",
     "nbconvert==6.3.0",
     "jinja2==3.0.3",
     "matplotlib<3.6",
     "numpy<1.23.0",
+    "psycopg[binary]==3.1.8",
+    "google-cloud-bigquery==3.6.0",
+    "db-dtypes>=1.0.5"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

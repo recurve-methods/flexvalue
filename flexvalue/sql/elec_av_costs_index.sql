@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS elec_av_cost_index ON elec_av_costs (hour_of_year, region, utility, state, quarter, month, total);

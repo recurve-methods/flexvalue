@@ -4,6 +4,12 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+2.0.0
+-----
+
+
 * Rewrite FLEXvalue to use sql calculations instead of pandas. Supports Google BigQuery and PostgreSQL.
 
 0.4.6

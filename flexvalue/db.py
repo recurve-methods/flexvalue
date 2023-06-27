@@ -478,8 +478,8 @@ class DBManager:
             "therms_profile_table": "therms_profile",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
-            "elec_components": self.config.elec_components,
-            "gas_components": self.config.gas_components,
+            "elec_components": self._elec_components(),
+            "gas_components": self._gas_components(),
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns
@@ -552,6 +552,20 @@ class DBManager:
         )
         logging.debug(
             f"gas_addl_fields = {self.config.gas_addl_fields}\ngas_agg_columns = {gas_agg_columns}\nset diff = {fields}"
+        )
+        return fields
+
+    def _elec_components(self):
+        fields = set(self.config.elec_components) - set(["total"])
+        logging.debug(
+            f"elec_components = {self.config.elec_components}\n diff = {fields}"
+        )
+        return fields
+
+    def _gas_components(self):
+        fields = set(self.config.gas_components) - set(["total"])
+        logging.debug(
+            f"gas_components = {self.config.gas_components}\n diff = {fields}"
         )
         return fields
 
@@ -1199,8 +1213,8 @@ class BigQueryManager(DBManager):
             "therms_profile_table": f"`{self._get_target_dataset()}.therms_profile`",
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
-            "elec_components": self.config.elec_components,
-            "gas_components": self.config.gas_components,
+            "elec_components": self._elec_components(),
+            "gas_components": self._gas_components(),
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns

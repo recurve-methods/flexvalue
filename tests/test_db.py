@@ -30,6 +30,8 @@ TEST_USER = "postgres"
 TEST_PASSWORD = "example"
 TEST_DATABASE = "postgres"
 
+# TODO: Add some ghg tests in the future.
+
 
 @pytest.fixture
 def config():

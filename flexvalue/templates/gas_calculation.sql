@@ -16,7 +16,7 @@ WITH project_costs AS (
         , gas_av_costs.month
         , gas_av_costs.quarter
         , gas_av_costs.total, gas_av_costs.market, gas_av_costs.t_d
-        , gas_av_costs.environment, gas_av_costs.btm_methane, gas_av_costs.upstream_methane
+        , gas_av_costs.environment, gas_av_costs.btm_methane, gas_av_costs.upstream_methane, gas_av_costs.marginal_ghg
         , 1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((gas_av_costs.year - project_costs.start_year) * 4) + gas_av_costs.quarter - project_costs.start_quarter) AS discount
         , ((gas_av_costs.year - project_costs.start_year) * 4) + gas_av_costs.quarter - project_costs.start_quarter + 1 as eul_quarter
         , gas_av_costs.datetime
@@ -40,12 +40,16 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
     , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as annual_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
-    , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * 0.006) as lifecycle_gas_ghg_savings
+    , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * pcwdga.marginal_ghg) as lifecycle_gas_ghg_savings
     , therms_profile.value as therms_profile_value
     , MAX(pcwdga.trc_costs) AS trc_costs
     , MAX(pcwdga.pac_costs) AS pac_costs
     {% for component in gas_components -%}
+    {% if component == 'marginal_ghg' %}
+    , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.{{component}}) as {{component}}
+    {% else %}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{component}}) as {{component}}
+    {% endif %}
     {% endfor -%}
     {% for field in gas_addl_fields -%}
     , pcwdga.{{ field }}

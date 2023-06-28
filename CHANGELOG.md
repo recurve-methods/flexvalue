@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Change how Jinja loads templates
 
 2.0.0
 -----

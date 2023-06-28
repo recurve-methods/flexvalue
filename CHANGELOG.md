@@ -4,6 +4,12 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+2.0.3
+-----
+
+
 * Include sql files in built package
 
 2.0.2

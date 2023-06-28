@@ -23,6 +23,7 @@
 #   $ pip install twine
 
 import os
+import glob
 import sys
 from shutil import rmtree
 
@@ -89,6 +90,8 @@ class UploadCommand(Command):
 
         sys.exit()
 
+template_files = glob.glob('flexvalue/templates/*sql')
+sql_files = glob.glob('flexvalue/sql/*sql')
 
 # Where the magic happens:
 setup(
@@ -114,4 +117,8 @@ setup(
     ],
     # $ setup.py publish support.
     cmdclass={"upload": UploadCommand},
+    data_files=[
+        ('templates', template_files),
+        ('sql', sql_files)
+    ]
 )

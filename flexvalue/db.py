@@ -26,7 +26,7 @@ import psycopg
 
 from datetime import datetime
 from flexvalue.config import FLEXValueConfig, FLEXValueException
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ResourceClosedError
@@ -148,7 +148,7 @@ class DBManager:
 
     def __init__(self, fv_config: FLEXValueConfig) -> None:
         self.template_env = Environment(
-            loader=FileSystemLoader("flexvalue/templates"),
+            loader=PackageLoader("flexvalue", "templates"),
             autoescape=select_autoescape(),
             trim_blocks=True,
         )
@@ -985,7 +985,7 @@ class SqliteManager(DBManager):
     def __init__(self, fv_config: FLEXValueConfig):
         super().__init__(fv_config)
         self.template_env = Environment(
-            loader=FileSystemLoader("flexvalue/templates"), autoescape=select_autoescape()
+            loader=PackageLoader("flexvalue", "templates"), autoescape=select_autoescape()
         )
         self.config = fv_config
 
@@ -1003,7 +1003,7 @@ class BigQueryManager(DBManager):
     def __init__(self, fv_config: FLEXValueConfig):
         super().__init__(fv_config)
         self.template_env = Environment(
-            loader=FileSystemLoader("flexvalue/templates"), autoescape=select_autoescape()
+            loader=PackageLoader("flexvalue", "templates"), autoescape=select_autoescape()
         )
         self.config = fv_config
         self.table_names = [

@@ -1173,7 +1173,9 @@ class BigQueryManager(DBManager):
             truncate=truncate,
         )
 
-        self._copy_table(self.config.elec_load_shape_table, f"{self._get_target_dataset()}.elec_load_shape")
+        # if we process the elec load shape, that will create target_dataset.elec_load_shape; otherwise...
+        if not self.config.process_elec_load_shape:
+            self._copy_table(self.config.elec_load_shape_table, f"{self._get_target_dataset()}.elec_load_shape")
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
         # Black ruins readability here, disable
         # fmt: off

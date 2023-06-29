@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Add support for the case that the load shape is already the right format.
 
 2.0.3
 -----

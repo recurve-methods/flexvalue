@@ -68,6 +68,7 @@ gas_calculations AS (
 
 SELECT
 gas_calculations.id
+, SUM(gas_calculations.total) as total
 {% if database_type == "postgresql" -%}
 , CASE
     WHEN MAX(gas_calculations.trc_costs) = 0 AND SUM(gas_calculations.gas_benefits) > 0 then FLOAT 'inf'

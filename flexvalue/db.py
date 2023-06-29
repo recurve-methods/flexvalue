@@ -1127,6 +1127,19 @@ class BigQueryManager(DBManager):
                     f"Unable to add a datetime column to {table_name}; can't process gas avoided costs."
                 )
 
+    def _copy_table(self, source_table, target_table):
+        """source_table and target_table must include the dataset in their values, like {dataset}.{table}.
+        This deletes target_table before copying source_table to it.
+        """
+        self.client.delete_table(target_table, not_found_ok=True)
+        job_config = bigquery.CopyJobConfig()
+        job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+        job_config.create_disposition = bigquery.CreateDisposition.CREATE_IF_NEEDED
+        copy_job = self.client.copy_table(
+            source_table, target_table, job_config=job_config
+        )
+        copy_job.result()
+
     def process_elec_load_shape(self, elec_load_shapes_path: str, truncate=False):
         """Transforms data in the table specified by config.elec_load_shape_table, and loads it into `elec_load_shape`."""
         dataset = self._get_target_dataset()
@@ -1150,7 +1163,9 @@ class BigQueryManager(DBManager):
         result = query_job.result()
 
     def process_metered_load_shape(self, metered_load_shapes_path: str, truncate=False):
-        """Transforms data in the table specified by config.metered_load_shape_table, and loads it into `elec_load_shape`."""
+        """Transforms data in the table specified by config.metered_load_shape_table, and
+        loads it into `elec_load_shape`. First copies the specified elec_load_shape table
+        into {target_dataset}.elec_load_shape."""
         dataset = self._get_target_dataset()
         self._prepare_table(
             f"{dataset}.elec_load_shape",
@@ -1158,6 +1173,7 @@ class BigQueryManager(DBManager):
             truncate=truncate,
         )
 
+        self._copy_table(self.config.elec_load_shape_table, f"{self._get_target_dataset()}.elec_load_shape")
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
         # Black ruins readability here, disable
         # fmt: off
@@ -1199,6 +1215,16 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
 
+    def _elec_load_shape_for_context(self):
+        if self.config.process_metered_load_shape or self.config.process_elec_load_shape:
+            return f"{self._get_target_dataset()}.elec_load_shape"
+        return self.config.elec_load_shape_table
+
+    def _therms_profile_for_context(self):
+        if self.config.process_therms_profiles:
+            return f"{self._get_target_dataset()}.therms_profile"
+        return self.config.therms_profiles_table
+
     def _get_calculation_sql_context(self, mode=""):
         elec_agg_columns = self._elec_aggregation_columns()
         gas_agg_columns = self._gas_aggregation_columns()
@@ -1208,9 +1234,9 @@ class BigQueryManager(DBManager):
         context = {
             "project_info_table": self.config.project_info_table,
             "eac_table": self.config.elec_av_costs_table,
-            "els_table": f"`{self._get_target_dataset()}.elec_load_shape`",
+            "els_table": self._elec_load_shape_for_context(),
             "gac_table": self.config.gas_av_costs_table,
-            "therms_profile_table": f"`{self._get_target_dataset()}.therms_profile`",
+            "therms_profile_table": self._therms_profile_for_context(),
             "float_type": self.config.float_type(),
             "database_type": self.config.database_type,
             "elec_components": self._elec_components(),

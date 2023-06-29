@@ -4,6 +4,12 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+2.0.5
+-----
+
+
 * When processing the metered load shape, only copy the elec load shape if we don't process it.
 
 2.0.4

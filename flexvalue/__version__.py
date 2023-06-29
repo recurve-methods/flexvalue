@@ -20,7 +20,7 @@
 __title__ = "FLEXvalue"
 __description__ = "FLEXvalue: a tool for calculating avoided costs"
 __url__ = "http://github.com/recurve-methods/flexvalue"
-__version__ = "2.0.4"
+__version__ = "2.0.5"
 __author__ = "Recurve Analytics, Inc."
 __author_email__ = "support@recurve.com"
 __license__ = "Apache 2.0"

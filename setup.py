@@ -33,12 +33,12 @@ NAME = "flexvalue"
 
 # TODO: fix psycopg-binary; use correct dependency for distributing
 INSTALL_REQUIRES = [
-    "click==8.0.3",
-    "toml==0.10.2",
-    "pandas==1.3.4",
-    "statsmodels==0.13.1",
-    "scipy==1.7.2",
-    "seaborn==0.11.2",
+    "click>=8.0.0",
+    "toml>=0.10.2",
+    "pandas",
+    "statsmodels",
+    "scipy",
+    "seaborn",
     "sqlalchemy==2.0",
     "nbformat==5.1.3",
     "nbconvert==6.3.0",
@@ -46,7 +46,7 @@ INSTALL_REQUIRES = [
     "matplotlib<3.6",
     "numpy<1.23.0",
     "psycopg[binary]==3.1.8",
-    "google-cloud-bigquery==3.6.0",
+    "google-cloud-bigquery",
     "db-dtypes>=1.0.5"
 ]
 

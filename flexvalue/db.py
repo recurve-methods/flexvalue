@@ -480,6 +480,7 @@ class DBManager:
             "database_type": self.config.database_type,
             "elec_components": self._elec_components(),
             "gas_components": self._gas_components(),
+            "use_value_curve_name_for_join": self.config.use_value_curve_name_for_join
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns
@@ -1243,6 +1244,7 @@ class BigQueryManager(DBManager):
             "database_type": self.config.database_type,
             "elec_components": self._elec_components(),
             "gas_components": self._gas_components(),
+            "use_value_curve_name_for_join": self.config.use_value_curve_name_for_join
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns

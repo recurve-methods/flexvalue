@@ -29,6 +29,9 @@ project_costs_with_discounted_elec_av AS (
     JOIN {{ eac_table }} elec_av_costs
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
+            {% if use_value_curve_name_for_join -%}
+            AND elec_av_costs.value_curve_name = project_costs.value_curve_name
+            {% endif -%}
             {% if database_type == "postgresql" -%}
             AND elec_av_costs.datetime >= make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0)
             AND elec_av_costs.datetime < make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0) + make_interval(project_costs.eul)

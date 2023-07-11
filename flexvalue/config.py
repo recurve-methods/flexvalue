@@ -48,6 +48,7 @@ class FLEXValueConfig:
     elec_addl_fields: List[str] = field(default_factory=list)
     gas_addl_fields: List[str] = field(default_factory=list)
     separate_output_tables: bool = False
+    use_value_curve_name_for_join: bool = False
 
     @staticmethod
     def from_file(config_file):
@@ -92,6 +93,7 @@ class FLEXValueConfig:
             separate_output_tables=run_info.get("separate_output_tables", None),
             elec_addl_fields=run_info.get("elec_addl_fields", []),
             gas_addl_fields=run_info.get("gas_addl_fields", []),
+            use_value_curve_name_for_join=run_info.get("join_on_value_curve_name", None)
         )
 
     def validate(self):

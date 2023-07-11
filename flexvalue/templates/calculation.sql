@@ -28,6 +28,9 @@ project_costs_with_discounted_elec_av AS (
     JOIN {{ eac_table }} elec_av_costs
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
+            {% if use_value_curve_name_for_join -%}
+            AND elec_av_costs.value_curve_name = project_costs.value_curve_name
+            {% endif -%}
             {% if database_type == "postgresql" -%}
             AND elec_av_costs.datetime >= make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0)
             AND elec_av_costs.datetime < make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0) + make_interval(project_costs.eul)
@@ -57,7 +60,7 @@ elec_calculations AS (
     , MAX(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as lifecycle_net_mwh_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as lifecycle_elec_ghg_savings
-    {% for addl_field in elec_addl_fields -%}
+    {% for field in elec_addl_fields if not field == "datetime" -%}
     , pcwdea.{{ addl_field }}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
@@ -66,7 +69,9 @@ elec_calculations AS (
             AND elec_load_shape.utility = pcwdea.utility
             AND elec_load_shape.hour_of_year = pcwdea.hour_of_year
     GROUP BY pcwdea.id, pcwdea.eul, pcwdea.datetime, elec_load_shape.load_shape_name
-    {% for field in elec_addl_fields %}, pcwdea.{{ field }}{% endfor -%}
+    {% for field in elec_addl_fields if not field == "datetime" -%}
+    , pcwdea.{{ field }}
+    {% endfor -%}
     {%- for column in elec_aggregation_columns -%}, pcwdea.{{ column }}{% endfor -%}
 )
 , project_costs_with_discounted_gas_av AS (
@@ -82,6 +87,9 @@ elec_calculations AS (
     FROM project_costs
     JOIN {{ gac_table }} gas_av_costs
         ON gas_av_costs.utility = project_costs.utility
+            {% if use_value_curve_name_for_join -%}
+            AND gas_av_costs.value_curve_name = project_costs.value_curve_name
+            {% endif -%}
             {% if database_type == "postgresql" -%}
             AND gas_av_costs.datetime >= make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0)
             AND gas_av_costs.datetime < make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0) + make_interval(project_costs.eul)

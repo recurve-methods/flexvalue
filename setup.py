@@ -39,7 +39,6 @@ INSTALL_REQUIRES = [
     "jinja2==3.0.3",
     "psycopg[binary]==3.1.8",
     "google-cloud-bigquery>=2.34.3",
-    # "db-dtypes>=1.0.5"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

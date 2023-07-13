@@ -1,4 +1,3 @@
-import pandas as pd
 import pytest
 import random
 
@@ -9,23 +8,6 @@ def test_ids():
 
 def pytest_addoption(parser):
     parser.addoption("--database-version", action="store", default="")
-
-
-@pytest.fixture
-def metered_load_shape(test_ids):
-    random.seed(0)
-    output = []
-    for _id in test_ids:
-        for hour in range(8760):
-            savings = random.random() * 0.1
-            output.append(
-                {"identifier": _id, "hour_of_year": hour, "hourly_mwh_savings": savings}
-            )
-    df = pd.DataFrame(output).pivot(
-        index="hour_of_year", columns="identifier", values="hourly_mwh_savings"
-    )
-    df.columns.name = None
-    return df
 
 
 @pytest.fixture

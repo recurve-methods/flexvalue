@@ -69,6 +69,8 @@ def addl_fields_sep_output():
         ],
         gas_addl_fields=["total", "month", "quarter"],
         separate_output_tables=True,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -116,6 +118,8 @@ def addl_fields_same_output():
         ],
         gas_addl_fields=["total", "month", "quarter"],
         separate_output_tables=False,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -153,6 +157,8 @@ def no_addl_fields_same_output():
             "upstream_methane",
         ],
         separate_output_tables=False,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -191,6 +197,8 @@ def no_addl_fields_sep_output():
             "upstream_methane",
         ],
         separate_output_tables=True,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -228,6 +236,8 @@ def agg_id_no_fields_same_output():
             "upstream_methane",
         ],
         separate_output_tables=False,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -248,6 +258,7 @@ def metered_load_shape():
         output_table="flexvalue_refactor_tables.apinfso_output_table",
         aggregation_columns=["id"],
         separate_output_tables=False,
+        process_therms_profiles=True,
     )
 
 
@@ -289,6 +300,8 @@ def real_data_calculations_aggregated():
         elec_addl_fields=["admin_cost", "measure_cost", "incentive_cost"],
         # gas_addl_fields = ["total", "month", "quarter"],
         separate_output_tables=False,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -326,6 +339,8 @@ def real_data_calculations_time_series():
             "upstream_methane",
         ],
         separate_output_tables=False,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -364,6 +379,8 @@ def real_data_calculations_time_series_sep():
             "upstream_methane",
         ],
         separate_output_tables=True,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
     )
 
 
@@ -393,11 +410,11 @@ def test_addl_fields_same_output(addl_fields_same_output):
     result = addl_fields_same_output.db_manager._exec_select_sql(
         "SELECT COUNT(*) FROM flexvalue_refactor_tables.output_table"
     )
-    # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
-    # We also need to include project ids 138 and 139 that have an electric load shape that doesn't match the load shape database
-    # These projects do match on the gas profile, so we expect 20 more rows (from a 15 and 5 year gas eul)
-    # These leaves the total expected number of rows at 3285000 + 20 = 3285020
-    assert result[0][0] == 3285020
+    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
+    # We also need to include project ids 138, 139, and heat_pump that have an electric load shape that doesn't match the load shape database
+    # These projects do match on the gas profile, so we expect 35 more rows (from two 15 and one 5 year gas eul)
+    # These leaves the total expected number of rows at 3153600 + 20 = 3153635
+    assert result[0][0] == 3153635
 
 
 def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
@@ -419,11 +436,11 @@ def test_no_addl_fields_same_output(no_addl_fields_same_output):
     result = no_addl_fields_same_output.db_manager._exec_select_sql(
         "SELECT COUNT(*) FROM flexvalue_refactor_tables.output_table"
     )
-    # sum(eul) of the projects that we have load shape data for == 375; 375 * 8760 == 3285000
-    # We also need to include project ids 138 and 139 that have an electric load shape that doesn't match the load shape database
-    # These projects do match on the gas profile, so we expect 20 more rows (from a 15 and 5 year gas eul)
-    # These leaves the total expected number of rows at 3285000 + 20 = 3285020
-    assert result[0][0] == 3285020
+    # sum(eul) of the projects that we have load shape data for == 360; 360 * 8760 == 3153600
+    # We also need to include project ids 138, 139, and heat_pump that have an electric load shape that doesn't match the load shape database
+    # These projects do match on the gas profile, so we expect 35 more rows (from two 15 and one 5 year gas eul)
+    # These leaves the total expected number of rows at 3153600 + 20 = 3153635
+    assert result[0][0] == 3153635
 
 
 def test_agg_id_no_fields_same_output(agg_id_no_fields_same_output):
@@ -527,7 +544,9 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         table_name="flexvalue_refactor_tables.rdcts_output_table",
         projects=projects,
     )
-    test_df = real_data_calculations_time_series.db_manager._select_as_df(sql=query)
+    result = real_data_calculations_time_series.db_manager._exec_select_sql(sql=query)
+    test_results = [dict(row) for row in result]
+
     like_clause = " OR ".join(
         [f"flexvalue_id LIKE '{x}%'" for x in results_dict.keys()]
     )
@@ -538,10 +557,14 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         table_name="oeem-mcemktpl-platform.cmkt_2023_04_01_flexvalue_metered_outputs.flexvalue_outputs_deer_p2021_ts_elec_latest",
         like_clause=like_clause,
     )
-    prod_df = real_data_calculations_time_series.db_manager._select_as_df(sql=query)
+    result = real_data_calculations_time_series.db_manager._exec_select_sql(sql=query)
+    prod_results = [dict(row) for row in result]
+
+    assert len(test_results) == len(prod_results)
     for k, v in column_mapping.items():
         if k != "flexvalue_id":
-            print(f"Testing {k}:{v}: {len(test_df[v])}")
-            assert len(test_df[v]) == len(prod_df[k])
-            for x in range(0, len(test_df[v]), 1000):
-                assert math.isclose(test_df[v][x], prod_df[k][x], rel_tol=0.005)
+            for x in range(0, len(test_results), 1000):
+                print(test_results[x][v], prod_results[x][k])
+                assert math.isclose(
+                    test_results[x][v], prod_results[x][k], rel_tol=0.005
+                )

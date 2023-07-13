@@ -1326,6 +1326,3 @@ class BigQueryManager(DBManager):
         query_job = self.client.query(sql)
         result = query_job.result()
         return [x for x in result]
-
-    def _select_as_df(self, sql: str):
-        return self.client.query(sql).to_dataframe()

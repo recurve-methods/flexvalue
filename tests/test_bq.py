@@ -545,10 +545,7 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         projects=projects,
     )
     result = real_data_calculations_time_series.db_manager._exec_select_sql(sql=query)
-    test_results = []
-    for row in result:
-        row_dict = dict(row)
-        test_results.append(row_dict)
+    test_results = [dict(row) for row in result]
 
     like_clause = " OR ".join(
         [f"flexvalue_id LIKE '{x}%'" for x in results_dict.keys()]
@@ -561,10 +558,7 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
         like_clause=like_clause,
     )
     result = real_data_calculations_time_series.db_manager._exec_select_sql(sql=query)
-    prod_results = []
-    for row in result:
-        row_dict = dict(row)
-        prod_results.append(row_dict)
+    prod_results = [dict(row) for row in result]
 
     assert len(test_results) == len(prod_results)
     for k, v in column_mapping.items():

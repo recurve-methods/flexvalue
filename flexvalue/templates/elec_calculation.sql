@@ -62,7 +62,7 @@ elec_calculations AS (
     , MAX(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as lifecycle_elec_ghg_savings
     {% for field in elec_addl_fields if not field == "datetime" -%}
-    , pcwdea.{{field}}
+    , pcwdea.{{ field }}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table}} elec_load_shape

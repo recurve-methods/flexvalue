@@ -61,7 +61,7 @@ elec_calculations AS (
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value) as lifecycle_net_mwh_savings
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as lifecycle_elec_ghg_savings
     {% for field in elec_addl_fields if not field == "datetime" -%}
-    , pcwdea.{{ addl_field }}
+    , pcwdea.{{ field }}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table }} elec_load_shape
@@ -117,8 +117,8 @@ gas_calculations AS (
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.{{component}}) as {{component}}
     {% endif %}
     {% endfor -%}
-    {% for addl_field in gas_addl_fields -%}
-    , pcwdga.{{ addl_field }}
+    {% for field in gas_addl_fields -%}
+    , pcwdga.{{ field }}
     {% endfor -%}
     , pcwdga.datetime
     FROM project_costs_with_discounted_gas_av pcwdga
@@ -204,11 +204,11 @@ if(
 {% for column in gas_aggregation_columns -%}
 , gas_calculations.{{ column }} as gas_{{ column }}
 {% endfor -%}
-{% for addl_field in elec_addl_fields -%}
-, elec_calculations.{{ addl_field }}
+{% for field in elec_addl_fields -%}
+, elec_calculations.{{ field }}
 {% endfor -%}
-{% for addl_field in gas_addl_fields -%}
-, gas_calculations.{{ addl_field }}
+{% for field in gas_addl_fields -%}
+, gas_calculations.{{ field }}
 {% endfor -%}
 {% for comp in elec_components -%}
 , COALESCE(SUM(elec_calculations.{{comp}}), 0) as {{ comp }}

@@ -26,7 +26,12 @@ project_costs_with_discounted_elec_av AS (
         1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter) AS discount
         , ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter + 1 as eul_quarter
     FROM project_costs
-    JOIN {{ eac_table }} elec_av_costs
+    JOIN 
+        {% if use_value_curve_name_for_join -%}
+        (SELECT * FROM {{ eac_table }} WHERE value_curve_name IN (SELECT DISTINCT value_curve_name FROM project_costs)) elec_av_costs
+        {% else -%}
+        {{ eac_table }} elec_av_costs
+        {% endif -%}
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
             {% if use_value_curve_name_for_join -%}

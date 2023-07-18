@@ -21,7 +21,12 @@ WITH project_costs AS (
         , ((gas_av_costs.year - project_costs.start_year) * 4) + gas_av_costs.quarter - project_costs.start_quarter + 1 as eul_quarter
         , gas_av_costs.datetime
     FROM project_costs
-    JOIN {{ gac_table }} gas_av_costs
+    JOIN 
+      {% if use_value_curve_name_for_join -%}
+      (SELECT * FROM {{ gac_table }} WHERE value_curve_name IN (SELECT DISTINCT value_curve_name FROM project_costs)) gas_av_costs
+      {% else -%}
+      {{ gac_table }} gas_av_costs
+      {% endif -%}
         ON gas_av_costs.utility = project_costs.utility
             {% if use_value_curve_name_for_join -%}
             AND gas_av_costs.value_curve_name = project_costs.value_curve_name

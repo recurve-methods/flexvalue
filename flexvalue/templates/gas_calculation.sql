@@ -98,7 +98,7 @@ gas_calculations.id
 , MAX(gas_calculations.trc_costs) as trc_costs
 , MAX(gas_calculations.pac_costs) as pac_costs
 , SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
-, SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
+, SUM(gas_calculations.lifecyle_net_therms_savings) as lifecycle_net_therms_savings
 , MAX(gas_calculations.therms_profile_value) as therms_profile_value
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
 {% for field in gas_addl_fields -%}

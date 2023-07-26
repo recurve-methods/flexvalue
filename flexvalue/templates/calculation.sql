@@ -204,7 +204,7 @@ if(
 , COALESCE(SUM(elec_calculations.annual_net_mwh_savings), 0) as annual_net_mwh_savings
 , COALESCE(SUM(elec_calculations.lifecycle_net_mwh_savings), 0) as lifecycle_net_mwh_savings
 , COALESCE(SUM(gas_calculations.annual_net_therms_savings), 0) as annual_net_therms_savings
-, COALESCE(SUM(gas_calculations.lifecyle_net_therms_savings), 0) as lifecyle_net_therms_savings
+, COALESCE(SUM(gas_calculations.lifecyle_net_therms_savings), 0) as lifecycle_net_therms_savings
 , COALESCE(SUM(elec_calculations.lifecycle_elec_ghg_savings), 0) as lifecycle_elec_ghg_savings
 , COALESCE(SUM(gas_calculations.lifecycle_gas_ghg_savings), 0) as lifecycle_gas_ghg_savings
 , SUM(COALESCE(elec_calculations.lifecycle_elec_ghg_savings, 0)) + SUM(COALESCE(gas_calculations.lifecycle_gas_ghg_savings, 0)) as lifecycle_total_ghg_savings

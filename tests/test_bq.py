@@ -383,6 +383,101 @@ def real_data_calculations_time_series_sep():
         process_therms_profiles=True,
     )
 
+@pytest.fixture
+def agg_same_output_value_curve_name():
+    return FlexValueRun(
+        database_type="bigquery",
+        project="oeem-avdcosts-platform",
+        elec_av_costs_table="oeem-avdcosts-platform.avoided_costs_platform_use.ca_combined_value_curve_electric",
+        elec_load_shape_table="flexvalue_refactor_tables.ca_hourly_electric_load_shapes_horizontal_copy",
+        therms_profiles_table="flexvalue_refactor_tables.ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="oeem-avdcosts-platform.avoided_costs_platform_use.ca_combined_value_curve_gas",
+        project_info_table="flexvalue_refactor_tables.value_curve_join_inputs_2",
+        output_table="flexvalue_refactor_tables.agg_value_curve_name_output_table",
+        aggregation_columns=["id"],
+        elec_components=[
+            "energy",
+            "losses",
+            "ancillary_services",
+            "capacity",
+            "transmission",
+            "distribution",
+            "cap_and_trade",
+            "ghg_adder_rebalancing",
+            "ghg_adder",
+            "ghg_rebalancing",
+            "methane_leakage",
+            "marginal_ghg",
+        ],
+        gas_components=[
+            "market",
+            "t_d",
+            "environment",
+            "btm_methane",
+            "upstream_methane",
+        ],
+        elec_addl_fields=[
+            "value_curve_name",
+        ],
+        gas_addl_fields=[
+            "value_curve_name",
+        ],
+        separate_output_tables=False,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
+        reset_elec_load_shape=True,
+        reset_therms_profiles=True,
+        use_value_curve_name_for_join=True,
+    )
+
+@pytest.fixture
+def agg_id_sep_output_value_curve_name():
+    return FlexValueRun(
+        database_type="bigquery",
+        project="oeem-avdcosts-platform",
+        elec_av_costs_table="oeem-avdcosts-platform.avoided_costs_platform_use.ca_combined_value_curve_electric",
+        elec_load_shape_table="flexvalue_refactor_tables.ca_hourly_electric_load_shapes_horizontal_copy",
+        therms_profiles_table="flexvalue_refactor_tables.ca_monthly_therms_load_profiles_copy",
+        gas_av_costs_table="oeem-avdcosts-platform.avoided_costs_platform_use.ca_combined_value_curve_gas",
+        project_info_table="flexvalue_refactor_tables.value_curve_join_inputs_2",
+        electric_output_table="flexvalue_refactor_tables.agg_value_curve_name_output_table_electric",
+        gas_output_table="flexvalue_refactor_tables.agg_value_curve_name_output_table_gas",
+        aggregation_columns=["id"],
+        elec_components=[
+            "energy",
+            "losses",
+            "ancillary_services",
+            "capacity",
+            "transmission",
+            "distribution",
+            "cap_and_trade",
+            "ghg_adder_rebalancing",
+            "ghg_adder",
+            "ghg_rebalancing",
+            "methane_leakage",
+            "marginal_ghg",
+        ],
+        gas_components=[
+            "market",
+            "t_d",
+            "environment",
+            "btm_methane",
+            "upstream_methane",
+        ],
+        elec_addl_fields=[
+            "value_curve_name",
+        ],
+        gas_addl_fields=[
+            "value_curve_name",
+        ],
+        separate_output_tables=True,
+        process_elec_load_shape=True,
+        process_therms_profiles=True,
+        reset_elec_load_shape=True,
+        reset_therms_profiles=True,
+        use_value_curve_name_for_join=True,
+    )
+
 
 def test_metered_load_shape(metered_load_shape):
     metered_load_shape.run()
@@ -415,6 +510,63 @@ def test_addl_fields_same_output(addl_fields_same_output):
     # These projects do match on the gas profile, so we expect 35 more rows (from two 15 and one 5 year gas eul)
     # These leaves the total expected number of rows at 3153600 + 20 = 3153635
     assert result[0][0] == 3153635
+
+def test_value_curve_name_join_same_output(agg_same_output_value_curve_name):
+    agg_same_output_value_curve_name.run()
+
+    result = agg_same_output_value_curve_name.db_manager._exec_select_sql(
+        "SELECT id, value_curve_name, electric_benefits, gas_benefits FROM flexvalue_refactor_tables.agg_value_curve_name_output_table"
+    )
+    results_list = [dict(row) for row in result]
+
+    # We expect both input meters to appear in the outputs because the value curve joined has not dropped any meters.
+    assert len(results_list) == 2
+    # We expect rows with the same inputs but different value curve names to yield distinct values.
+    for result in results_list:
+        if result['id'] == 'v2020':
+            assert result['value_curve_name'] == 'v2020'
+            assert math.isclose(result['electric_benefits'], 10442.47, rel_tol=0.01)
+            assert math.isclose(result['gas_benefits'], 95.36, rel_tol=0.01)
+        if result['id'] == 'v2022':
+            assert result['value_curve_name'] == 'v2022'
+            assert math.isclose(result['electric_benefits'], 8586.40, rel_tol=0.01)
+            assert math.isclose(result['gas_benefits'], 128.09, rel_tol=0.01)
+
+def test_value_curve_name_join_sep_output(agg_id_sep_output_value_curve_name):
+    agg_id_sep_output_value_curve_name.run()
+    
+    result = agg_id_sep_output_value_curve_name.db_manager._exec_select_sql(
+        "SELECT id, value_curve_name, electric_benefits FROM flexvalue_refactor_tables.agg_value_curve_name_output_table_electric"
+    )
+    results_list = [dict(row) for row in result]
+
+    # We expect both input meters to appear in the outputs because the value curve joined has not dropped any meters.
+    assert len(results_list) == 2
+    # We expect rows with the same inputs but different value curve names to yield distinct values.
+    for result in results_list:
+        if result['id'] == 'v2020':
+            assert result['value_curve_name'] == 'v2020'
+            assert math.isclose(result['electric_benefits'], 10442.47, rel_tol=0.01)
+        if result['id'] == 'v2022':
+            assert result['value_curve_name'] == 'v2022'
+            assert math.isclose(result['electric_benefits'], 8586.40, rel_tol=0.01)
+    
+    result = agg_id_sep_output_value_curve_name.db_manager._exec_select_sql(
+        "SELECT id, value_curve_name, gas_benefits FROM flexvalue_refactor_tables.agg_value_curve_name_output_table_gas"
+    )
+    results_list = [dict(row) for row in result]
+
+    # We expect both input meters to appear in the outputs because the value curve joined has not dropped any meters.
+    assert len(results_list) == 2
+    # We expect rows with the same inputs but different value curve names to yield distinct values.
+    for result in results_list:
+        if result['id'] == 'v2020':
+            assert result['value_curve_name'] == 'v2020'
+            assert math.isclose(result['gas_benefits'], 95.36, rel_tol=0.01)
+        if result['id'] == 'v2022':
+            assert result['value_curve_name'] == 'v2022'
+            assert math.isclose(result['gas_benefits'], 128.09, rel_tol=0.01)
+    
 
 
 def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
@@ -568,3 +720,4 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
                 assert math.isclose(
                     test_results[x][v], prod_results[x][k], rel_tol=0.005
                 )
+

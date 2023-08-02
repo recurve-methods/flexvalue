@@ -49,7 +49,13 @@ The gas avoided cost calculator can be downloaded as a .xlsb file from `here <ht
 
 The gas avoided cost calculator is a macro-driven Excel file, so several data extraction and transformation steps were done to combine all calculator results into a single table.
 
-*Currently the gas avoided costs data uses the same year-month avoided costs (using Utility: PGE, Class: Total Core, End Use: Small Boiler, Emission Control: Uncontrolled) for all analysis. Based on testing against the CET, different numerical factors are applied depending on the program administrator. Future work can incorporate the full suite of gas parameters.*
+*Currently the gas avoided costs data uses the same year-month avoided costs (using Utility: PGE, Class: Total Core, End Use: Small Boiler, Emission Control: Uncontrolled) for all analysis. Based on testing against the CET, different numerical adjustment factors are applied depending on the program administrator.*
+
+The adjustment factors applied are:
+- PGE: 0.933918
+- SCE/SCG: 0.868483
+- SDGE: 0.930421
+
 
 
 Inputs
@@ -94,6 +100,7 @@ The columns for the electric avoided cost data are as follows:
     - **total**: This is the total avoided cost for this hour. It is the sum of the values in the component columns.
     - **marginal_ghg**:
     - **ghg_adder_rebalancing**:
+    - **value_curve_name**: The name of the value curve representing the avoided costs for a given hour. This may be null if only using a single value curve.
 
 
 Gas Avoided Costs
@@ -114,6 +121,7 @@ The columns for the gas avoided cost data are as follows:
     - **total**: This is the total avoided cost for this hour. It is the sum of the values in the component columns.
     - **upstream_methane**:
     - **marginal_ghg**:
+    - **value_curve_name**: The name of the value curve representing the avoided costs for a given hour. This may be null if only using a single value curve.
 
 
 Electric Load Shapes
@@ -171,6 +179,7 @@ The `user_inputs` CSV requires the following columns:
     - **therms_profile**: Indicates the season in which therms savings are achieved, can be one of ['annual', 'summer', 'winter']
     - **therms_savings**: The first year gas gross savings in Therms
     - **mwh_savings**: The first year electricity gross savings in MWh (used to scale the load shape savings data if using custom load shape)
+    - **value_curve_name**: The name of the value curve that the project should be matched to. This may be null if only using a single value curve.
 
 
 Metered Load Shapes
@@ -342,6 +351,7 @@ Here is an example config.toml file if you are connecting to BigQuery::
   separate_output_tables = True
   electric_output_table = "example_dataset.hourly_electric_output"
   gas_output_table = "example_dataset.hourly_gas_output"
+  use_value_curve_name_for_join = False
 
   [database]
   #credentials = ""
@@ -373,6 +383,7 @@ Here is an example config file if you are connecting to Postgresql::
   reset_gas_av_costs = false
   elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"]
   gas_addl_fields = ["total", "month", "quarter"]
+  use_value_curve_name_for_join = False
 
   [database]
   database_type = "postgresql"
@@ -402,6 +413,7 @@ Here's an example of calling FLEXvalue directly from python::
         output_table="example_output_table",
         aggregation_columns=["id"],
         separate_output_tables=False
+        use_value_curve_name_for_join = False
     )
   flex_value_run.run()
 
@@ -413,6 +425,8 @@ If the "process_X" flag is set, FLEXvalue will prepare that data for use in its 
 * The electric avoided cost table is not touched - this is a no-op, as the available avoided cost data is already in a format that FLEXvalue can use.
 
 If you are using a relational database, the tables will be created if they don't exist, and then populated based on the data in the input files. The input files are csv files and have the columns described below. Header rows are required for the electrical load shape and therms profiles files. FLEXvalue attempts to determine the presence of header rows and will skip one if found and not needed. Note that FLEXvalue will NOT look up columns by the values in the header row - it's strictly positional.
+
+If the "use_value_curve_name_for_join" flag is set to True, FLEXvalue will include the "value_curve_name" during the "join" step when matching project savings to the avoided cost curve value. This enables users to include multiple value curves in the same avoided costs table if desired. If this flag is set to False, FLEXvalue will ignore the "value_curve_name" columns in both the project inputs and the avoided cost tables.
 
 .. _data-stores-label:
 

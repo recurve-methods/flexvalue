@@ -62,6 +62,7 @@ PROJECT_INFO_FIELDS = [
     "admin_cost",
     "measure_cost",
     "incentive_cost",
+    "value_curve_name"
 ]
 ELEC_AV_COSTS_FIELDS = [
     "utility",
@@ -70,6 +71,7 @@ ELEC_AV_COSTS_FIELDS = [
     "hour_of_year",
     "total",
     "marginal_ghg",
+    "value_curve_name"
 ]
 GAS_AV_COSTS_FIELDS = [
     "state",
@@ -85,6 +87,7 @@ GAS_AV_COSTS_FIELDS = [
     "total",
     "upstream_methane",
     "marginal_ghg",
+    "value_curve_name"
 ]
 ELEC_AVOIDED_COSTS_FIELDS = [
     "state",
@@ -109,6 +112,7 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "total",
     "marginal_ghg",
     "ghg_adder_rebalancing",
+    "value_curve_name"
 ]
 
 logging.basicConfig(
@@ -327,7 +331,7 @@ class DBManager:
                 _ = conn.execute(text(sql))
         if truncate:
             self._reset_table(table_name)
-
+        
     def _prepare_table_from_str(
         self,
         table_name: str,
@@ -697,7 +701,8 @@ class PostgresqlManager(DBManager):
                     btm_methane,
                     total,
                     upstream_methane,
-                    marginal_ghg)
+                    marginal_ghg,
+                    value_curve_name)
                     FROM STDIN"""
             ) as copy:
                 for row in rows:
@@ -737,6 +742,7 @@ class PostgresqlManager(DBManager):
                             float(r["total"]),
                             float(r["upstream_methane"]),
                             float(r["marginal_ghg"]),
+                            r["value_curve_name"],
                         ]
                     )
                     if len(buf) == MAX_ROWS:
@@ -773,7 +779,8 @@ class PostgresqlManager(DBManager):
                     methane_leakage,
                     total,
                     marginal_ghg,
-                    ghg_adder_rebalancing)
+                    ghg_adder_rebalancing,
+                    value_curve_name)
                     FROM STDIN"""
             ) as copy:
                 for row in rows:
@@ -821,6 +828,7 @@ class PostgresqlManager(DBManager):
                             float(r["total"]),
                             r["marginal_ghg"],
                             r["ghg_adder_rebalancing"],
+                            r["value_curve_name"],
                         ]
                     )
                     if len(buf) == MAX_ROWS:
@@ -948,7 +956,7 @@ class PostgresqlManager(DBManager):
 
         def copy_write(cur, rows):
             with cur.copy(
-                "COPY project_info (id, state, utility, region, mwh_savings, therms_savings, load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost ) FROM STDIN"
+                "COPY project_info (id, state, utility, region, mwh_savings, therms_savings, load_shape, therms_profile, start_year, start_quarter, start_date, end_date, units, eul, ntg, discount_rate, admin_cost, measure_cost, incentive_cost, value_curve_name) FROM STDIN"
             ) as copy:
                 for row in rows:
                     copy.write_row(row)
@@ -974,6 +982,7 @@ class PostgresqlManager(DBManager):
                 x["admin_cost"],
                 x["measure_cost"],
                 x["incentive_cost"],
+                x.get("value_curve_name"),
             )
             for x in project_info_dicts
         ]

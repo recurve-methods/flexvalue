@@ -22,5 +22,6 @@ CREATE TABLE elec_av_costs (
     methane_leakage FLOAT,
     total FLOAT,
     marginal_ghg FLOAT,
-    ghg_adder_rebalancing FLOAT
+    ghg_adder_rebalancing FLOAT,
+    value_curve_name TEXT
 );

@@ -17,5 +17,6 @@ CREATE TABLE project_info (
     discount_rate FLOAT,
     admin_cost FLOAT,
     measure_cost FLOAT,
-    incentive_cost FLOAT
+    incentive_cost FLOAT,
+    value_curve_name TEXT
 );

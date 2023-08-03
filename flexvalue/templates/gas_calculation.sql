@@ -21,8 +21,12 @@ WITH project_costs AS (
         , ((gas_av_costs.year - project_costs.start_year) * 4) + gas_av_costs.quarter - project_costs.start_quarter + 1 as eul_quarter
         , gas_av_costs.datetime
     FROM project_costs
-    JOIN {{ gac_table }} gas_av_costs
+    JOIN 
+      {{ gac_table }} gas_av_costs
         ON gas_av_costs.utility = project_costs.utility
+            {% if use_value_curve_name_for_join -%}
+            AND gas_av_costs.value_curve_name = project_costs.value_curve_name
+            {% endif -%}
             {% if database_type == "postgresql" %}
             AND gas_av_costs.datetime >= make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0)
             AND gas_av_costs.datetime < make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0) + make_interval(project_costs.eul)
@@ -39,7 +43,7 @@ gas_calculations AS (
     {% endfor -%}
     , SUM(pcwdga.units * pcwdga.ntg * pcwdga.therms_savings * therms_profile.value * pcwdga.discount * pcwdga.total) as gas_benefits
     , SUM((pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) / CAST(pcwdga.eul AS {{ float_type }}) ) as annual_net_therms_savings
-    , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecyle_net_therms_savings
+    , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value) as lifecycle_net_therms_savings
     , SUM(pcwdga.units * pcwdga.therms_savings * pcwdga.ntg * therms_profile.value * pcwdga.marginal_ghg) as lifecycle_gas_ghg_savings
     , therms_profile.value as therms_profile_value
     , MAX(pcwdga.trc_costs) AS trc_costs
@@ -90,7 +94,7 @@ gas_calculations.id
 , MAX(gas_calculations.trc_costs) as trc_costs
 , MAX(gas_calculations.pac_costs) as pac_costs
 , SUM(gas_calculations.annual_net_therms_savings) as annual_net_therms_savings
-, SUM(gas_calculations.lifecyle_net_therms_savings) as lifecyle_net_therms_savings
+, SUM(gas_calculations.lifecycle_net_therms_savings) as lifecycle_net_therms_savings
 , MAX(gas_calculations.therms_profile_value) as therms_profile_value
 , SUM(gas_calculations.lifecycle_gas_ghg_savings) as lifecycle_gas_ghg_savings
 {% for field in gas_addl_fields -%}

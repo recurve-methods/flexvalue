@@ -7,6 +7,7 @@ Development
 * Update requirements in setup.py.
 * Update tests.
 * Remove legacy files from flexvalue 1.0.
+* Add an option to join on value_curve_name.
 
 2.0.5
 -----

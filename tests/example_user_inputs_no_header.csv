@@ -1,5 +1,0 @@
-heat_pump,CA,PGE,CZ12,1,300,res_heat_pump_electrification,winter,2021,1,1,15,1,0.0766,100,2000,1000
-heat_pump2,CA,SCE,CZ12,1,300,res_heat_pump_electrification,winter,2021,1,1,15,1,0.0766,100,2000,1000
-deer_id_2,CA,SDGE,CZ14,0.3,-3,RES_INDOOR_CFL_LTG,annual,2022,3,1,10,0.85,0.0766,25,220,100
-deer_id_0,CA,PGE,CZ3A,1.9,0,RES_HVAC_Eff_AC,annual,2021,4,1,5,0.95,0.0766,130,2400,1500
-deer_id_1,CA,SCE,CZ8,2.3,20,NONRES_HVAC_CHILLERS,summer,2021,2,7,12,0.7,0.0766,300,6000,3400

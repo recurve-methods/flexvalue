@@ -26,9 +26,13 @@ project_costs_with_discounted_elec_av AS (
         1.0 / POW(1.0 + (project_costs.discount_rate / 4.0), ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter) AS discount
         , ((elec_av_costs.year - project_costs.start_year) * 4) + elec_av_costs.quarter - project_costs.start_quarter + 1 as eul_quarter
     FROM project_costs
-    JOIN {{ eac_table }} elec_av_costs
+    JOIN 
+        {{ eac_table }} elec_av_costs
         ON elec_av_costs.utility = project_costs.utility
             AND elec_av_costs.region = project_costs.region
+            {% if use_value_curve_name_for_join -%}
+            AND elec_av_costs.value_curve_name = project_costs.value_curve_name
+            {% endif -%}
             {% if database_type == "postgresql" -%}
             AND elec_av_costs.datetime >= make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0)
             AND elec_av_costs.datetime < make_timestamp(project_costs.start_year, (project_costs.start_quarter - 1) * 3 + 1, 1, 0, 0, 0) + make_interval(project_costs.eul)
@@ -59,7 +63,7 @@ elec_calculations AS (
     , MAX(pcwdea.pac_costs) AS pac_costs
     , SUM(pcwdea.units * pcwdea.ntg * pcwdea.mwh_savings * elec_load_shape.value * pcwdea.marginal_ghg) as lifecycle_elec_ghg_savings
     {% for field in elec_addl_fields if not field == "datetime" -%}
-    , pcwdea.{{field}}
+    , pcwdea.{{ field }}
     {% endfor -%}
     FROM project_costs_with_discounted_elec_av pcwdea
     JOIN {{ els_table}} elec_load_shape

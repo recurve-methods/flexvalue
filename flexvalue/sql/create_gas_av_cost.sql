@@ -12,5 +12,6 @@ CREATE TABLE gas_av_costs (
     btm_methane FLOAT,
     total FLOAT,
     upstream_methane FLOAT,
-    marginal_ghg FLOAT
+    marginal_ghg FLOAT,
+    value_curve_name TEXT
 );

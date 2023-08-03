@@ -1,6 +1,6 @@
 import pytest
 import random
-import requests as re
+import requests
 import os
 
 
@@ -105,7 +105,7 @@ def download_test_data():
     
     for missing_file in missing_test_files:
         url = f"https://storage.googleapis.com/oee-avdcosts-platform/flexvalue_test_data/{missing_file}"
-        response = re.get(url)
+        response = requests.get(url)
         if response.status_code == 200:
             local_path = f"tests/test_data/{missing_file}"
             with open(local_path, "wb") as f:

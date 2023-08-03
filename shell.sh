@@ -1,1 +1,1 @@
-docker-compose run --rm --entrypoint "bash -c" flexvalue bash
+docker compose run --rm --entrypoint "bash -c" shell bash

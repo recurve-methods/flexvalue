@@ -4,6 +4,12 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+2.0.6
+-----
+
+
 * Update requirements in setup.py.
 * Update tests.
 * Remove legacy files from flexvalue 1.0.

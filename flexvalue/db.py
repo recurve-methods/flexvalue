@@ -982,7 +982,7 @@ class PostgresqlManager(DBManager):
                 x["admin_cost"],
                 x["measure_cost"],
                 x["incentive_cost"],
-                x.get("value_curve_name"),
+                x["value_curve_name"],
             )
             for x in project_info_dicts
         ]

@@ -40,3 +40,8 @@ echo "python setup.py install"
 echo "python setup.py upload"  # requires PyPI credentials
 echo ""
 echo "git checkout main"
+
+echo "docker-compose build"
+echo ""
+echo "docker tag flexvalue_shell gcr.io/oee-admiral/flexvalue:v${NEW_VERSION}"
+echo "docker push gcr.io/oee-admiral/flexvalue:v${NEW_VERSION}"

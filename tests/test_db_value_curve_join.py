@@ -167,7 +167,7 @@ def check_av_costs(config: FLEXValueConfig):
     return None
 
 @pytest.fixture
-def agg_same_output_value_curve_name():
+def agg_same_output_value_curve_name(reset_project_info):
     return FlexValueRun(
         database_type="postgresql",
         host=TEST_HOST,
@@ -210,7 +210,7 @@ def agg_same_output_value_curve_name():
     )
 
 @pytest.fixture
-def agg_sep_output_value_curve_name():
+def agg_sep_output_value_curve_name(reset_project_info):
     return FlexValueRun(
         database_type="postgresql",
         host=TEST_HOST,

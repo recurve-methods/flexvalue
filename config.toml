@@ -19,7 +19,8 @@ elec_components = ["energy", "losses", "ancillary_services", "capacity", "transm
 gas_components = ["market", "t_d", "environment", "btm_methane", "upstream_methane"]
 # elec_addl_fields = ["hour_of_year", "utility", "region", "month", "quarter", "hour_of_day", "discount"]
 # gas_addl_fields = ["total", "month", "quarter"]
-separate_output_tables = false
+# separate_output_tables = true
+use_value_curve_name_for_join = false
 
 [database]
 # database_type = "postgresql"
@@ -33,7 +34,6 @@ separate_output_tables = false
 #credentials = ""
 database_type = "bigquery"
 project = "oeem-avdcosts-platform"
-
 elec_av_costs_table = "oeem-avdcosts-platform.flexvalue_refactor_tables.full_ca_avoided_costs_2020acc_copy"
 elec_load_shape_table = "flexvalue_refactor_tables.ca_hourly_electric_load_shapes_horizontal_copy"
 therms_profiles_table = "flexvalue_refactor_tables.ca_monthly_therms_load_profiles_copy"

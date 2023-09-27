@@ -199,6 +199,11 @@ def cli():
     help="Comma-separated list of additional fields from gas data to include in output",
     is_flag=False
 )
+@click.option(
+    "--use-value-curve-name-for-join",
+    help="Specifies that the ACC and project info tables you are using have multiple curves in them, and that FLEXvalue should join based on the curve names.",
+    is_flag=True
+)
 def get_results(
     config_file,
     project_info_file,
@@ -237,7 +242,8 @@ def get_results(
     elec_components,
     gas_components,
     elec_addl_fields,
-    gas_addl_fields
+    gas_addl_fields,
+    use_value_curve_name_for_join
 ):
     try:
         fv_run = FlexValueRun(config_file=config_file,
@@ -278,6 +284,7 @@ def get_results(
             gas_components=gas_components.split(",") if gas_components else [],
             elec_addl_fields=elec_addl_fields.split(",") if elec_addl_fields else [],
             gas_addl_fields=gas_addl_fields.split(",") if gas_addl_fields else [],
+            use_value_curve_name_for_join=use_value_curve_name_for_join
         )
         fv_run.run()
     except FLEXValueException as e:

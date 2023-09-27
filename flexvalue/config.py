@@ -93,7 +93,7 @@ class FLEXValueConfig:
             separate_output_tables=run_info.get("separate_output_tables", None),
             elec_addl_fields=run_info.get("elec_addl_fields", []),
             gas_addl_fields=run_info.get("gas_addl_fields", []),
-            use_value_curve_name_for_join=run_info.get("join_on_value_curve_name", None)
+            use_value_curve_name_for_join=run_info.get("use_value_curve_name_for_join", None)
         )
 
     def validate(self):

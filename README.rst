@@ -326,6 +326,7 @@ FLEXValue uses the following command-line arguments. If ``--config-file`` is pas
 * **--gas-components**: Comma-separated list of electric avoided cost component field names,
 * **--elec-addl-fields**: Comma-separated list of additional fields from electric data to include in output,
 * **--gas-addl-fields**: Comma-separated list of additional fields from gas data to include in output.
+* **--use-value-curve-name-for-join**: Indicates that the project_info table and the electric avoided costs table use the value curve name. Defaults to false. See below for more information. 
 
 
 Config file

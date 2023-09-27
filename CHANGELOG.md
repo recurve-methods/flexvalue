@@ -4,7 +4,7 @@ Changelog
 Development
 -----------
 
-* Placeholder
+* Add support for use_value_curve_name_for_join to command line
 
 2.0.6
 -----

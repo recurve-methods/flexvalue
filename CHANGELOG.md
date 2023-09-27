@@ -10,6 +10,12 @@ Development
 -----
 
 
+* Placeholder
+
+2.0.7
+-----
+
+
 * Add support for use_value_curve_name_for_join to command line
 
 2.0.6

@@ -524,11 +524,11 @@ def test_value_curve_name_join_same_output(agg_same_output_value_curve_name):
     # We expect rows with the same inputs but different value curve names to yield distinct values.
     for result in results_list:
         if result['id'] == 'v2020':
-            assert result['value_curve_name'] == 'v2020'
+            assert result['value_curve_name'] == 'full_ca_avoided_costs_2020acc'
             assert math.isclose(result['electric_benefits'], 10442.47, rel_tol=0.01)
             assert math.isclose(result['gas_benefits'], 95.36, rel_tol=0.01)
         if result['id'] == 'v2022':
-            assert result['value_curve_name'] == 'v2022'
+            assert result['value_curve_name'] == 'full_ca_avoided_costs_2022acc'
             assert math.isclose(result['electric_benefits'], 8586.40, rel_tol=0.01)
             assert math.isclose(result['gas_benefits'], 128.09, rel_tol=0.01)
 
@@ -545,10 +545,10 @@ def test_value_curve_name_join_sep_output(agg_id_sep_output_value_curve_name):
     # We expect rows with the same inputs but different value curve names to yield distinct values.
     for result in results_list:
         if result['id'] == 'v2020':
-            assert result['value_curve_name'] == 'v2020'
+            assert result['value_curve_name'] == 'full_ca_avoided_costs_2020acc'
             assert math.isclose(result['electric_benefits'], 10442.47, rel_tol=0.01)
         if result['id'] == 'v2022':
-            assert result['value_curve_name'] == 'v2022'
+            assert result['value_curve_name'] == 'full_ca_avoided_costs_2022acc'
             assert math.isclose(result['electric_benefits'], 8586.40, rel_tol=0.01)
     
     result = agg_id_sep_output_value_curve_name.db_manager._exec_select_sql(
@@ -561,10 +561,10 @@ def test_value_curve_name_join_sep_output(agg_id_sep_output_value_curve_name):
     # We expect rows with the same inputs but different value curve names to yield distinct values.
     for result in results_list:
         if result['id'] == 'v2020':
-            assert result['value_curve_name'] == 'v2020'
+            assert result['value_curve_name'] == 'full_ca_avoided_costs_2020acc_gas'
             assert math.isclose(result['gas_benefits'], 95.36, rel_tol=0.01)
         if result['id'] == 'v2022':
-            assert result['value_curve_name'] == 'v2022'
+            assert result['value_curve_name'] == 'full_ca_avoided_costs_2022acc_gas'
             assert math.isclose(result['gas_benefits'], 128.09, rel_tol=0.01)
     
 

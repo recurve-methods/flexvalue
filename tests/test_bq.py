@@ -383,6 +383,7 @@ def real_data_calculations_time_series_sep():
         process_therms_profiles=True,
     )
 
+
 @pytest.fixture
 def agg_same_output_value_curve_name():
     return FlexValueRun(
@@ -429,6 +430,7 @@ def agg_same_output_value_curve_name():
         reset_therms_profiles=True,
         use_value_curve_name_for_join=True,
     )
+
 
 @pytest.fixture
 def agg_id_sep_output_value_curve_name():
@@ -511,6 +513,7 @@ def test_addl_fields_same_output(addl_fields_same_output):
     # These leaves the total expected number of rows at 3153600 + 20 = 3153635
     assert result[0][0] == 3153635
 
+
 def test_value_curve_name_join_same_output(agg_same_output_value_curve_name):
     agg_same_output_value_curve_name.run()
 
@@ -523,18 +526,19 @@ def test_value_curve_name_join_same_output(agg_same_output_value_curve_name):
     assert len(results_list) == 2
     # We expect rows with the same inputs but different value curve names to yield distinct values.
     for result in results_list:
-        if result['id'] == 'v2020':
-            assert result['value_curve_name'] == 'full_ca_avoided_costs_2020acc'
-            assert math.isclose(result['electric_benefits'], 10442.47, rel_tol=0.01)
-            assert math.isclose(result['gas_benefits'], 95.36, rel_tol=0.01)
-        if result['id'] == 'v2022':
-            assert result['value_curve_name'] == 'full_ca_avoided_costs_2022acc'
-            assert math.isclose(result['electric_benefits'], 8586.40, rel_tol=0.01)
-            assert math.isclose(result['gas_benefits'], 128.09, rel_tol=0.01)
+        if result["id"] == "v2020":
+            assert result["value_curve_name"] == "full_ca_avoided_costs_2020acc"
+            assert math.isclose(result["electric_benefits"], 10442.47, rel_tol=0.01)
+            assert math.isclose(result["gas_benefits"], 95.36, rel_tol=0.01)
+        if result["id"] == "v2022":
+            assert result["value_curve_name"] == "full_ca_avoided_costs_2022acc"
+            assert math.isclose(result["electric_benefits"], 8586.40, rel_tol=0.01)
+            assert math.isclose(result["gas_benefits"], 128.09, rel_tol=0.01)
+
 
 def test_value_curve_name_join_sep_output(agg_id_sep_output_value_curve_name):
     agg_id_sep_output_value_curve_name.run()
-    
+
     result = agg_id_sep_output_value_curve_name.db_manager._exec_select_sql(
         "SELECT id, value_curve_name, electric_benefits FROM flexvalue_refactor_tables.agg_value_curve_name_output_table_electric"
     )
@@ -544,13 +548,13 @@ def test_value_curve_name_join_sep_output(agg_id_sep_output_value_curve_name):
     assert len(results_list) == 2
     # We expect rows with the same inputs but different value curve names to yield distinct values.
     for result in results_list:
-        if result['id'] == 'v2020':
-            assert result['value_curve_name'] == 'full_ca_avoided_costs_2020acc'
-            assert math.isclose(result['electric_benefits'], 10442.47, rel_tol=0.01)
-        if result['id'] == 'v2022':
-            assert result['value_curve_name'] == 'full_ca_avoided_costs_2022acc'
-            assert math.isclose(result['electric_benefits'], 8586.40, rel_tol=0.01)
-    
+        if result["id"] == "v2020":
+            assert result["value_curve_name"] == "full_ca_avoided_costs_2020acc"
+            assert math.isclose(result["electric_benefits"], 10442.47, rel_tol=0.01)
+        if result["id"] == "v2022":
+            assert result["value_curve_name"] == "full_ca_avoided_costs_2022acc"
+            assert math.isclose(result["electric_benefits"], 8586.40, rel_tol=0.01)
+
     result = agg_id_sep_output_value_curve_name.db_manager._exec_select_sql(
         "SELECT id, value_curve_name, gas_benefits FROM flexvalue_refactor_tables.agg_value_curve_name_output_table_gas"
     )
@@ -560,13 +564,12 @@ def test_value_curve_name_join_sep_output(agg_id_sep_output_value_curve_name):
     assert len(results_list) == 2
     # We expect rows with the same inputs but different value curve names to yield distinct values.
     for result in results_list:
-        if result['id'] == 'v2020':
-            assert result['value_curve_name'] == 'full_ca_avoided_costs_2020acc_gas'
-            assert math.isclose(result['gas_benefits'], 95.36, rel_tol=0.01)
-        if result['id'] == 'v2022':
-            assert result['value_curve_name'] == 'full_ca_avoided_costs_2022acc_gas'
-            assert math.isclose(result['gas_benefits'], 128.09, rel_tol=0.01)
-    
+        if result["id"] == "v2020":
+            assert result["value_curve_name"] == "full_ca_avoided_costs_2020acc_gas"
+            assert math.isclose(result["gas_benefits"], 95.36, rel_tol=0.01)
+        if result["id"] == "v2022":
+            assert result["value_curve_name"] == "full_ca_avoided_costs_2022acc_gas"
+            assert math.isclose(result["gas_benefits"], 128.09, rel_tol=0.01)
 
 
 def test_no_addl_fields_sep_output(no_addl_fields_sep_output):
@@ -720,4 +723,3 @@ def test_real_data_calculations_time_series(real_data_calculations_time_series):
                 assert math.isclose(
                     test_results[x][v], prod_results[x][k], rel_tol=0.005
                 )
-

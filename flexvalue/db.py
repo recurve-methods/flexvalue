@@ -62,7 +62,7 @@ PROJECT_INFO_FIELDS = [
     "admin_cost",
     "measure_cost",
     "incentive_cost",
-    "value_curve_name"
+    "value_curve_name",
 ]
 ELEC_AV_COSTS_FIELDS = [
     "utility",
@@ -71,7 +71,7 @@ ELEC_AV_COSTS_FIELDS = [
     "hour_of_year",
     "total",
     "marginal_ghg",
-    "value_curve_name"
+    "value_curve_name",
 ]
 GAS_AV_COSTS_FIELDS = [
     "state",
@@ -87,7 +87,7 @@ GAS_AV_COSTS_FIELDS = [
     "total",
     "upstream_methane",
     "marginal_ghg",
-    "value_curve_name"
+    "value_curve_name",
 ]
 ELEC_AVOIDED_COSTS_FIELDS = [
     "state",
@@ -112,7 +112,7 @@ ELEC_AVOIDED_COSTS_FIELDS = [
     "total",
     "marginal_ghg",
     "ghg_adder_rebalancing",
-    "value_curve_name"
+    "value_curve_name",
 ]
 
 logging.basicConfig(
@@ -331,7 +331,7 @@ class DBManager:
                 _ = conn.execute(text(sql))
         if truncate:
             self._reset_table(table_name)
-        
+
     def _prepare_table_from_str(
         self,
         table_name: str,
@@ -484,7 +484,7 @@ class DBManager:
             "database_type": self.config.database_type,
             "elec_components": self._elec_components(),
             "gas_components": self._gas_components(),
-            "use_value_curve_name_for_join": self.config.use_value_curve_name_for_join
+            "use_value_curve_name_for_join": self.config.use_value_curve_name_for_join,
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns
@@ -995,7 +995,8 @@ class SqliteManager(DBManager):
     def __init__(self, fv_config: FLEXValueConfig):
         super().__init__(fv_config)
         self.template_env = Environment(
-            loader=PackageLoader("flexvalue", "templates"), autoescape=select_autoescape()
+            loader=PackageLoader("flexvalue", "templates"),
+            autoescape=select_autoescape(),
         )
         self.config = fv_config
 
@@ -1013,7 +1014,8 @@ class BigQueryManager(DBManager):
     def __init__(self, fv_config: FLEXValueConfig):
         super().__init__(fv_config)
         self.template_env = Environment(
-            loader=PackageLoader("flexvalue", "templates"), autoescape=select_autoescape()
+            loader=PackageLoader("flexvalue", "templates"),
+            autoescape=select_autoescape(),
         )
         self.config = fv_config
         self.table_names = [
@@ -1185,7 +1187,10 @@ class BigQueryManager(DBManager):
 
         # if we process the elec load shape, that will create target_dataset.elec_load_shape; otherwise...
         if not self.config.process_elec_load_shape:
-            self._copy_table(self.config.elec_load_shape_table, f"{self._get_target_dataset()}.elec_load_shape")
+            self._copy_table(
+                self.config.elec_load_shape_table,
+                f"{self._get_target_dataset()}.elec_load_shape",
+            )
         template = self.template_env.get_template("bq_populate_metered_load_shape.sql")
         # Black ruins readability here, disable
         # fmt: off
@@ -1228,7 +1233,10 @@ class BigQueryManager(DBManager):
         result = query_job.result()
 
     def _elec_load_shape_for_context(self):
-        if self.config.process_metered_load_shape or self.config.process_elec_load_shape:
+        if (
+            self.config.process_metered_load_shape
+            or self.config.process_elec_load_shape
+        ):
             return f"{self._get_target_dataset()}.elec_load_shape"
         return self.config.elec_load_shape_table
 
@@ -1253,7 +1261,7 @@ class BigQueryManager(DBManager):
             "database_type": self.config.database_type,
             "elec_components": self._elec_components(),
             "gas_components": self._gas_components(),
-            "use_value_curve_name_for_join": self.config.use_value_curve_name_for_join
+            "use_value_curve_name_for_join": self.config.use_value_curve_name_for_join,
         }
         if mode == "electric":
             context["elec_aggregation_columns"] = elec_agg_columns

@@ -93,7 +93,9 @@ class FLEXValueConfig:
             separate_output_tables=run_info.get("separate_output_tables", None),
             elec_addl_fields=run_info.get("elec_addl_fields", []),
             gas_addl_fields=run_info.get("gas_addl_fields", []),
-            use_value_curve_name_for_join=run_info.get("use_value_curve_name_for_join", None)
+            use_value_curve_name_for_join=run_info.get(
+                "use_value_curve_name_for_join", None
+            ),
         )
 
     def validate(self):
@@ -121,7 +123,7 @@ class FLEXValueConfig:
                     self.elec_load_shape_table,
                     self.therms_profiles_table,
                     self.elec_av_costs_table,
-                    self.gas_av_costs_table
+                    self.gas_av_costs_table,
                 ]
             ):
                 raise FLEXValueException(
@@ -129,7 +131,9 @@ class FLEXValueConfig:
                 )
             if self.separate_output_tables == True:
                 if not self.electric_output_table or not self.gas_output_table:
-                    raise FLEXValueException("When you specify separate_output_tables, you must specify both electric_output_table and gas_output_table.")
+                    raise FLEXValueException(
+                        "When you specify separate_output_tables, you must specify both electric_output_table and gas_output_table."
+                    )
 
     def float_type(self):
         if self.database_type == "bigquery":

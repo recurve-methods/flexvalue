@@ -18,22 +18,22 @@
 
 """
 
-import logging
-
-from .__version__ import __title__, __description__, __url__, __version__
-from .__version__ import __author__, __author_email__, __license__
-from .__version__ import __copyright__
-from .calculations import FlexValueProject, FlexValueRun
-from .plots import plot_results
-from .db import (
-    get_all_valid_deer_load_shapes,
-    get_all_valid_utility_climate_zone_combinations,
-)
-
-
-def get_version():
-    return __version__
+# import logging
+import flexvalue.flexvalue
+# from .__version__ import __title__, __description__, __url__, __version__
+# from .__version__ import __author__, __author_email__, __license__
+# from .__version__ import __copyright__
+# #from .calculations import FlexValueProject, FlexValueRun
+# # from .plots import plot_results
+# # from .db import (
+# #     get_all_valid_deer_load_shapes,
+# #     get_all_valid_utility_climate_zone_combinations,
+# # )
 
 
-# Set default logging handler to avoid "No handler found" warnings.
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+# def get_version():
+#     return __version__
+
+
+# # Set default logging handler to avoid "No handler found" warnings.
+# logging.getLogger(__name__).addHandler(logging.NullHandler())

@@ -22,26 +22,23 @@
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pip install twine
 
-import io
 import os
+import glob
 import sys
 from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
 
 NAME = "flexvalue"
+
+# TODO: fix psycopg-binary; use correct dependency for distributing
 INSTALL_REQUIRES = [
-    "click==8.0.3",
-    "pandas==1.3.4",
-    "statsmodels==0.13.1",
-    "scipy==1.7.2",
-    "seaborn==0.11.2",
-    "sqlalchemy<1.4.0",
-    "nbformat==5.1.3",
-    "nbconvert==6.3.0",
+    "click>=8.0.0",
+    "toml>=0.10.2",
+    "sqlalchemy==2.0",
     "jinja2==3.0.3",
-    "matplotlib<3.6",
-    "numpy<1.23.0",
+    "psycopg[binary]==3.1.8",
+    "google-cloud-bigquery>=2.34.3",
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -84,6 +81,8 @@ class UploadCommand(Command):
 
         sys.exit()
 
+template_files = glob.glob('flexvalue/templates/*sql')
+sql_files = glob.glob('flexvalue/sql/*sql')
 
 # Where the magic happens:
 setup(
@@ -109,4 +108,8 @@ setup(
     ],
     # $ setup.py publish support.
     cmdclass={"upload": UploadCommand},
+    data_files=[
+        ('templates', template_files),
+        ('sql', sql_files)
+    ]
 )

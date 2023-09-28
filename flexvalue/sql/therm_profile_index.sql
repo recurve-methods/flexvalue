@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS therm_profile_index ON therms_profile (utility, month, quarter, profile_name, state, value);

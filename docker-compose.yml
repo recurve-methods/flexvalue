@@ -1,7 +1,7 @@
 version: '3'
 services:
   shell:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.nobinder
     image: flexvalue_shell
@@ -44,3 +44,12 @@ services:
     volumes:
       - .:/app
       - /app/tests/__pycache__/
+
+  postgresql:
+    image: postgres:15.1
+    restart: always
+    shm_size: 4g
+    environment:
+      - POSTGRES_PASSWORD=example
+    ports:
+      - 5432:5432

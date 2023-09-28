@@ -1,0 +1,1 @@
+select id, start_year, start_quarter, eul, discount_rate FROM {{ dataset }}.{{ project_info_table }};

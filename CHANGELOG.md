@@ -6,6 +6,57 @@ Development
 
 * Placeholder
 
+2.0.7
+-----
+
+
+* Add support for use_value_curve_name_for_join to command line
+
+2.0.6
+-----
+
+
+* Update requirements in setup.py.
+* Update tests.
+* Remove legacy files from flexvalue 1.0.
+* Add an option to join on value_curve_name.
+
+2.0.5
+-----
+
+
+* When processing the metered load shape, only copy the elec load shape if we don't process it.
+
+2.0.4
+-----
+
+
+* Add support for the case that the load shape is already the right format.
+
+2.0.3
+-----
+
+
+* Include sql files in built package
+
+2.0.2
+-----
+
+
+* Change Jinja template load approach
+
+2.0.1
+-----
+
+
+* Change how Jinja loads templates
+
+2.0.0
+-----
+
+
+* Rewrite FLEXvalue to use sql calculations instead of pandas. Supports Google BigQuery and PostgreSQL.
+
 0.4.6
 -----
 

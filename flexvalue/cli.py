@@ -18,36 +18,11 @@
 
 """
 import click
-import logging
-import json
-import ntpath
-from pathlib import Path
-import pandas as pd
-import os
-import re
-import requests
-from textwrap import dedent
 
-from .calculations import FlexValueRun
-from flexvalue import (
-    get_all_valid_utility_climate_zone_combinations,
-    get_all_valid_deer_load_shapes,
-)
-from .settings import database_location
-from .examples import (
-    get_example_metered_load_shape,
-    get_example_user_inputs_deer,
-    get_example_user_inputs_metered,
-)
-from .report import Notebook
+from flexvalue.flexvalue import FlexValueRun
+from flexvalue.config import FLEXValueException
 
-__all__ = (
-    "download_avoided_costs_data_db",
-    "generate_example_inputs",
-    "get_results",
-    "valid_utility_climate_zone_combos",
-    "valid_deer_load_shapes",
-)
+__all__ = ("get_results",)
 
 
 @click.group()
@@ -56,258 +31,253 @@ def cli():
 
 
 @cli.command()
-@click.option("-v", "--version", default="2020", show_default=True)
 @click.option(
-    "--url-prefix",
-    default="https://storage.googleapis.com/flexvalue-public-resources/db/v1/",
-    show_default=True,
+    "--project-info-file",
+    help="Filepath to the project information file that is used to calculate results",
 )
-@click.option("--skip-if-exists/--overwrite-if-exists", default=False)
-def download_avoided_costs_data_db(url_prefix, version, skip_if_exists):
-    """Downloads the avoided costs database. Options for version are 2020, 2021, and adjusted_acc_map.
-
-    If you are having trouble downlading this database,
-    you can instead use the following command:
-
-    `curl --output 2020.db https://storage.googleapis.com/flexvalue-public-resources/db/v1/2020.db`
-
-    """
-    db_filename = f"{version}.db"
-    output_filepath = os.path.join(database_location(), db_filename)
-    Path(database_location()).mkdir(parents=True, exist_ok=True)
-
-    if skip_if_exists and os.path.exists(output_filepath):
-        logging.warning("This file already exists so it will not be downloaded again.")
-    else:
-        url = os.path.join(url_prefix, db_filename)
-        response = requests.get(url)
-        open(output_filepath, "wb").write(response.content)
-
-
-@cli.command()
+@click.option("--database-type", help="One of 'postgresql', 'bigquery', or 'sqlite'")
 @click.option(
-    "-v",
-    "--version",
-    default="2020",
-    show_default=True,
-    help="What version of the avoided costs data to use in the analysis",
+    "--host", help="The host for the postgresql database to which you are connecting."
 )
 @click.option(
-    "--output-filepath",
-    default=".",
-    show_default=True,
-    help="Filepath to where the example inputs will be stored",
-)
-def generate_example_inputs(output_filepath, version):
-    """Generates the sample inputs that can be used in the get-results command"""
-    Path(output_filepath).mkdir(parents=True, exist_ok=True)
-    metered_df = get_example_metered_load_shape()
-
-    metered_df.to_csv(os.path.join(output_filepath, "example_metered_load_shape.csv"))
-    get_example_user_inputs_deer(version).to_csv(
-        os.path.join(output_filepath, "example_user_inputs_deer.csv")
-    )
-    get_example_user_inputs_metered(metered_df.columns).to_csv(
-        os.path.join(output_filepath, "example_user_inputs_metered.csv")
-    )
-
-
-@cli.command()
-@click.option(
-    "--user-inputs-filepath",
-    required=True,
-    help="Filepath to the user-inputs CSV file that is used to calculate results",
+    "--port", help="The port for the postgresql database to which you are connecting."
 )
 @click.option(
-    "--metered-load-shape-filepath",
-    help="Optional filepath to the CSV file containing metered load shapes",
+    "--user", help="The user for the postgresql database to which you are connecting."
 )
 @click.option(
-    "--include-report/--exclude-report",
-    default=True,
-    show_default=True,
-    help="Whether to include an HTML report in the outputs",
+    "--password",
+    help="The password for the postgresql database to which you are connecting.",
 )
 @click.option(
-    "--report-filepath",
-    default="report.html",
-    show_default=True,
-    help="Filepath to where the report will be saved",
+    "--database",
+    help="The database for the postgresql database to which you are connecting.",
 )
 @click.option(
-    "--outputs-table-filepath",
-    default="outputs_table.csv",
-    show_default=True,
-    help="Filepath to where the outputs table CSV will be saved",
+    "--elec-av-costs-table",
+    help="Used when --database-type is bigquery. Specifies the electric avoided costs table. Must specify the dataset and the google project (if different than the --project argument).",
 )
 @click.option(
-    "-v",
-    "--version",
-    default="2020",
-    show_default=True,
-    help="What version of the avoided costs data to use in the analysis",
+    "--elec-load-shape-table",
+    help="Used when --database-type is bigquery. Specifies the electric load shape table. Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--gas-av-costs-table",
+    help="Used when --database-type is bigquery. Specifies the gas avoided costs table. Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--therms-profiles-table",
+    help="Used when --database-type is bigquery. Specifies the therms profiles table. Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--project-info-table",
+    help="Used when --database-type is bigquery. Specifies the table containing the project information. Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--metered-load-shape-table",
+    help="Used when --database-type is bigquery. Specifies the metered load shape table. Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--project",
+    help="Used when --database-type is bigquery. Specifies the google project.",
+)
+@click.option(
+    "--output-table",
+    help="The database table to write output to. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--separate-output-tables",
+    help="Create two output tables, one for electric benefits and one for gas.",
+    is_flag=True,
+)
+@click.option(
+    "--electric-output-table",
+    help="The database table to write electric output to, when --separate-output-tables=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option(
+    "--gas-output-table",
+    help="The database table to write gas output to, when --separate-output-tables=True. This table gets overwritten (not appended to). Must specify the dataset and the google project (if different than the --project argument).",
+)
+@click.option("--config-file", help="Path to the toml configuration file.")
+@click.option(
+    "--elec-av-costs-file",
+    help="Filepath to the electric avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file.",
+)
+@click.option(
+    "--gas-av-costs-file",
+    help="Filepath to the gas avoided costs. Used when --database-type is not BigQuery to load this data into the database from a file.",
+)
+@click.option(
+    "--elec-load-shape-file",
+    help="Filepath to the hourly electric load shape file. Used when --database-type is not BigQuery to load this data into the database from a file.",
+)
+@click.option(
+    "--therms-profiles-file",
+    help="Filepath to the therms profiles file. Used when --database-type is not BigQuery to load this data into the database from a file.",
+)
+@click.option(
+    "--metered-load-shape-file",
+    help="Filepath to the hourly metered load shape file. Used when --database-type is not BigQuery to load this data into the database from a file.",
+)
+@click.option(
+    "--aggregation-columns",
+    help="Comma-separated list of field names on which to aggregate the query.",
+)
+@click.option(
+    "--reset-elec-load-shape",
+    help="Reset the data in the electric load shape table. This restores it to its contents prior to running FLEXvalue.",
+    is_flag=True,
+)
+@click.option(
+    "--reset-elec-av-costs",
+    help="Reset the data in the electric avoided costs table. This restores it to its contents prior to running FLEXvalue.",
+    is_flag=True,
+)
+@click.option(
+    "--reset-therms-profiles",
+    help="Reset the data in the therms profiles table. This restores it to its contents prior to running FLEXvalue.",
+    is_flag=True,
+)
+@click.option(
+    "--reset-gas-av-costs",
+    help="Reset the data in the gas avoided costs table. This restores it to its contents prior to running FLEXvalue.",
+    is_flag=True,
+)
+@click.option(
+    "--process-elec-load-shape",
+    help="Process (load/transform) the electric load shape data.",
+    is_flag=True,
+)
+@click.option(
+    "--process-elec-av-costs",
+    help="Process (load/transform) the electric avoided costs data.",
+    is_flag=True,
+)
+@click.option(
+    "--process-therms-profiles",
+    help="Process (load/transform) the therms profiles table.",
+    is_flag=True,
+)
+@click.option(
+    "--process-gas-av-costs",
+    help="Process (load/transform) the gas avoided costs data.",
+    is_flag=True,
+)
+@click.option(
+    "--process-metered-load-shape",
+    help="Process (load/transform) the metered load shape data.",
+    is_flag=True,
+)
+@click.option(
+    "--elec-components",
+    help="Comma-separated list of electric avoided cost component field names",
+    is_flag=False,
+)
+@click.option(
+    "--gas-components",
+    help="Comma-separated list of electric avoided cost component field names",
+    is_flag=False,
+)
+@click.option(
+    "--elec-addl-fields",
+    help="Comma-separated list of additional fields from electric data to include in output",
+    is_flag=False,
+)
+@click.option(
+    "--gas-addl-fields",
+    help="Comma-separated list of additional fields from gas data to include in output",
+    is_flag=False,
+)
+@click.option(
+    "--use-value-curve-name-for-join",
+    help="Specifies that the ACC and project info tables you are using have multiple curves in them, and that FLEXvalue should join based on the curve names.",
+    is_flag=True,
 )
 def get_results(
-    user_inputs_filepath,
-    metered_load_shape_filepath,
-    include_report,
-    outputs_table_filepath,
-    report_filepath,
-    version,
+    config_file,
+    project_info_file,
+    database_type,
+    host,
+    port,
+    user,
+    password,
+    database,
+    elec_av_costs_table,
+    elec_load_shape_table,
+    gas_av_costs_table,
+    therms_profiles_table,
+    metered_load_shape_table,
+    project_info_table,
+    project,
+    output_table,
+    electric_output_table,
+    gas_output_table,
+    separate_output_tables,
+    elec_av_costs_file,
+    gas_av_costs_file,
+    elec_load_shape_file,
+    therms_profiles_file,
+    metered_load_shape_file,
+    aggregation_columns,
+    reset_elec_load_shape,
+    reset_elec_av_costs,
+    reset_therms_profiles,
+    reset_gas_av_costs,
+    process_elec_load_shape,
+    process_elec_av_costs,
+    process_therms_profiles,
+    process_gas_av_costs,
+    process_metered_load_shape,
+    elec_components,
+    gas_components,
+    elec_addl_fields,
+    gas_addl_fields,
+    use_value_curve_name_for_join,
 ):
-    """Calculates results and optionally writes a report"""
-    if not include_report:
-        metered_load_shape = (
-            pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
-            if metered_load_shape_filepath
-            else None
+    try:
+        fv_run = FlexValueRun(
+            config_file=config_file,
+            project_info_file=project_info_file,
+            database_type=database_type,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+            elec_av_costs_table=elec_av_costs_table,
+            elec_load_shape_table=elec_load_shape_table,
+            gas_av_costs_table=gas_av_costs_table,
+            therms_profiles_table=therms_profiles_table,
+            metered_load_shape_table=metered_load_shape_table,
+            project_info_table=project_info_table,
+            project=project,
+            output_table=output_table,
+            separate_output_tables=separate_output_tables,
+            electric_output_table=electric_output_table,
+            gas_output_table=gas_output_table,
+            elec_av_costs_file=elec_av_costs_file,
+            gas_av_costs_file=gas_av_costs_file,
+            elec_load_shape_file=elec_load_shape_file,
+            therms_profiles_file=therms_profiles_file,
+            metered_load_shape_file=metered_load_shape_file,
+            reset_elec_load_shape=reset_elec_load_shape,
+            reset_elec_av_costs=reset_elec_av_costs,
+            reset_therms_profiles=reset_therms_profiles,
+            reset_gas_av_costs=reset_gas_av_costs,
+            aggregation_columns=aggregation_columns.split(",")
+            if aggregation_columns
+            else [],
+            process_elec_load_shape=process_elec_load_shape,
+            process_elec_av_costs=process_elec_av_costs,
+            process_therms_profiles=process_therms_profiles,
+            process_gas_av_costs=process_gas_av_costs,
+            process_metered_load_shape=process_metered_load_shape,
+            elec_components=elec_components.split(",") if elec_components else [],
+            gas_components=gas_components.split(",") if gas_components else [],
+            elec_addl_fields=elec_addl_fields.split(",") if elec_addl_fields else [],
+            gas_addl_fields=gas_addl_fields.split(",") if gas_addl_fields else [],
+            use_value_curve_name_for_join=use_value_curve_name_for_join,
         )
-        user_inputs = pd.read_csv(user_inputs_filepath)
-        flexvalue_run = FlexValueRun(
-            metered_load_shape=metered_load_shape, database_version=version
-        )
-        (
-            outputs_table,
-            outputs_table_totals,
-            elec_benefits,
-            gas_benefits,
-        ) = flexvalue_run.get_results(user_inputs)
-        outputs_table.to_csv(outputs_table_filepath, index=False)
-    else:
-        Path(ntpath.dirname(report_filepath)).mkdir(parents=True, exist_ok=True)
-        nbf_nt = Notebook()
-        # convert paths from filename into 'filename' so they are intepreted as strings
-        metered_load_shape_filepath = (
-            f'"{metered_load_shape_filepath}"'
-            if metered_load_shape_filepath
-            else metered_load_shape_filepath
-        )
-        user_inputs_filepath = f'"{user_inputs_filepath}"'
-        outputs_table_filepath = f'"{outputs_table_filepath}"'
-        version = f'"{version}"'
-        content = dedent(
-            f"""
-            import pandas as pd
-            from flexvalue import FlexValueRun
-            from flexvalue.plots import plot_results
-            from IPython.display import display
-            metered_load_shape_filepath = {metered_load_shape_filepath}
-            user_inputs_filepath = {user_inputs_filepath}
-            outputs_table_filepath = {outputs_table_filepath}
-            database_version = {version}
-            metered_load_shape = (
-                pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
-                if metered_load_shape_filepath
-                else None
-            )
-            user_inputs = pd.read_csv(user_inputs_filepath)
-            flexvalue_run = FlexValueRun(metered_load_shape=metered_load_shape, database_version=database_version)
-            outputs_table, outputs_table_totals, elec_benefits, gas_benefits = flexvalue_run.get_results(
-                user_inputs
-            )
-            display(user_inputs)
-            display(outputs_table)
-            plot_results(outputs_table_totals, elec_benefits, gas_benefits)
-            outputs_table.to_csv(outputs_table_filepath, index=False)
-            """
-        )
-        nbf_nt.add_code_cell(content)
-        nbf_nt.execute()
-        nbf_nt.to_html(report_filepath)
-
-
-@cli.command()
-@click.option("--utility", default=None, show_default=True)
-@click.option(
-    "-v",
-    "--version",
-    default="2020",
-    show_default=True,
-    help="What version of the avoided costs data to use in the analysis",
-)
-def valid_utility_climate_zone_combos(utility, version):
-    """Returns all utility-climate zone combinations"""
-    utility_cz = get_all_valid_utility_climate_zone_combinations(version, utility)
-    click.echo(
-        json.dumps(
-            utility_cz.groupby("utility")["climate_zone"]
-            .agg(lambda x: ", ".join(x))
-            .to_dict(),
-            indent=2,
-        )
-    )
-
-
-@cli.command()
-@click.option(
-    "-v",
-    "--version",
-    default="2020",
-    show_default=True,
-    help="What version of the avoided costs data to use in the analysis",
-)
-def valid_deer_load_shapes(version):
-    """Returns all valid DEER load shapes"""
-    click.echo("\n".join(get_all_valid_deer_load_shapes(version)))
-
-@cli.command()
-@click.option(
-    "--user-inputs-filepath",
-    required=True,
-    help="Filepath to the user-inputs CSV file that is used to calculate results",
-)
-@click.option(
-    "--metered-load-shape-filepath",
-    help="Optional filepath to the CSV file containing metered load shapes",
-)
-@click.option(
-    "--outputs-electricity-filepath",
-    default="outputs_time_series_electricity.csv",
-    show_default=True,
-    help="Filepath to where the time series electricity data will be saved",
-)
-@click.option(
-    "--outputs-gas-filepath",
-    default="outputs_time_series_gas.csv",
-    show_default=True,
-    help="Filepath to where the time series gas data will be saved",
-)
-@click.option(
-    "-v",
-    "--version",
-    default="2020",
-    show_default=True,
-    help="What version of the avoided costs data to use in the analysis",
-)
-def get_time_series_results(
-    user_inputs_filepath,
-    metered_load_shape_filepath,
-    outputs_electricity_filepath,
-    outputs_gas_filepath,
-    version,
-):
-    """ Return raw time series electricity and gas benefits data. """
-    metered_load_shape = (
-        pd.read_csv(metered_load_shape_filepath, index_col="hour_of_year")
-        if metered_load_shape_filepath
-        else None
-    )
-    user_inputs = pd.read_csv(user_inputs_filepath)
-    flexvalue_run = FlexValueRun(
-        metered_load_shape=metered_load_shape, database_version=version
-    )
-
-    outputs = flexvalue_run.get_time_series_results(
-        user_inputs
-    )
-    if os.path.exists(outputs_electricity_filepath):
-        os.remove(outputs_electricity_filepath)
-    if os.path.exists(outputs_gas_filepath):
-        os.remove(outputs_gas_filepath)
-    
-    for row in outputs:
-        
-        (outputs_electricity, outputs_gas) = row 
-        outputs_electricity.to_csv(outputs_electricity_filepath, mode='a', header= not os.path.exists(outputs_electricity_filepath), index=False)
-        outputs_gas.to_csv(outputs_gas_filepath, mode='a', header= not os.path.exists(outputs_gas_filepath), index=False)
-
+        fv_run.run()
+    except FLEXValueException as e:
+        print(e)

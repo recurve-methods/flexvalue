@@ -7,8 +7,8 @@ FLEXvalue™
 
 `Github Link <https://github.com/recurve-inc/flexvalue>`_
 
-.. image:: https://readthedocs.com/projects/recurve-analytics-inc-flexvalue/badge/?version=latest&token=03dc3e4930d430d47b5d1169ec38ad7df5d2bc70f69689d1e845b56596bcf590
-    :target: https://recurve-analytics-inc-flexvalue.readthedocs-hosted.com/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/flexvalue/badge/?version=latest
+    :target: https://flexvalue.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 This library provides aggregators, program administrators, utilities, and regulators a pathway to consistently and transparently gauge the value of their projects, portfolios, and programs. Whereas the first version of FLEXvalue was limited to California, this version allows for user-provided avoided cost as well as load data. It defaults to using the CPUC’s published avoided cost data to enable market actors to assess demand flexibility value from either pre-defined or custom/measured load shapes. FLEXvalue accepts user-defined 8,760 hourly savings profiles or deemed load shapes that are part of the Database for Energy Efficiency Resources (DEER). See the user_inputs section below for more information. FLEXvalue currently computes Total Resource Cost (TRC) and Program Administrator Cost (PAC) test results. See the `California Standard Practice Manual <https://www.cpuc.ca.gov/uploadedFiles/CPUC_Public_Website/Content/Utilities_and_Industries/Energy_-_Electricity_and_Natural_Gas/CPUC_STANDARD_PRACTICE_MANUAL.pdf>`_ for more information on cost-effectiveness tests. 

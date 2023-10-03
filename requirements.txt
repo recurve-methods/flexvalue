@@ -15,7 +15,7 @@ snapshottest==0.6.0
 # docs
 sphinx==3.5.2
 sphinx-autobuild==2020.9.1
-sphinx-click==2.7.1
+sphinx-click==5.0.1
 nbsphinx==0.8.2
 autoapi==2.0.1
 m2r==0.2.1

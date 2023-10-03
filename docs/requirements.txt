@@ -1,5 +1,5 @@
 # docs
-sphinx==3.5.2
+sphinx==7.1.2
 sphinx-autobuild==2020.9.1
 sphinx-click==5.0.1
 nbsphinx==0.8.2

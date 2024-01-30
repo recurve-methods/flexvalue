@@ -212,7 +212,7 @@ In addition, some outputs may repeat at certain granularities. For example, **tr
 Below are the outputs that can be expected for each table. If you have other input columns that you would like to pass through to the outputs, you can designate these column names in the **elec_addl_fields** and the **gas_addl_fields** variables. Additional avoided cost components can also be displayed in outputs if the column names are passed into the **elec_components** and **gas_components** variables, respectively.
 
 Single Combined Table Outputs
---------------------
+-----------------------------
     - **id**: The id from the inputs.
     - **trc_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total trc costs for a given id.
     - **pac_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total pac costs for a given id.
@@ -229,7 +229,7 @@ Single Combined Table Outputs
     - **lifecycle_gas_ghg_savings**: The lifecycle gas ghg savings (post net-to_gross) for a given id, in metric tons.
 
 Electric Table Outputs
---------------------
+----------------------
     - **id**: The id from the inputs.
     - **trc_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total trc costs for a given id.
     - **pac_ratio**: The sum of total benefits (at a given level of aggregation) divided by the total pac costs for a given id.

@@ -5,7 +5,7 @@ FLEXvalue™
 
 `Read The Docs PDF Link <https://flexvalue.readthedocs.io/_/downloads/en/latest/pdf/>`_
 
-`Github Link <https://github.com/recurve-inc/flexvalue>`_
+`Github Link <https://github.com/recurve-methods/flexvalue>`_
 
 .. image:: https://readthedocs.org/projects/flexvalue/badge/?version=latest
     :target: https://flexvalue.readthedocs.io/en/latest/?badge=latest

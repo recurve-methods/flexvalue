@@ -24,7 +24,7 @@ copyright = "2021, Recurve Analytics, Inc."
 author = "Recurve Analytics, Inc."
 
 # The full version, including alpha/beta/rc tags
-release = "2.0.7"
+release = "2.0.8"
 
 
 # -- General configuration ---------------------------------------------------

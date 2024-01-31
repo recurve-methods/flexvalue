@@ -4,6 +4,12 @@ Changelog
 Development
 -----------
 
+* Placeholder
+
+2.0.8
+-----
+
+
 * Update documentation to fix incorrect link
 
 2.0.7
